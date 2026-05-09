@@ -296,3 +296,15 @@ Un endpoint dédié existe pour l'upload image offre:
 - réponse: `photo_url` + métadonnées `media`
 
 Le champ `photo` est ensuite persistant sur l'entité `offers` et exposé par `OfferResource`.
+
+7. Pipeline CI/CD (GitHub Actions → o2switch)
+
+Le dépôt inclut `.github/workflows/deploy.yml`, sur le même principe que `jbis-next` :
+
+- **Déclencheur** : push sur la branche `master`.
+- **Étapes** : checkout, PHP 8.2 + Composer, `composer install --no-dev --optimize-autoloader`, fichier `tmp/restart.txt` horodaté (repère de build), déploiement FTP avec [SamKirkland/FTP-Deploy-Action](https://github.com/SamKirkland/FTP-Deploy-Action).
+- **Secrets GitHub** (identiques au front si même hébergeur) : `FTP_SERVER`, `FTP_USERNAME`, `FTP_PASSWORD`.
+- **Dossier distant** : par défaut `server-dir: ./jbis/api/` (à adapter dans le YAML si votre arborescence o2switch diffère ; le front Next pointe par exemple sur `./jbis/jbis.cm/`).
+- **`.env`** : exclu du déploiement pour ne pas écraser la configuration déjà présente sur le serveur (comme pour le front).
+
+Après déploiement, sur l’hébergement : vérifier `.env`, droits `storage/` et `bootstrap/cache/`, éventuellement `php artisan migrate --force` et caches Laravel selon votre procédure de mise en production.
