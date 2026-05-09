@@ -1,0 +1,6 @@
+{
+    "The provided password does not match your current password.": "The provided password does not match your current password.",
+    "Les identifiants fournis sont incorrects.": "The provided credentials are incorrect.",
+    "Deconnexion effectuee avec succes.": "Successfully logged out.",
+    "Toutes les sessions ont ete revoquees.": "All sessions have been revoked."
+}
