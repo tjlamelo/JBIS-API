@@ -45,7 +45,6 @@ jobs:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          # À aligner avec le dossier distant de l’API sur o2switch (même logique que jbis-next → ./jbis/jbis.cm/)
           server-dir: ./jbis/api.jbis.cm/
           local-dir: ./
           exclude: |
