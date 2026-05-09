@@ -39,7 +39,8 @@ jobs:
         run: |
           mkdir -p tmp
           echo "Build: ${{ github.sha }} - $(date)" > tmp/restart.txt
-
+ # IMPORTANT : On exclut le .env du déploiement SI il existe déjà sur le serveur
+ # Pour ne pas écraser tes clés de prod saisies sur cPanel par exemple
       - name: Deploy via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
