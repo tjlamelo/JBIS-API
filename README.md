@@ -301,7 +301,7 @@ Le champ `photo` est ensuite persistant sur l'entité `offers` et exposé par `O
 
 Le dépôt inclut `.github/workflows/deploy.yml`, sur le même principe que `jbis-next` :
 
-- **Déclencheur** : push sur la branche `master`.
+- **Déclencheur** : push sur `main` ou `master`, ou lancement manuel (*Run workflow* dans l’onglet Actions).
 - **Étapes** : checkout, PHP 8.2 + Composer, `composer install --no-dev --optimize-autoloader`, fichier `tmp/restart.txt` horodaté (repère de build), déploiement FTP avec [SamKirkland/FTP-Deploy-Action](https://github.com/SamKirkland/FTP-Deploy-Action).
 - **Secrets GitHub** (identiques au front si même hébergeur) : `FTP_SERVER`, `FTP_USERNAME`, `FTP_PASSWORD`.
 - **Dossier distant** : par défaut `server-dir: ./jbis/api/` (à adapter dans le YAML si votre arborescence o2switch diffère ; le front Next pointe par exemple sur `./jbis/jbis.cm/`).

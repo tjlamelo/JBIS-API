@@ -2,7 +2,8 @@ name: Deploy Laravel API to o2switch
 
 on:
   push:
-    branches: [ master ]
+    branches: [ main, master ]
+  workflow_dispatch:
 
 jobs:
   build-and-deploy:
