@@ -302,9 +302,9 @@ Le champ `photo` est ensuite persistant sur l'entité `offers` et exposé par `O
 Le dépôt inclut `.github/workflows/deploy.yml`, sur le même principe que `jbis-next` :
 
 - **Déclencheur** : push sur `main` ou `master`, ou lancement manuel (*Run workflow* dans l’onglet Actions).
-- **Étapes** : checkout, PHP 8.2 + Composer, `composer install --no-dev --optimize-autoloader`, fichier `tmp/restart.txt` horodaté (repère de build), déploiement FTP avec [SamKirkland/FTP-Deploy-Action](https://github.com/SamKirkland/FTP-Deploy-Action).
+- **Étapes** : checkout, fichier `tmp/restart.txt` (repère de build), déploiement FTP avec [SamKirkland/FTP-Deploy-Action](https://github.com/SamKirkland/FTP-Deploy-Action). **Pas de `composer install` en CI** (gain de temps) : le dossier `vendor/` est **exclu** du sync FTP pour éviter qu’il soit supprimé côté serveur ; exécuter sur le serveur (Terminal cPanel), dans la racine Laravel, après un déploiement ou quand `composer.lock` change : `composer install --no-dev --optimize-autoloader` (ou l’équivalent via le sélecteur de version PHP d’o2switch).
 - **Secrets GitHub** (identiques au front si même hébergeur) : `FTP_SERVER`, `FTP_USERNAME`, `FTP_PASSWORD`.
-- **Dossier distant** : par défaut `server-dir: ./jbis/api/` (à adapter dans le YAML si votre arborescence o2switch diffère ; le front Next pointe par exemple sur `./jbis/jbis.cm/`).
+- **Dossier distant** : à adapter dans le YAML (`server-dir`, ex. `./jbis/api.jbis.cm/` ; le front Next pointe souvent sur `./jbis/jbis.cm/`).
 - **`.env`** : exclu du déploiement pour ne pas écraser la configuration déjà présente sur le serveur (comme pour le front).
 
-Après déploiement, sur l’hébergement : vérifier `.env`, droits `storage/` et `bootstrap/cache/`, éventuellement `php artisan migrate --force` et caches Laravel selon votre procédure de mise en production.
+Après déploiement, sur l’hébergement : `composer install` si besoin, vérifier `.env`, droits `storage/` et `bootstrap/cache/`, éventuellement `php artisan migrate --force` et caches Laravel selon votre procédure de mise en production.

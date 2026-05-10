@@ -12,35 +12,13 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.2'
-          extensions: mbstring, xml, ctype, fileinfo, json, tokenizer, pdo, pdo_mysql, bcmath, curl, openssl, zip, gd, intl
-          coverage: none
-          tools: composer:v2
-
-      - name: Get Composer cache directory
-        id: composer-cache
-        run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
-
-      - name: Cache Composer downloads
-        uses: actions/cache@v4
-        with:
-          path: ${{ steps.composer-cache.outputs.dir }}
-          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-composer-
-
-      - name: Install dependencies (production)
-        run: composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
-
       - name: Prepare deploy marker
         run: |
           mkdir -p tmp
           echo "Build: ${{ github.sha }} - $(date)" > tmp/restart.txt
- # IMPORTANT : On exclut le .env du déploiement SI il existe déjà sur le serveur
- # Pour ne pas écraser tes clés de prod saisies sur cPanel par exemple
+
+      # vendor/ est exclu : pas de composer en CI ; à installer sur le serveur (Terminal cPanel).
+      # .env exclu pour ne pas écraser la prod déjà sur le serveur.
       - name: Deploy via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
@@ -53,6 +31,7 @@ jobs:
             **/.git*
             **/.git*/**
             **/node_modules/**
+            **/vendor/**
             .env
             .phpunit.result.cache
             **/tests/**
