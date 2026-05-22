@@ -1,7 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Core\Domain\Candidacy\Models;
 
+use App\Core\Domain\Identity\Models\User;
+use App\Core\Domain\Identity\Models\UserDocument;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -11,38 +15,39 @@ class ApplicationDocument extends Model
 
     protected $fillable = [
         'application_id',
-        'required_document_id',
         'user_document_id',
-        'reviewed_by',
-        'review_date',
-        'comments',
+        'application_step_id',
         'status',
+        'admin_notes',
+        'reviewed_by',
+        'reviewed_at',
     ];
 
-    protected $dates = [
-        'review_date',
-        'created_at',
-        'updated_at',
+    protected $casts = [
+        'application_id' => 'integer',
+        'user_document_id' => 'integer',
+        'application_step_id' => 'integer',
+        'reviewed_by' => 'integer',
+        'reviewed_at' => 'datetime',
     ];
 
-    // Relations
     public function application(): BelongsTo
     {
-        return $this->belongsTo(\App\Core\Domain\Candidacy\Models\Application::class);
-    }
-
-    public function requiredDocument(): BelongsTo
-    {
-        return $this->belongsTo(\App\Core\Domain\Candidacy\Models\RequiredDocument::class);
+        return $this->belongsTo(Application::class);
     }
 
     public function userDocument(): BelongsTo
     {
-        return $this->belongsTo(\App\Core\Domain\Identity\Models\UserDocument::class);
+        return $this->belongsTo(UserDocument::class);
+    }
+
+    public function applicationStep(): BelongsTo
+    {
+        return $this->belongsTo(ApplicationStep::class);
     }
 
     public function reviewer(): BelongsTo
     {
-        return $this->belongsTo(\App\Core\Domain\Identity\Models\User::class, 'reviewed_by');
+        return $this->belongsTo(User::class, 'reviewed_by');
     }
 }

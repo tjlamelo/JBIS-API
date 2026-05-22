@@ -2,21 +2,25 @@
 
 namespace App\Providers;
 
+use App\Core\Domain\Communication\Contracts\MailboxProvisioner;
+use App\Core\Domain\Communication\Contracts\SmsProvider;
 use App\Core\Domain\Communication\Events\MailCampaignDispatched;
 use App\Core\Domain\Communication\Events\SmsCampaignDispatched;
-use App\Core\Domain\Communication\Contracts\SmsProvider;
+use App\Core\Domain\Communication\Exceptions\SmsProviderException;
 use App\Core\Domain\Communication\Listeners\RefreshMailCampaignStatsListener;
 use App\Core\Domain\Communication\Listeners\RefreshSmsCampaignStatsListener;
-use App\Core\Domain\Communication\Exceptions\SmsProviderException;
-use App\Listeners\SendWelcomeEmailListener;
+use App\Core\Domain\Communication\Services\CpanelMailboxProvisionerService;
+use App\Core\Domain\Workflow\Services\ProcessFlow\Contracts\ProcessFlowPdfRenderer;
+use App\Core\Domain\Workflow\Services\ProcessFlow\ProcessFlowScreenshotPdfRenderer;
 use App\Core\Domain\Identity\Models\User;
+use App\Listeners\SendWelcomeEmailListener;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -25,6 +29,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        $this->app->bind(MailboxProvisioner::class, CpanelMailboxProvisionerService::class);
+
+        $this->app->bind(ProcessFlowPdfRenderer::class, ProcessFlowScreenshotPdfRenderer::class);
+
         $this->app->bind(SmsProvider::class, function ($app): SmsProvider {
             $provider = (string) config('sms.provider', 'queen_sms');
             $providerClass = config("sms.providers.{$provider}");

@@ -14,31 +14,32 @@ return new class extends Migration
         Schema::create('user_documents', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-
-            // Classification
-            $table->string('type')->index(); // ex: PASSPORT, ID_CARD, DIPLOMA
+            $table->foreignId('uploaded_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('document_type_id')->constrained('document_types')->restrictOnDelete();
             $table->string('document_number', 50)->nullable()->index();
-            $table->text('description')->nullable();
+            $table->foreignId('issuing_country_id')->nullable()->constrained('countries');
 
-            // --- FICHIERS (Recto, Verso, ou Multi-pages) ---
-            // Format JSON : {"front": "path/id_front.jpg", "back": "path/id_back.jpg"}
-            $table->json('files');
+            // Métadonnées du fichier
+            $table->string('file_path');
+            $table->string('original_filename')->nullable();
+            $table->string('mime_type', 100)->nullable();
+            $table->unsignedBigInteger('file_size')->nullable(); // En octets
 
             // Validité
             $table->date('issue_date')->nullable();
             $table->date('expiry_date')->nullable()->index();
-            $table->string('issuing_authority', 150)->nullable();
+            $table->boolean('is_expired')->virtualAs('expiry_date < CURDATE()'); // Colonne calculée (si MariaDB 10.2+)
 
-            // --- WORKFLOW ---
-            $table->enum('status', ['PENDING', 'APPROVED', 'REJECTED', 'EXPIRED'])
-                ->default('PENDING')
-                ->index();
-
-            $table->text('rejection_reason')->nullable(); // Pourquoi le document a été refusé
-
-            // Validation Admin
+            // Workflow & Validation
+            $table->enum('status', ['PENDING', 'APPROVED', 'REJECTED', 'EXPIRED'])->default('PENDING')->index();
+            $table->text('rejection_reason')->nullable();
             $table->timestamp('validated_at')->nullable();
             $table->foreignId('validated_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->text('notes')->nullable();
+
+            // Sécurité
+            $table->boolean('is_verified_copy')->default(false); // Si l'agent a vu l'original
+            $table->boolean('is_sensitive')->default(false);
 
             $table->timestamps();
             $table->softDeletes();

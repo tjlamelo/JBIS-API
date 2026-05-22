@@ -15,16 +15,23 @@ class LocalMirrorStorageDriver implements MediaStorageDriverInterface
     {
         $extension = $file->getClientOriginalExtension();
 
+        $mimeType = (string) ($file->getMimeType() ?? '');
+        $isImage = str_starts_with($mimeType, 'image/');
+
         $localRawPath = "{$targetFolder}/raw/{$baseName}.{$extension}";
         Storage::disk('jbis_assets')->putFileAs("{$targetFolder}/raw", $file, "{$baseName}.{$extension}");
 
-        $localOptimizedPath = "{$targetFolder}/optimized/{$baseName}.webp";
-        $optimizedImage = Image::read($file)
-            ->scale(width: 1200)
-            ->toWebp(80);
-        Storage::disk('jbis_assets')->put($localOptimizedPath, (string) $optimizedImage);
+        $localOptimizedPath = '';
+        if ($isImage) {
+            $localOptimizedPath = "{$targetFolder}/optimized/{$baseName}.webp";
+            $optimizedImage = Image::read($file)
+                ->scale(width: 1200)
+                ->toWebp(80);
+            Storage::disk('jbis_assets')->put($localOptimizedPath, (string) $optimizedImage);
+        }
 
-        $publicUrl = rtrim((string) config('filesystems.disks.jbis_assets.url'), '/') . '/' . $localOptimizedPath;
+        $publicPath = $localOptimizedPath !== '' ? $localOptimizedPath : $localRawPath;
+        $publicUrl = rtrim((string) config('filesystems.disks.jbis_assets.url'), '/').'/'.$publicPath;
 
         return [
             'local_optimized_path' => $localOptimizedPath,
@@ -48,4 +55,3 @@ class LocalMirrorStorageDriver implements MediaStorageDriverInterface
         }
     }
 }
-

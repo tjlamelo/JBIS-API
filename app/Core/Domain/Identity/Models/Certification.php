@@ -2,16 +2,17 @@
 
 namespace App\Core\Domain\Identity\Models;
 
+use App\Core\Domain\Identity\Concerns\AuditsModelChanges;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Certification extends Model
 {
-    use HasFactory, SoftDeletes;
+    use AuditsModelChanges, HasFactory, SoftDeletes;
 
-    protected $table = 'certifications';
+    protected $table = 'user_certifications';
 
     protected $fillable = [
         'user_id',
@@ -64,7 +65,10 @@ class Certification extends Model
      */
     public function isValid(): bool
     {
-        if (!$this->expiry_date) return true;
+        if (! $this->expiry_date) {
+            return true;
+        }
+
         return $this->expiry_date->isFuture();
     }
 }

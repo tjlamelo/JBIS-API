@@ -14,10 +14,11 @@ return new class extends Migration
     Schema::create('interviews', function (Blueprint $table) {
     $table->id();
     $table->foreignId('application_id')->constrained()->cascadeOnDelete();
-    $table->foreignId('company_id')->constrained()->cascadeOnDelete(); // La boîte qui recrute
+    $table->foreignId('application_step_id')->nullable()->constrained()->nullOnDelete();
+    $table->foreignId('company_id')->nullable()->constrained()->nullOnDelete();
 
     // Planification
-    $table->dateTime('scheduled_date');
+    $table->dateTime('scheduled_date')->nullable();
     $table->integer('duration')->nullable(); // en minutes
     $table->enum('interview_type', ['ONLINE', 'PHONE', 'ONSITE'])->default('ONLINE');
     $table->string('location')->nullable(); // Lien Meet/Zoom ou adresse physique

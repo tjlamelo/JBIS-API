@@ -3,18 +3,19 @@
 namespace App\Core\Domain\Candidacy\Models;
 
 use App\Core\Domain\Catalog\Models\Agency;
+use App\Core\Domain\Communication\Models\DiscoverySource;
 use App\Core\Domain\Identity\Models\User;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Appointment extends Model
 {
     use HasFactory, SoftDeletes;
 
     // Si tu gardes le nom de table 'rendez_vous'
-    protected $table = 'appointments'; 
+    protected $table = 'appointments';
 
     protected $fillable = [
         'user_id',
@@ -26,6 +27,13 @@ class Appointment extends Model
         'duration_minutes',
         'subject',
         'message',
+        'discovery_source_id',
+        'discovery_source_other',
+        'utm_source',
+        'utm_medium',
+        'utm_campaign',
+        'ip_address',
+        'user_agent',
         'type',
         'meeting_link',
         'status',
@@ -55,14 +63,19 @@ class Appointment extends Model
         return $this->belongsTo(Agency::class);
     }
 
+    public function discoverySource(): BelongsTo
+    {
+        return $this->belongsTo(DiscoverySource::class);
+    }
+
     /**
      * Scope pour filtrer les rendez-vous à venir
      */
     public function scopeUpcoming($query)
     {
         return $query->where('scheduled_at', '>=', now())
-                     ->where('status', 'CONFIRMED')
-                     ->orderBy('scheduled_at', 'asc');
+            ->where('status', 'CONFIRMED')
+            ->orderBy('scheduled_at', 'asc');
     }
 
     /**

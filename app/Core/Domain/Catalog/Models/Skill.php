@@ -6,11 +6,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Translatable\HasTranslations;
 
 class Skill extends Model
 {
-    use HasFactory, HasTranslations;
+    use HasFactory, HasTranslations, SoftDeletes;
 
     protected $table = 'skills';
 
@@ -33,7 +34,7 @@ class Skill extends Model
     public function offers(): BelongsToMany
     {
         return $this->belongsToMany(Offer::class, 'offer_skill')
-                    ->withPivot('level')
-                    ->withTimestamps();
+            ->withPivot('level')
+            ->withTimestamps();
     }
 }

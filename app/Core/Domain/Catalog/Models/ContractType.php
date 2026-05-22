@@ -14,12 +14,11 @@ class ContractType extends Model
 
     /**
      * Les champs traduisibles gérés par Spatie.
-     * ATTENTION : Ne mets JAMAIS 'color_code' ici, sinon Laravel 
+     * ATTENTION : Ne mets JAMAIS 'color_code' ici, sinon Laravel
      * attendra un array au lieu d'une string.
      */
     public array $translatable = [
         'name',
-        'slug',
     ];
 
     /**

@@ -11,39 +11,21 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('payments', function (Blueprint $table) {
+        Schema::create('payment_installments', function (Blueprint $table) {
             $table->id();
 
-            // Relations
             $table->foreignId('application_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete(); // Le candidat ou l'initiateur
+            $table->foreignId('application_step_id')->nullable()->constrained()->nullOnDelete();
 
-            // LIEN CRUCIAL : Vers quelle tranche ce paiement est-il dirigé ?
-            $table->foreignId('payment_installment_id')->nullable()->constrained()->nullOnDelete();
-
-            // Informations financières
             $table->decimal('amount', 15, 2);
-            $table->string('currency', 10)->default('XAF'); // Par défaut pour le Cameroun
-
-            // Précision du type pour la comptabilité
-            $table->enum('payment_type', ['DEPOSIT', 'INSTALLMENT', 'FINAL', 'REFUND'])->default('INSTALLMENT');
-            $table->enum('payment_method', ['CASH', 'BANK_TRANSFER', 'MOBILE_MONEY', 'CARD', 'CHEQUE'])->default('CASH');
-
-            // Dates
-            $table->dateTime('payment_date')->useCurrent(); // Date effective de l'encaissement
-            // Note: due_date n'est plus nécessaire ici car elle est gérée par l'installment
-
-            // Suivi & Preuves
-            $table->enum('status', ['PENDING', 'COMPLETED', 'FAILED', 'REVERSED'])->default('COMPLETED');
-
-            $table->string('transaction_id')->nullable()->index(); // ID externe (OM/MoMo/Banque)
-            $table->string('reference')->unique()->nullable();    // Ton numéro de reçu interne (ex: RCP-2026-001)
-
-            $table->text('internal_note')->nullable(); // Note pour l'admin JBIS
-            $table->string('receipt_path')->nullable(); // Lien vers le scan du reçu papier si besoin
+            $table->string('currency', 10)->default('XAF');
+            $table->dateTime('due_date')->nullable()->index();
+            $table->dateTime('paid_at')->nullable()->index();
+            $table->enum('status', ['PENDING', 'PAID', 'OVERDUE', 'CANCELLED'])->default('PENDING')->index();
 
             $table->timestamps();
-            $table->softDeletes();
+
+            $table->index(['application_step_id', 'status']);
         });
     }
 

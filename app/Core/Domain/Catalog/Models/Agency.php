@@ -4,7 +4,6 @@ namespace App\Core\Domain\Catalog\Models;
 
 use App\Core\Domain\Identity\Models\User;
 use App\Core\Domain\Identity\Models\UserProfile;
- 
 use App\Core\Domain\Location\Models\City;
 use App\Core\Domain\Location\Models\Country;
 use Illuminate\Database\Eloquent\Model;
@@ -15,7 +14,7 @@ use Spatie\Translatable\HasTranslations;
 
 class Agency extends Model
 {
-    use SoftDeletes, HasTranslations;
+    use HasTranslations, SoftDeletes;
 
     protected $table = 'agencies';
 
@@ -80,6 +79,6 @@ class Agency extends Model
      */
     public function profiles(): HasMany
     {
-        return $this->hasMany(UserProfile::class, 'agencies_id');
+        return $this->hasMany(UserProfile::class, 'agency_id');
     }
 }

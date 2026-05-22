@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('assigned_tasks', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('meeting_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignId('meeting_id')->nullable()->index();
             $table->string('title');
             $table->text('description')->nullable();
             $table->date('due_date')->nullable();

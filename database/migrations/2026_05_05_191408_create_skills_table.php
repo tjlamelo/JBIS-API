@@ -16,6 +16,7 @@ return new class extends Migration
             $table->json('name'); // Traduisible
             $table->string('slug')->unique();
             $table->timestamps();
+            $table->softDeletes();
         });
 
         Schema::create('skills', function (Blueprint $table) {
@@ -24,6 +25,17 @@ return new class extends Migration
             $table->string('slug')->unique();
             $table->foreignId('skill_category_id')->nullable()->constrained('skill_categories')->nullOnDelete();
             $table->timestamps();
+            $table->softDeletes();
+        });
+        Schema::create('user_skills', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('skill_id')->constrained()->cascadeOnDelete();
+            $table->integer('years_of_experience')->nullable();
+            $table->enum('level', ['BEGINNER', 'INTERMEDIATE', 'ADVANCED', 'EXPERT'])->default('BEGINNER');
+            $table->timestamps();
+
+            $table->softDeletes();
         });
         Schema::create('offer_skill', function (Blueprint $table) {
             $table->id();
@@ -34,6 +46,8 @@ return new class extends Migration
             $table->string('level')->nullable(); // ex: 'Expert', 'Intermediate', 'Beginner'
 
             $table->timestamps();
+
+            $table->softDeletes();
         });
     }
 

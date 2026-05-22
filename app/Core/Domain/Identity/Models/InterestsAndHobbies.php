@@ -2,13 +2,14 @@
 
 namespace App\Core\Domain\Identity\Models;
 
+use App\Core\Domain\Identity\Concerns\AuditsModelChanges;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class InterestAndHobby extends Model
 {
-    use HasFactory;
+    use AuditsModelChanges, HasFactory;
 
     protected $table = 'interests_and_hobbies';
 
@@ -16,8 +17,6 @@ class InterestAndHobby extends Model
         'user_id',
         'title',
         'category',
-        'description',
-        'icon',
     ];
 
     protected $casts = [

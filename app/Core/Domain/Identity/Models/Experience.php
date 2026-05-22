@@ -2,17 +2,18 @@
 
 namespace App\Core\Domain\Identity\Models;
 
+use App\Core\Domain\Identity\Concerns\AuditsModelChanges;
 use App\Core\Domain\Catalog\Models\ContractType; // Assure-toi que le modèle existe ici
 use App\Core\Domain\Location\Models\Country;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Carbon\Carbon;
 
 class Experience extends Model
 {
-    use HasFactory, SoftDeletes;
+    use AuditsModelChanges, HasFactory, SoftDeletes;
 
     protected $table = 'experiences';
 
@@ -31,6 +32,7 @@ class Experience extends Model
         'achievements',
         'status',
         'approved_by',
+        'approved_at',
     ];
 
     protected $casts = [
@@ -39,6 +41,7 @@ class Experience extends Model
         'is_current' => 'boolean',
         'user_id' => 'integer',
         'contract_type_id' => 'integer',
+        'approved_at' => 'datetime',
     ];
 
     /**
@@ -48,17 +51,21 @@ class Experience extends Model
     public function getDurationLabelAttribute(): string
     {
         $end = $this->is_current ? now() : $this->end_date;
-        if (!$end) return "";
-        
+        if (! $end) {
+            return '';
+        }
+
         return $this->start_date->diffForHumans($end, [
             'syntax' => Carbon::DIFF_RELATIVE_TO_NOW,
             'parts' => 2,
         ]);
     }
-public function document(): BelongsTo
+
+    public function document(): BelongsTo
     {
         return $this->belongsTo(UserDocument::class, 'document_id');
     }
+
     /**
      * Relation vers l'utilisateur
      */

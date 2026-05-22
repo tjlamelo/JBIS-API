@@ -6,9 +6,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class UserDevice extends Model
 {
-   protected $fillable = [
+    protected $fillable = [
         'user_id',
         'device_key',
+        'personal_access_token_id',
         'device_name',
         'ip',
         'last_ip',
@@ -35,6 +36,6 @@ class UserDevice extends Model
 
     public function user()
     {
-        return $this->belongsTo(\App\Core\Domain\Identity\Models\User::class);
+        return $this->belongsTo(User::class);
     }
 }

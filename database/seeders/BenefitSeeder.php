@@ -12,18 +12,17 @@ class BenefitSeeder extends Seeder
     {
         $benefits = [
             ['name' => ['fr' => 'Logement fourni', 'en' => 'Housing provided'], 'icon' => 'home'],
-            ['name' => ['fr' => 'Billet d\'avion annuel', 'en' => 'Annual flight ticket'], 'icon' => 'plane'],
-            ['name' => ['fr' => 'Assurance Maladie', 'en' => 'Health Insurance'], 'icon' => 'shield-check'],
-            ['name' => ['fr' => 'Transport inclus', 'en' => 'Transport included'], 'icon' => 'bus'],
-            ['name' => ['fr' => 'Télétravail possible', 'en' => 'Remote friendly'], 'icon' => 'laptop'],
+            ['name' => ['fr' => 'Nutrition (repas inclus)', 'en' => 'Nutrition (meals included)'], 'icon' => 'apple'],
+            ['name' => ['fr' => 'Assurance maladie', 'en' => 'Health insurance'], 'icon' => 'shield-check'],
         ];
 
         foreach ($benefits as $benefit) {
-            Benefit::create([
-                'name' => $benefit['name'],
-                'slug' => Str::slug($benefit['name']['en']),
-                'icon' => $benefit['icon'],
-            ]);
+            $slug = Str::slug($benefit['name']['en']);
+
+            $model = Benefit::query()->firstOrNew(['slug' => $slug]);
+            $model->icon = $benefit['icon'];
+            $model->setTranslations('name', $benefit['name']);
+            $model->save();
         }
     }
 }

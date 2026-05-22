@@ -11,27 +11,27 @@ return new class extends Migration
      */
     public function up(): void
     {
-      Schema::create('offer_required_document', function (Blueprint $table) {
-    $table->id();
+        Schema::create('offer_required_document', function (Blueprint $table) {
+            $table->id();
 
-    // Clés étrangères
-    $table->foreignId('offer_id')
-          ->constrained()
-          ->onDelete('cascade');
+            // Clés étrangères
+            $table->foreignId('offer_id')
+                ->constrained()
+                ->onDelete('cascade');
 
-    $table->foreignId('required_document_id')
-          ->constrained('required_documents')
-          ->onDelete('cascade');
+            $table->foreignId('required_document_id')
+                ->constrained('required_documents')
+                ->onDelete('cascade');
 
-    // Attributs spécifiques à la relation
-    $table->boolean('is_mandatory')->default(true);
-    $table->integer('sort_order')->default(0);
+            // Attributs spécifiques à la relation
+            $table->boolean('is_mandatory')->default(true);
+            $table->integer('sort_order')->default(0);
 
-    // Index de sécurité pour éviter les doublons (une offre ne peut pas demander 2 fois le même doc)
-    $table->unique(['offer_id', 'required_document_id'], 'offer_doc_unique');
+            // Index de sécurité pour éviter les doublons (une offre ne peut pas demander 2 fois le même doc)
+            $table->unique(['offer_id', 'required_document_id'], 'offer_doc_unique');
 
-    $table->timestamps();
-});
+            $table->timestamps();
+        });
     }
 
     /**

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Core\Application\Api\V1\Catalog\Controllers\Offer;
 
 use App\Core\Application\Api\Responses\BaseResponse;
-use App\Core\Domain\Catalog\Actions\ForceDeleteOfferAction;
+use App\Core\Domain\Catalog\Actions\Offer\ForceDeleteOfferAction;
 use App\Core\Domain\Catalog\Models\Offer;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;

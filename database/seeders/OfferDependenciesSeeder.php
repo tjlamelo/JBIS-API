@@ -97,13 +97,19 @@ class OfferDependenciesSeeder extends Seeder
         // 5) Company (offers.company_id)
         $company = DB::table('companies')->where('name', 'JBIS Demo Company')->first();
         if (! $company) {
+            $countryRow = DB::table('countries')->where('code', 'CM')->first();
+            $cityRow = DB::table('cities')->where('slug', 'yaounde')->first();
+            $categoryRow = DB::table('offer_categories')->where('slug', 'it-technology')->first();
+
             DB::table('companies')->insert([
                 'name' => 'JBIS Demo Company',
                 'slug' => 'jbis-demo-company',
-                'industry' => 'Technology',
-                'country' => 'Cameroon',
-                'city' => 'Yaounde',
+                'offer_category_id' => $categoryRow?->id,
+                'country_id' => $countryRow?->id,
+                'city_id' => $cityRow?->id,
                 'address' => 'Yaounde Centre',
+                'type' => 'EMPLOYER',
+                'status' => 'PUBLISHED',
                 'email' => 'contact+demo@jbis.cm',
                 'is_approved' => true,
                 'approved_by' => $adminId,
@@ -121,9 +127,13 @@ class OfferDependenciesSeeder extends Seeder
                 'description' => json_encode(['fr' => 'Programme de test', 'en' => 'Testing program'], JSON_UNESCAPED_UNICODE),
                 'slug' => json_encode(['fr' => 'programme-demo-'.$suffix, 'en' => 'demo-program-'.$suffix], JSON_UNESCAPED_UNICODE),
                 'user_id' => $adminId,
-                'procedure_cost' => 0,
-                'currency' => 'XAF',
-                'status' => 'active',
+                'duration_unit' => 'months',
+                'is_featured' => false,
+                'is_urgent' => false,
+                'views_count' => 0,
+                'status' => 'PUBLISHED',
+                'start_date' => $now->toDateString(),
+                'end_date' => $now->copy()->addYears(2)->toDateString(),
                 'published_at' => $now,
                 'created_at' => $now,
                 'updated_at' => $now,

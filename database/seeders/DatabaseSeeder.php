@@ -2,9 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Core\Domain\Identity\Models\User;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
@@ -14,19 +12,18 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // --- 1. UTILISATEURS ---
-        User::updateOrCreate(
-            ['email' => 'admin@jbis.cm'],
-            [
-                'name' => 'JBIS Admin',
-                'password' => Hash::make('password'),
-                'email_verified_at' => now(),
-            ]
-        );
+        // --- 1. PERMISSIONS & RÔLES ---
+        $this->call([
+            PermissionSeeder::class,
+            RoleSeeder::class,
+            UserSeeder::class,
+            LegalDocumentSeeder::class,
+        ]);
 
         // --- 2. RÉFÉRENTIELS DE BASE (Niveau 0) ---
         // Ces tables ne dépendent d'aucune autre.
         $this->call([
+            DocumentTypeSeeder::class,
             OfferDependenciesSeeder::class, // Assure les FK minimales pour offers
             GeographicZoneSeeder::class, // Zones mondiales (Nécessaire pour Programs)
             OfferCategorySeeder::class,  // Catégories de métiers (Nécessaire pour Offers)
@@ -38,7 +35,8 @@ class DatabaseSeeder extends Seeder
             LanguageSeeder::class,       // Langues référentielles (FK/pivots language_*)
             SkillSeeder::class,          // Compétences (table skills)
             BenefitSeeder::class,        // Avantages sociaux (Relation Many-to-Many)
-            AgencySeeder::class,         // Agences JBIS
+            DiscoverySourceSeeder::class, // Provenance (Comment avez-vous connu JBIS ?)
+            TrainingSeeder::class,       // Catalogue formations (ex. cours d'anglais)
         ]);
 
         // --- 3. GÉOGRAPHIE & PARTENAIRES (Niveau 1) ---
@@ -47,6 +45,7 @@ class DatabaseSeeder extends Seeder
             CountrySeeder::class,        // Liste des pays
             LocationSeeder::class,       // Régions et Villes liées aux pays
             CompanySeeder::class,        // Partenaires (Aman Taxi, etc.)
+            AgencySeeder::class,         // Agences JBIS
         ]);
 
         // --- 4. CŒUR DU CATALOGUE (Niveau 2) ---
@@ -61,6 +60,11 @@ class DatabaseSeeder extends Seeder
         $this->call([
             OfferSeeder::class,
             RequiredDocumentSeeder::class,
+        ]);
+
+        // --- 6. PARCOURS PROCÉDURAUX (templates abstraits, sans FK programme/offre/pays) ---
+        $this->call([
+            ProcessFlowSeeder::class,
         ]);
     }
 }

@@ -15,13 +15,18 @@ class MediaPathBuilder
     {
         $cleanFolder = $this->normalizeFolder($folder);
         $datePath = now()->format('Y/m');
-        $targetFolder = trim($cleanFolder . '/' . $datePath, '/');
+        $targetFolder = trim($cleanFolder.'/'.$datePath, '/');
 
         $sourceName = $originalName ?: 'media';
         $nameWithoutExt = pathinfo($sourceName, PATHINFO_FILENAME);
         $safeName = Str::slug((string) $nameWithoutExt);
         if ($safeName === '') {
             $safeName = 'media';
+        }
+
+        // Cloudinary public_id length constraints: keep base name short even for very long filenames.
+        if (Str::length($safeName) > 80) {
+            $safeName = Str::substr($safeName, 0, 60).'-'.Str::lower(Str::substr(md5($safeName), 0, 10));
         }
 
         $baseName = sprintf(
@@ -56,4 +61,3 @@ class MediaPathBuilder
         return implode('/', array_filter($cleaned));
     }
 }
-

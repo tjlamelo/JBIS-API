@@ -17,10 +17,12 @@ class CompanyController extends Controller
 
         $companies = Company::query()
             ->where('is_approved', true)
+            ->where('status', 'PUBLISHED')
             ->when($search, function ($query, $search) {
                 $query->where('name', 'like', "%{$search}%");
             })
-            ->select(['id', 'name', 'logo'])
+            ->with(['category:id,name', 'country:id,name', 'city:id,name'])
+            ->select(['id', 'name', 'logo', 'offer_category_id', 'country_id', 'city_id', 'type'])
             ->paginate(15);
 
         return response()->json($companies);

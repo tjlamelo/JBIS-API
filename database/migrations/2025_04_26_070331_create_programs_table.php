@@ -18,7 +18,7 @@ return new class extends Migration
             $table->json('name');
             $table->json('description')->nullable();
             $table->json('slug'); // JSON pour multilingue
-            $table->string('image', 255)->nullable();
+            $table->json('image_media')->nullable();
 
             // --- RELATIONS ---
             $table->foreignId('geographic_zone_id')
@@ -32,17 +32,20 @@ return new class extends Migration
                 ->onDelete('set null');
 
             // --- FINANCE & TEMPS ---
-            $table->string('currency', 3)->default('XAF');
+
             $table->integer('procedure_duration')->nullable();
             $table->string('duration_unit', 20)->default('months');
 
             // --- CRITÈRES (Considérer une table pivot si multi-critères) ---
-            $table->string('required_age', 50)->nullable();
-          
-            // --- CONFIG & DATA ---
-            $table->json('meta')->nullable();
-            $table->string('status', 20)->default('active')->index();
-            
+            $table->unsignedTinyInteger('age_min')->nullable();
+            $table->unsignedTinyInteger('age_max')->nullable();
+
+            $table->boolean('is_featured')->default(false);
+            $table->boolean('is_urgent')->default(false);
+            $table->unsignedBigInteger('views_count')->default(0);
+
+            $table->enum('status', ['DRAFT', 'PUBLISHED', 'ARCHIVED', 'EXPIRED'])->default('PUBLISHED')->index();
+
             // --- TIMESTAMPS & DATES ---
             $table->date('start_date')->nullable();
             $table->date('end_date')->nullable()->index();

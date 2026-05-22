@@ -2,6 +2,7 @@
 
 namespace App\Core\Application\Api\V1\Auth\Controllers;
 
+use App\Core\Application\Api\Responses\BaseResponse;
 use App\Core\Application\Api\V1\Auth\Actions\CompleteTwoFactorLoginAction;
 use App\Core\Application\Api\V1\Auth\Actions\HandleGoogleCallbackAction;
 use App\Core\Application\Api\V1\Auth\Actions\PrepareTwoFactorLoginChallengeAction;
@@ -11,7 +12,8 @@ use App\Core\Application\Api\V1\Auth\Requests\ForgotPasswordRequest;
 use App\Core\Application\Api\V1\Auth\Requests\LoginRequest;
 use App\Core\Application\Api\V1\Auth\Requests\RegisterRequest;
 use App\Core\Application\Api\V1\Auth\Requests\ResetPasswordRequest;
-use App\Core\Application\Api\Responses\BaseResponse;
+use App\Core\Application\Api\V1\Identity\Support\AuthUserPayloadMapper;
+use App\Core\Application\Api\V1\Identity\Support\ProfileResponseMapper;
 use App\Core\Domain\Identity\Actions\ForgotPasswordAction;
 use App\Core\Domain\Identity\Actions\LoginUserAction;
 use App\Core\Domain\Identity\Actions\RegisterUserAction;
@@ -31,6 +33,7 @@ use Laravel\Fortify\Actions\EnableTwoFactorAuthentication;
 use Laravel\Fortify\Actions\GenerateNewRecoveryCodes;
 use Laravel\Fortify\Contracts\TwoFactorAuthenticationProvider;
 use Laravel\Socialite\Facades\Socialite;
+use Laravel\Socialite\Two\GoogleProvider;
 
 class AuthTokenController extends Controller
 {
@@ -44,6 +47,8 @@ class AuthTokenController extends Controller
         private readonly PrepareTwoFactorLoginChallengeAction $prepareTwoFactorLoginChallengeAction,
         private readonly CompleteTwoFactorLoginAction $completeTwoFactorLoginAction,
         private readonly HandleGoogleCallbackAction $handleGoogleCallbackAction,
+        private readonly ProfileResponseMapper $profileResponseMapper,
+        private readonly AuthUserPayloadMapper $authUserPayloadMapper,
     ) {}
 
     public function register(RegisterRequest $request): JsonResponse
@@ -80,8 +85,7 @@ class AuthTokenController extends Controller
     public function completeTwoFactorLogin(
         CompleteTwoFactorLoginRequest $request,
         TwoFactorAuthenticationProvider $provider
-    ): JsonResponse
-    {
+    ): JsonResponse {
         $result = $this->completeTwoFactorLoginAction->execute($request->validated(), $provider);
 
         if ($result['status'] === 'error') {
@@ -93,8 +97,10 @@ class AuthTokenController extends Controller
 
     public function me(Request $request): JsonResponse
     {
+        $user = $request->user();
+
         return BaseResponse::ok([
-            'user' => $request->user(),
+            'user' => $user ? $this->authUserPayloadMapper->toArray($user) : null,
         ])->toJsonResponse();
     }
 
@@ -160,12 +166,13 @@ class AuthTokenController extends Controller
         }
 
         $frontUrl = rtrim((string) env('FRONTEND_URL', 'http://localhost:3000'), '/');
+
         return redirect()->away($frontUrl.'/verify-email?verified=1');
     }
 
     public function redirectToGoogle(): RedirectResponse
     {
-        /** @var \Laravel\Socialite\Two\GoogleProvider $googleProvider */
+        /** @var GoogleProvider $googleProvider */
         $googleProvider = Socialite::driver('google');
 
         return $googleProvider
@@ -294,5 +301,4 @@ class AuthTokenController extends Controller
             acceptLanguage: (string) $request->header('accept-language'),
         );
     }
-
 }

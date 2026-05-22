@@ -24,12 +24,15 @@ return new class extends Migration
             $table->string('field_of_study')->nullable();
 
             $table->foreignId('country_id')->nullable()->constrained('countries')->nullOnDelete();
-            $table->string('city_name')->nullable();
+            $table->foreignId('residence_city_id')->nullable()->constrained('cities');
 
             $table->date('start_date');
             $table->date('end_date')->nullable();
             $table->boolean('is_current')->default(false);
             $table->string('grade')->nullable();
+
+            $table->boolean('is_approved')->default(false);
+            $table->foreignId('approved_by')->nullable()->constrained('users')->nullOnDelete();
 
             $table->timestamps();
             $table->softDeletes();

@@ -2,12 +2,18 @@
 
 namespace App\Core\Domain\Identity\Models;
 
+use App\Core\Domain\Communication\Models\DiscoverySource;
+use App\Core\Domain\Identity\Concerns\AuditsModelChanges;
 use App\Core\Domain\Catalog\Models\Agency;
+use App\Core\Domain\Shared\Geography\Models\City;
+use App\Core\Domain\Shared\Geography\Models\Country;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class UserProfile extends Model
 {
+    use AuditsModelChanges;
+
     protected $table = 'user_profiles';
 
     protected $fillable = [
@@ -30,7 +36,8 @@ class UserProfile extends Model
         'email_institutional',
         'is_approved',
         'approved_by',
-        'agencies_id',
+        'agency_id',
+        'total_years_of_experience',
     ];
 
     protected $casts = [
@@ -38,7 +45,7 @@ class UserProfile extends Model
         'pictures' => 'array',
         'number_of_children' => 'integer',
         'is_approved' => 'boolean',
-        'agencies_id' => 'integer',
+        'agency_id' => 'integer',
     ];
 
     /**
@@ -49,12 +56,17 @@ class UserProfile extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function discoverySource(): BelongsTo
+    {
+        return $this->belongsTo(DiscoverySource::class);
+    }
+
     /**
      * Pays de nationalité
      */
     public function nationality(): BelongsTo
     {
-        return $this->belongsTo(\App\Core\Domain\Shared\Geography\Models\Country::class, 'nationality_country_id');
+        return $this->belongsTo(Country::class, 'nationality_country_id');
     }
 
     /**
@@ -62,7 +74,7 @@ class UserProfile extends Model
      */
     public function city(): BelongsTo
     {
-        return $this->belongsTo(\App\Core\Domain\Shared\Geography\Models\City::class, 'residence_city_id');
+        return $this->belongsTo(City::class, 'residence_city_id');
     }
 
     /**
@@ -70,7 +82,7 @@ class UserProfile extends Model
      */
     public function agency(): BelongsTo
     {
-        return $this->belongsTo(Agency::class, 'agencies_id');
+        return $this->belongsTo(Agency::class, 'agency_id');
     }
 
     /**

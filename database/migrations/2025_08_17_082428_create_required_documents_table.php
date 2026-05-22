@@ -11,25 +11,25 @@ return new class extends Migration
      */
     public function up(): void
     {
-      Schema::create('required_documents', function (Blueprint $table) {
-    $table->id();
+        Schema::create('required_documents', function (Blueprint $table) {
+            $table->id();
 
-    // On retire program_id et offer_id car la relation est maintenant dans les pivots
-    // Données principales
-    $table->string('name'); 
-    $table->string('slug')->unique(); // ex: "passeport-valide"
-    
-    // Type de fichier attendu
-    $table->enum('type', ['PDF', 'IMAGE', 'WORD', 'OTHER'])->default('PDF')->index();
-    
-    $table->text('description')->nullable();
+            // On retire program_id et offer_id car la relation est maintenant dans les pivots
+            // Données principales
+            $table->json('name'); // ex: {"fr": "Passeport valide", "en": "Valid passport"}
+            $table->string('slug')->unique(); // ex: "passeport-valide"
 
-    // On garde template_path ici car le modèle de document (ex: un formulaire vide) 
-    // est lié au type de document lui-même, peu importe l'offre.
-    $table->string('template_path')->nullable();
+            // Type de fichier attendu
+            $table->enum('type', ['PDF', 'IMAGE', 'WORD', 'OTHER'])->default('PDF')->index();
 
-    $table->timestamps();
-});
+            $table->text('description')->nullable();
+
+            // On garde template_path ici car le modèle de document (ex: un formulaire vide)
+            // est lié au type de document lui-même, peu importe l'offre.
+            $table->string('template_path')->nullable();
+
+            $table->timestamps();
+        });
     }
 
     /**

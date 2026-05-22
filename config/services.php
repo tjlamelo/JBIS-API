@@ -15,7 +15,12 @@ return [
     */
 
     'postmark' => [
-        'key' => env('POSTMARK_API_KEY'),
+        'token' => env('POSTMARK_TOKEN'),
+    ],
+
+    'ga4' => [
+        'property_id' => env('GA4_PROPERTY_ID'),
+        'service_account_json' => env('GA4_SERVICE_ACCOUNT_JSON'),
     ],
 
     'resend' => [
@@ -46,6 +51,14 @@ return [
         'api_key' => env('QUEENSMS_API_KEY'),
         'sender_id' => env('QUEENSMS_SENDER_ID'),
         'timeout' => (int) env('QUEENSMS_TIMEOUT', 10),
+    ],
+
+    'cpanel' => [
+        'host' => env('CPANEL_DOMAIN'),
+        'username' => env('CPANEL_USER'),
+        'token' => env('CPANEL_TOKEN'),
+        'primary_domain' => env('CPANEL_PRIMARY_DOMAIN'),
+        'timeout' => (int) env('CPANEL_TIMEOUT', 15),
     ],
 
 ];

@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Api\V1\Catalog;
 
+use App\Core\Domain\Catalog\Models\ContractType;
 use App\Core\Domain\Catalog\Models\Offer;
 use App\Core\Domain\Catalog\States\OfferStatus;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -14,7 +16,7 @@ class JobOfferFilterTest extends TestCase
 {
     use RefreshDatabase;
 
-#[Test]
+    #[Test]
     public function it_filters_offers_by_search_term_in_french(): void
     {
         Offer::factory()->create([
@@ -26,38 +28,53 @@ class JobOfferFilterTest extends TestCase
             ->getJson('/api/v1/public/offers?filter[search]=Expert');
 
         $response->assertStatus(200)
-                 ->assertJsonCount(1, 'data.offers');
-        
-        // On vérifie que le titre contient bien le mot cherché
-        $this->assertStringContainsString('Expert Laravel', $response->json('data.offers.0.title'));
+            ->assertJsonCount(1, 'data.offers');
+
+        $title = $response->json('data.offers.0.title');
+        $titleFr = is_array($title) ? (string) ($title['fr'] ?? '') : (string) $title;
+        $this->assertStringContainsString('Expert Laravel', $titleFr);
     }
 
     #[Test]
     public function it_filters_by_multiple_contract_types(): void
     {
-        // On s'assure que les contrats sont bien dans la clé JSON attendue
-        Offer::factory()->create(['contract_type' => ['fr' => 'CDI']]);
-        Offer::factory()->create(['contract_type' => ['fr' => 'Stage']]);
-        Offer::factory()->create(['contract_type' => ['fr' => 'Freelance']]);
+        $cdi = ContractType::query()->create([
+            'name' => ['fr' => 'CDI', 'en' => 'Full-time'],
+            'slug' => 'cdi-'.Str::lower(Str::random(8)),
+            'color_code' => '#00ff88',
+        ]);
+        $stage = ContractType::query()->create([
+            'name' => ['fr' => 'Stage', 'en' => 'Internship'],
+            'slug' => 'stage-'.Str::lower(Str::random(8)),
+            'color_code' => '#ff00ff',
+        ]);
+        $freelance = ContractType::query()->create([
+            'name' => ['fr' => 'Freelance', 'en' => 'Freelance'],
+            'slug' => 'freelance-'.Str::lower(Str::random(8)),
+            'color_code' => '#d4af37',
+        ]);
 
-        // Ce test passera si tu as mis le callback dans Job OfferIndexQuery
+        Offer::factory()->create(['contract_type_id' => $cdi->id]);
+        Offer::factory()->create(['contract_type_id' => $stage->id]);
+        Offer::factory()->create(['contract_type_id' => $freelance->id]);
+
         $response = $this->withHeaders(['X-Locale' => 'fr'])
             ->getJson('/api/v1/public/offers?filter[contract_type]=CDI,Stage');
 
         $response->assertStatus(200)
-                 ->assertJsonCount(2, 'data.offers');
+            ->assertJsonCount(2, 'data.offers');
     }
 
     #[Test]
     public function it_strictly_excludes_non_public_offers(): void
     {
-        Offer::factory()->draft()->create();   
-        Offer::factory()->expired()->create(); 
-        Offer::factory()->create(); // Published & Active           
+        Offer::factory()->draft()->create();
+        Offer::factory()->expired()->create();
+        Offer::factory()->create();
 
         $response = $this->getJson('/api/v1/public/offers');
 
         $response->assertStatus(200)
-                 ->assertJsonCount(1, 'data.offers');
+            ->assertJsonCount(1, 'data.offers');
     }
 }

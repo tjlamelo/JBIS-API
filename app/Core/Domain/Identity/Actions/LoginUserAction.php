@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Core\Domain\Identity\Actions;
 
 use App\Core\Domain\Identity\DTOs\AuthenticationResultDto;
@@ -10,7 +12,7 @@ use App\Core\Domain\Identity\Services\UserDeviceSecurityService;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
-class LoginUserAction
+final class LoginUserAction
 {
     public function __construct(
         private readonly UserDeviceSecurityService $userDeviceSecurityService,
@@ -23,8 +25,7 @@ class LoginUserAction
         LoginCredentialsDto $credentials,
         DeviceContextDto $deviceContext,
         bool $issueToken = true,
-    ): AuthenticationResultDto
-    {
+    ): AuthenticationResultDto {
         $user = User::query()->findByLogin($credentials->login)->first();
 
         if (! $user || ! Hash::check($credentials->password, (string) $user->password)) {
@@ -37,12 +38,30 @@ class LoginUserAction
             ]);
         }
 
+        $assessment = $this->userDeviceSecurityService->assessLogin($user, $deviceContext);
+
+        if ($assessment->shouldBlock) {
+            $this->userDeviceSecurityService->handleBlockedLogin($user, $deviceContext, $assessment);
+
+            throw ValidationException::withMessages([
+                'login' => [$assessment->userMessage()],
+            ])->status(403);
+        }
+
         $tokenName = $credentials->deviceName;
         $token = '';
 
         if ($issueToken) {
-            $token = $user->createToken($tokenName)->plainTextToken;
-            $this->userDeviceSecurityService->handleSuccessfulLogin($user, $deviceContext, $tokenName);
+            $accessToken = $user->createToken($tokenName);
+            $token = $accessToken->plainTextToken;
+
+            $this->userDeviceSecurityService->handleSuccessfulLogin(
+                $user,
+                $deviceContext,
+                $assessment,
+                $tokenName,
+                $accessToken->accessToken->id,
+            );
         }
 
         return new AuthenticationResultDto(

@@ -1,7 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Database\Seeders;
 
+use App\Core\Domain\Identity\Support\ApplicationPermission;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
 
@@ -9,47 +12,11 @@ class PermissionSeeder extends Seeder
 {
     public function run(): void
     {
-        $models = [
-            'Agency',
-            'Application',
-            'ApplicationDocument',
-            'Archive',
-            'Certification',
-            'CertificationOffer',
-            'Company',
-            'Education',
-            'Experience',
-            'InterestsAndHobbies',
-            'Internship',
-            'Interview',
-            'Offer',
-            'Language',
-            'Payment',
-            'PaymentInstallment',
-            'PaymentSchedule',
-            'ProcessFlow',
-            'ProcessStep',
-            'ProfessionalProfile',
-            'Program',
-            'RendezVous',
-            'RequiredDocument',
-            'Training',
-            'User',
-            'UserDevice',
-            'UserDocument',
-            'UserProfile',
-            'UserSettings',
-            'user_certification',
-            'user_training'
-        ];
-
-        $actions = ['view', 'create', 'update', 'delete'];
-
-        foreach ($models as $model) {
-            foreach ($actions as $action) {
-                Permission::firstOrCreate(['name' => strtolower($model) . '.' . $action]);
-            }
+        foreach (ApplicationPermission::allNames() as $name) {
+            Permission::firstOrCreate([
+                'name' => $name,
+                'guard_name' => ApplicationPermission::GUARD,
+            ]);
         }
-           Permission::firstOrCreate(['name' => 'admin.access']);
     }
 }

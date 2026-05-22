@@ -26,6 +26,9 @@ return new class extends Migration
             $table->timestamp('reviewed_at')->nullable();
 
             $table->timestamps();
+
+            $table->unique(['application_id', 'user_document_id']);
+            $table->index(['application_step_id', 'status']);
         });
     }
 

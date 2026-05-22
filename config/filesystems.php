@@ -38,7 +38,7 @@ return [
         // CONFIGURATION DU SOUS-DOMAINE ASSETS (Local Mirror)
         'jbis_assets' => [
             'driver' => 'local',
-            'root' => env('ASSETS_PATH', '/home/sc1tcjo2411/jbis/assets.jbis.cm'), 
+            'root' => env('ASSETS_PATH', '/home/sc1tcjo2411/jbis/assets.jbis.cm'),
             'url' => env('ASSETS_DOMAIN', 'https://assets.jbis.cm'),
             'visibility' => 'public',
             'throw' => true,
@@ -47,6 +47,12 @@ return [
         // CONFIGURATION CLOUDINARY
         'cloudinary' => [
             'driver' => 'cloudinary',
+            // The CloudinaryServiceProvider reads these keys directly.
+            'url' => env('CLOUDINARY_URL'),
+            'cloud' => env('CLOUDINARY_CLOUD_NAME'),
+            'key' => env('CLOUDINARY_KEY'),
+            'secret' => env('CLOUDINARY_SECRET'),
+            'secure' => env('CLOUDINARY_SECURE', true),
         ],
 
         's3' => [

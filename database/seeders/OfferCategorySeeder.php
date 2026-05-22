@@ -15,150 +15,219 @@ class OfferCategorySeeder extends Seeder
             [
                 'fr' => 'Informatique & Technologie',
                 'en' => 'IT & Technology',
-                'icon' => 'computer-chip'
+                'icon' => 'computer-chip',
             ],
             [
                 'fr' => 'Banque & Finance',
                 'en' => 'Banking & Finance',
-                'icon' => 'landmark'
+                'icon' => 'landmark',
             ],
             [
                 'fr' => 'Santé & Médecine',
                 'en' => 'Healthcare & Medical',
-                'icon' => 'stethoscope'
+                'icon' => 'stethoscope',
             ],
             [
                 'fr' => 'BTP & Construction',
                 'en' => 'Construction & Civil Engineering',
-                'icon' => 'building'
+                'icon' => 'building',
             ],
             [
                 'fr' => 'Ingénierie',
                 'en' => 'Engineering',
-                'icon' => 'cogs'
+                'icon' => 'cogs',
             ],
             [
                 'fr' => 'Automobiles',
                 'en' => 'Automotive',
-                'icon' => 'car'
+                'icon' => 'car',
             ],
             [
                 'fr' => 'Électricité & Énergies',
                 'en' => 'Electrical & Energy',
-                'icon' => 'bolt'
+                'icon' => 'bolt',
             ],
             [
                 'fr' => 'Industrie Manufacturière',
                 'en' => 'Manufacturing',
-                'icon' => 'industry'
+                'icon' => 'industry',
             ],
             [
                 'fr' => 'Juridique & Droit',
                 'en' => 'Legal Services',
-                'icon' => 'gavel'
+                'icon' => 'gavel',
             ],
             [
                 'fr' => 'Ressources Humaines',
                 'en' => 'Human Resources',
-                'icon' => 'user-tie'
+                'icon' => 'user-tie',
             ],
-            
+
             // Secteurs Informels & Services
             [
                 'fr' => 'Menuiserie & Ébénisterie',
                 'en' => 'Carpentry & Woodwork',
-                'icon' => 'saw'
+                'icon' => 'saw',
             ],
             [
                 'fr' => 'Ouvriers & Métiers',
                 'en' => 'Skilled Labor',
-                'icon' => 'tool-box'
+                'icon' => 'tool-box',
             ],
             [
                 'fr' => 'Entrepôt & Logistique',
                 'en' => 'Warehouse & Logistics',
-                'icon' => 'warehouse'
+                'icon' => 'warehouse',
             ],
             [
                 'fr' => 'Vente & Distribution',
                 'en' => 'Sales & Distribution',
-                'icon' => 'shopping-cart'
+                'icon' => 'shopping-cart',
             ],
             [
                 'fr' => 'Marketing & Communication',
                 'en' => 'Marketing & Advertising',
-                'icon' => 'megaphone'
+                'icon' => 'megaphone',
             ],
             [
                 'fr' => 'Médias & Communication',
                 'en' => 'Media & Broadcasting',
-                'icon' => 'newspaper'
+                'icon' => 'newspaper',
             ],
-            
+
             // Secteurs Spécialisés
             [
                 'fr' => 'Agriculture & Agroalimentaire',
                 'en' => 'Agriculture & Food',
-                'icon' => 'seedling'
+                'icon' => 'seedling',
             ],
             [
                 'fr' => 'Tourisme & Hôtellerie',
                 'en' => 'Tourism & Hospitality',
-                'icon' => 'hotel'
+                'icon' => 'hotel',
             ],
             [
                 'fr' => 'Éducation & Formation',
                 'en' => 'Education & Training',
-                'icon' => 'graduation-cap'
+                'icon' => 'graduation-cap',
             ],
             [
                 'fr' => 'Santé Mentale & Bien-être',
                 'en' => 'Mental Health & Wellness',
-                'icon' => 'heart'
+                'icon' => 'heart',
             ],
             [
                 'fr' => 'Design & Créativité',
                 'en' => 'Design & Creative',
-                'icon' => 'palette'
+                'icon' => 'palette',
             ],
             [
                 'fr' => 'Environnement & Développement Durable',
                 'en' => 'Environment & Sustainability',
-                'icon' => 'leaf'
+                'icon' => 'leaf',
             ],
-            
+
             // Secteurs Émergents
             [
                 'fr' => 'Cryptomonnaies & Blockchain',
                 'en' => 'Cryptocurrency & Blockchain',
-                'icon' => 'bitcoin'
+                'icon' => 'bitcoin',
             ],
             [
                 'fr' => 'Intelligence Artificielle',
                 'en' => 'Artificial Intelligence',
-                'icon' => 'robot'
+                'icon' => 'robot',
             ],
             [
                 'fr' => 'Réalité Virtuelle/Augmentée',
                 'en' => 'VR/AR Technology',
-                'icon' => 'vr-cardboard'
+                'icon' => 'vr-cardboard',
+            ],
+            // Aéronautique & Défense
+            [
+                'fr' => 'Aéronautique & Défense',
+                'en' => 'Aerospace & Defense',
+                'icon' => 'plane-takeoff',
+            ],
+            // Sécurité & Sûreté
+            [
+                'fr' => 'Sécurité & Sûreté',
+                'en' => 'Security & Safety',
+                'icon' => 'shield',
+            ],
+            // Immobilier & Gestion locative
+            [
+                'fr' => 'Immobilier & Gestion locative',
+                'en' => 'Real Estate & Property Management',
+                'icon' => 'building-2',
+            ],
+            // Télécommunications
+            [
+                'fr' => 'Télécommunications',
+                'en' => 'Telecommunications',
+                'icon' => 'wifi',
+            ],
+            // Services à la personne
+            [
+                'fr' => 'Services à la personne',
+                'en' => 'Personal Care & Home Services',
+                'icon' => 'hand-heart',
+            ],
+            // Nettoyage & Hygiène
+            [
+                'fr' => 'Nettoyage & Hygiène',
+                'en' => 'Cleaning & Hygiene',
+                'icon' => 'spray-can',
+            ],
+            // Restauration & Alimentation
+            [
+                'fr' => 'Restauration & Alimentation',
+                'en' => 'Food & Beverage',
+                'icon' => 'utensils',
+            ],
+            // Événementiel & Loisirs
+            [
+                'fr' => 'Événementiel & Loisirs',
+                'en' => 'Events & Entertainment',
+                'icon' => 'party-popper',
+            ],
+            // Photographie & Audiovisuel
+            [
+                'fr' => 'Photographie & Audiovisuel',
+                'en' => 'Photography & AV',
+                'icon' => 'camera',
+            ],
+            // Coiffure & Esthétique
+            [
+                'fr' => 'Coiffure & Esthétique',
+                'en' => 'Hair & Beauty',
+                'icon' => 'scissors',
+            ],
+            // Transport & Mobilité
+            [
+                'fr' => 'Transport & Mobilité',
+                'en' => 'Transport & Mobility',
+                'icon' => 'truck',
+            ],
+            // Services publics & Administration
+            [
+                'fr' => 'Services publics & Administration',
+                'en' => 'Public Services & Administration',
+                'icon' => 'landmark',
             ],
         ];
 
-        foreach ($categories as $category) {
-            $slug = Str::slug($category['en']);
-
-            OfferCategory::updateOrCreate(
-                ['slug' => $slug],
-                [
-                    'name' => [
-                        'fr' => $category['fr'],
-                        'en' => $category['en'],
-                    ],
-                    'icon' => $category['icon'],
-                    'is_active' => true,
-                ]
-            );
+        $data = [];
+        foreach ($categories as $cat) {
+            $data[] = [
+                'slug' => Str::slug($cat['en']),
+                'name' => json_encode(['fr' => $cat['fr'], 'en' => $cat['en']], JSON_UNESCAPED_UNICODE),
+                'icon' => $cat['icon'],
+                'is_active' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
         }
+        OfferCategory::upsert($data, ['slug'], ['name', 'icon', 'is_active', 'updated_at']);
     }
 }

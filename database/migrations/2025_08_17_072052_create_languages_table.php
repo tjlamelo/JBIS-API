@@ -4,7 +4,8 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
+return new class extends Migration
+{
     /**
      * Run the migrations.
      */
@@ -31,13 +32,14 @@ return new class extends Migration {
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->foreignId('language_id')->constrained('languages')->cascadeOnDelete();
-            $table->string('proficiency_level');
+            $table->foreignId('language_level_id')->constrained('language_levels')->cascadeOnDelete();
             $table->boolean('is_approved')->default(false);
             $table->foreignId('approved_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamp('reviewed_at')->nullable();
-            $table->unique(['user_id', 'language_id']);
+            $table->unique(['user_id', 'language_id', 'language_level_id']);
             $table->index(['user_id', 'is_approved']);
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

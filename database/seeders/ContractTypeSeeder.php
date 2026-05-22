@@ -11,22 +11,22 @@ class ContractTypeSeeder extends Seeder
     public function run(): void
     {
         $types = [
-            ['fr' => 'CDI', 'en' => 'Full-time', 'color' => '#00ff88'], // Vert néon
-            ['fr' => 'CDD', 'en' => 'Fixed-term', 'color' => '#00d1ff'], // Bleu néon
-            ['fr' => 'Freelance', 'en' => 'Freelance', 'color' => '#d4af37'], // Doré JBIS
-            ['fr' => 'Stage', 'en' => 'Internship', 'color' => '#ff00ff'], // Magenta néon
+            ['fr' => 'CDI', 'en' => 'Full-time', 'color' => '#00ff88'],
+            ['fr' => 'CDD', 'en' => 'Fixed-term', 'color' => '#00d1ff'],
+            ['fr' => 'Freelance', 'en' => 'Freelance', 'color' => '#d4af37'],
+            ['fr' => 'Stage', 'en' => 'Internship', 'color' => '#ff00ff'],
         ];
 
-   foreach ($types as $type) {
-    ContractType::create([
-        'name' => ['fr' => $type['fr'], 'en' => $type['en']],
-        // On passe un tableau pour le slug aussi
-        'slug' => [
-            'fr' => Str::slug($type['fr']), 
-            'en' => Str::slug($type['en'])
-        ],
-        'color_code' => $type['color'],
-    ]);
-}
+        foreach ($types as $type) {
+            $slug = Str::slug($type['en']);
+
+            $contractType = ContractType::query()->firstOrNew(['slug' => $slug]);
+            $contractType->color_code = $type['color'];
+            $contractType->setTranslations('name', [
+                'fr' => $type['fr'],
+                'en' => $type['en'],
+            ]);
+            $contractType->save();
+        }
     }
 }

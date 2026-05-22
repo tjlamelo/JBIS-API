@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Core\Application\Api\V1\Catalog\Controllers\Offer;
 
 use App\Core\Application\Api\Responses\BaseResponse;
-use App\Core\Application\Api\V1\Catalog\Resources\OfferResource;
-use App\Core\Application\Api\V1\Catalog\Queries\OfferIndexQuery;
-use App\Core\Application\Api\V1\Catalog\Resources\OfferShortResource;
+use App\Core\Application\Api\V1\Catalog\Queries\Offer\OfferIndexQuery;
+use App\Core\Application\Api\V1\Catalog\Resources\Offer\OfferResource;
+use App\Core\Application\Api\V1\Catalog\Resources\Offer\OfferShortResource;
 use App\Core\Domain\Catalog\Models\Offer;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
@@ -28,49 +28,49 @@ class PublicOfferController extends Controller
 
         // 3. Pagination (Prend en compte les relations définies dans OfferIndexQuery)
         $offers = $query->paginate((int) $request->integer('per_page', 15))
-                        ->appends($request->query());
+            ->appends($request->query());
 
         return BaseResponse::ok([
             'offers' => OfferShortResource::collection($offers),
             'meta' => [
                 'current_page' => $offers->currentPage(),
-                'last_page'    => $offers->lastPage(),
-                'per_page'     => $offers->perPage(),
-                'total'        => $offers->total(),
-            ]
+                'last_page' => $offers->lastPage(),
+                'per_page' => $offers->perPage(),
+                'total' => $offers->total(),
+            ],
         ])->toJsonResponse();
     }
 
-public function show(string $slug): JsonResponse
-{
-    $offer = Offer::query()
-       
-        ->with([
-            'program.requiredDocuments', 
-            'company', 
-            'country', 
-            'category', 
-            'city.region', 
-            'contractType', 
-            'benefits', 
-            'requiredDocuments' 
-        ]) 
-        ->published()
-        ->notExpired()
-        ->where(function ($query) use ($slug) {
-            $query->where('slug->fr', $slug)
-                  ->orWhere('slug->en', $slug);
-        })
-        ->first();
+    public function show(string $slug): JsonResponse
+    {
+        $offer = Offer::query()
 
-    if (! $offer) {
-        return BaseResponse::notFound([
-            'message' => __('Offre d\'emploi introuvable ou expirée.'),
+            ->with([
+                'program.requiredDocuments',
+                'company',
+                'country',
+                'category',
+                'city.region',
+                'contractType',
+                'benefits',
+                'requiredDocuments',
+            ])
+            ->published()
+            ->notExpired()
+            ->where(function ($query) use ($slug) {
+                $query->where('slug->fr', $slug)
+                    ->orWhere('slug->en', $slug);
+            })
+            ->first();
+
+        if (! $offer) {
+            return BaseResponse::notFound([
+                'message' => __('Offre d\'emploi introuvable ou expirée.'),
+            ])->toJsonResponse();
+        }
+
+        return BaseResponse::ok([
+            'offer' => new OfferResource($offer),
         ])->toJsonResponse();
     }
-
-    return BaseResponse::ok([
-        'offer' => new OfferResource($offer),
-    ])->toJsonResponse();
-}
 }

@@ -32,6 +32,7 @@ return new class extends Migration
             $table->timestamps();
 
             $table->index([$morphPrefix . '_id', $morphPrefix . '_type']);
+            $table->index('created_at');
         });
     }
 
