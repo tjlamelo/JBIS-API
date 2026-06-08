@@ -22,4 +22,16 @@ final class ApplicationEnrollmentException extends RuntimeException
     {
         return new self('Le Process Flow publié ne contient aucune étape.');
     }
+
+    /**
+     * @param  list<string>  $reasons
+     */
+    public static function notEligible(array $reasons): self
+    {
+        $message = $reasons !== []
+            ? implode(' ', $reasons)
+            : 'Vous ne pouvez pas postuler à cette offre pour le moment.';
+
+        return new self($message);
+    }
 }

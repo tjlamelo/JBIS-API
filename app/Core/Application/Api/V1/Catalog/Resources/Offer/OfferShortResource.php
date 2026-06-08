@@ -21,6 +21,10 @@ class OfferShortResource extends JsonResource
             'title' => $this->getTranslations('title'),
             'slug' => $this->getTranslations('slug'),
 
+            'photo' => $this->photo,
+            'photo_url' => is_array($this->photo) ? ($this->photo['url'] ?? null) : $this->photo,
+            'photo_fallback_url' => is_array($this->photo) ? ($this->photo['fallback_url'] ?? null) : null,
+
             // Localisation
             'city' => [
                 'name' => $this->city?->name, // Traduit automatiquement par Spatie sur le modèle City

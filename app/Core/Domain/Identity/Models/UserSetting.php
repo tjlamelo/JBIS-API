@@ -76,6 +76,7 @@ class UserSetting extends Model
     {
         return [
             'newsletter' => false,
+            'newsletter_scope' => 'both',
             'partner_offers' => false,
         ];
     }

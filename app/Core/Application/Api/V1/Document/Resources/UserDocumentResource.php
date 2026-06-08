@@ -27,7 +27,7 @@ final class UserDocumentResource extends JsonResource
             'uploaded_by' => $this->uploaded_by,
             'document_type_id' => $this->document_type_id,
             'type' => $documentType?->code,
-            'type_label' => $documentType?->label,
+            'type_label' => $documentType?->resolvedLabel(),
             'document_number' => $this->document_number,
             'issuing_country_id' => $this->issuing_country_id,
             'issuing_country' => $this->whenLoaded('issuingCountry', fn () => [

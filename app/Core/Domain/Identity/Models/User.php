@@ -4,6 +4,7 @@ namespace App\Core\Domain\Identity\Models;
 
 use App\Core\Domain\Candidacy\Models\Application;
 use App\Core\Domain\Catalog\Models\Offer;
+use App\Core\Domain\Recruiter\Models\RecruiterOrganization;
 use App\Core\Domain\Catalog\Models\OfferCategory;
 use App\Core\Domain\Identity\Builders\UserBuilder;
 use App\Core\Domain\Identity\Concerns\HasPermissionOverrides;
@@ -136,6 +137,11 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(Language::class);
     }
 
+    public function userSkills(): HasMany
+    {
+        return $this->hasMany(UserSkill::class);
+    }
+
     public function educations(): HasMany
     {
         return $this->hasMany(Education::class);
@@ -182,6 +188,21 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(UserVisaHistory::class);
     }
 
+    public function trainings(): HasMany
+    {
+        return $this->hasMany(UserTraining::class);
+    }
+
+    public function internships(): HasMany
+    {
+        return $this->hasMany(UserInternship::class);
+    }
+
+    public function interests(): HasMany
+    {
+        return $this->hasMany(InterestAndHobby::class);
+    }
+
     /**
      * Notes internes (staff) rattachées à ce compte candidat.
      */
@@ -196,5 +217,12 @@ class User extends Authenticatable implements MustVerifyEmail
     public function authoredStaffNotes(): HasMany
     {
         return $this->hasMany(UserNote::class, 'author_id');
+    }
+
+    public function recruiterOrganizations(): BelongsToMany
+    {
+        return $this->belongsToMany(RecruiterOrganization::class, 'recruiter_organization_user')
+            ->withPivot('is_owner')
+            ->withTimestamps();
     }
 }

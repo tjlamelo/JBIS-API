@@ -2,16 +2,15 @@
 
 namespace App\Core\Domain\Identity\Models;
 
-use App\Core\Domain\Identity\Concerns\AuditsModelChanges;
 use App\Core\Domain\Catalog\Models\EducationLevel;
+use App\Core\Domain\Identity\Concerns\AuditedModel;
 use App\Core\Domain\Location\Models\Country;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Education extends Model
+class Education extends AuditedModel
 {
-    use AuditsModelChanges, SoftDeletes;
+    use SoftDeletes;
 
     protected $table = 'education';
 

@@ -91,6 +91,13 @@ abstract class AbstractEloquentExportSource implements ExportSourceInterface
             $query->limit((int) $filters['limit']);
         }
 
+        if (! empty($filters['user_id'])) {
+            $model = $query->getModel();
+            if (in_array('user_id', $model->getFillable(), true)) {
+                $query->where($model->qualifyColumn('user_id'), (int) $filters['user_id']);
+            }
+        }
+
         return $this->applyCustomFilters($query, $filters);
     }
 

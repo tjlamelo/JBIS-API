@@ -8,12 +8,14 @@ use App\Core\Domain\Catalog\DTOs\Program\ProgramDto;
 use App\Core\Domain\Catalog\Mappers\Program\ProgramAttributeMapper;
 use App\Core\Domain\Catalog\Mappers\Program\ProgramRelationSync;
 use App\Core\Domain\Catalog\Models\Program;
+use App\Core\Infrastructure\Cache\CatalogCacheInvalidator;
 
 final class CreateProgramAction
 {
     public function __construct(
         private readonly ProgramAttributeMapper $attributeMapper,
         private readonly ProgramRelationSync $relationSync,
+        private readonly CatalogCacheInvalidator $catalogCache,
     ) {}
 
     public function execute(ProgramDto $dto): Program
@@ -28,6 +30,9 @@ final class CreateProgramAction
             $this->relationSync->syncLanguages($program, $dto->language_requirements);
         }
 
-        return $program->refresh();
+        $program = $program->refresh();
+        $this->catalogCache->invalidate();
+
+        return $program;
     }
 }

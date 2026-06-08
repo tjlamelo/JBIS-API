@@ -2,18 +2,17 @@
 
 namespace App\Core\Domain\Identity\Models;
 
-use App\Core\Domain\Identity\Concerns\AuditsModelChanges;
-use App\Core\Domain\Catalog\Models\ContractType; // Assure-toi que le modèle existe ici
+use App\Core\Domain\Catalog\Models\ContractType;
+use App\Core\Domain\Identity\Concerns\AuditedModel; // Assure-toi que le modèle existe ici
 use App\Core\Domain\Location\Models\Country;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Experience extends Model
+class Experience extends AuditedModel
 {
-    use AuditsModelChanges, HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes;
 
     protected $table = 'experiences';
 

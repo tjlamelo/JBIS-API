@@ -6,7 +6,7 @@ namespace App\Core\Domain\Audit\Queries;
 
 use App\Core\Domain\Audit\Models\Audit;
 use App\Core\Domain\Audit\Support\AuditCandidateResolver;
-use App\Core\Domain\Identity\Models\User;
+use App\Core\Domain\Identity\Support\UserPersonName;
 use Illuminate\Support\Carbon;
 
 final class StaffAuditFeedQuery
@@ -19,7 +19,7 @@ final class StaffAuditFeedQuery
         return Audit::query()
             ->where('user_id', $actorUserId)
             ->with([
-                'actor:id,first_name,last_name',
+                ...UserPersonName::withProfile('actor'),
                 'auditable' => static function ($query): void {
                     if (method_exists($query, 'withTrashed')) {
                         $query->withTrashed();
@@ -40,7 +40,7 @@ final class StaffAuditFeedQuery
     {
         return Audit::query()
             ->with([
-                'actor:id,first_name,last_name',
+                ...UserPersonName::withProfile('actor'),
                 'auditable' => static function ($query): void {
                     if (method_exists($query, 'withTrashed')) {
                         $query->withTrashed();
@@ -77,11 +77,7 @@ final class StaffAuditFeedQuery
             'application' => null,
             'candidate' => $candidate,
             'step' => null,
-            'actor' => $audit->actor ? [
-                'id' => $audit->actor->id,
-                'first_name' => $audit->actor->first_name,
-                'last_name' => $audit->actor->last_name,
-            ] : null,
+            'actor' => $audit->actor ? UserPersonName::toActorArray($audit->actor) : null,
         ];
     }
 }

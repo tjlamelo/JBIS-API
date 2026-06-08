@@ -28,10 +28,7 @@ final class UpdateInterestAndHobbyRequest extends FormRequest
 
             'title' => ['sometimes', 'string', 'max:255'],
 
-            'category' => ['sometimes', 'nullable', 'string', 'max:100'],
-
         ];
 
     }
-
 }

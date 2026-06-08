@@ -1,0 +1,77 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Core\Application\Mail\Mailable;
+
+use App\Core\Domain\Communication\Models\NewsletterSubscription;
+use App\Core\Domain\Communication\Services\NewsletterUnsubscribeUrlBuilder;
+use Illuminate\Bus\Queueable;
+use Illuminate\Mail\Mailable;
+use Illuminate\Mail\Mailables\Content;
+use Illuminate\Mail\Mailables\Envelope;
+use Illuminate\Queue\SerializesModels;
+
+class OfferNewsletterMail extends Mailable
+{
+    use Queueable;
+    use SerializesModels;
+
+    /**
+     * @param  array{national: list<array<string, mixed>>, international: list<array<string, mixed>>, has_national: bool, has_international: bool}  $content
+     */
+    public function __construct(
+        public readonly NewsletterSubscription $subscription,
+        public readonly array $content,
+        public readonly string $language = 'fr',
+    ) {
+        $this->locale($language);
+    }
+
+    public function envelope(): Envelope
+    {
+        $subject = $this->language === 'en'
+            ? 'JBIS — New job opportunities'
+            : 'JBIS — Nouvelles offres d\'emploi';
+
+        return new Envelope(subject: $subject);
+    }
+
+    public function content(): Content
+    {
+        $appUrl = rtrim((string) config('app.url', 'http://127.0.0.1:8000'), '/');
+        $frontendUrl = rtrim((string) config('services.newsletter.frontend_url', env('FRONTEND_URL', 'http://localhost:3000')), '/');
+        $unsubscribeUrl = app(NewsletterUnsubscribeUrlBuilder::class)->build($this->subscription);
+
+        $copy = $this->language === 'en' ? [
+            'greeting' => 'Hello'.($this->subscription->name ? ' '.$this->subscription->name : ''),
+            'intro' => 'Here are the latest job opportunities matching your JBIS newsletter preferences.',
+            'national_title' => 'National opportunities (Cameroon)',
+            'international_title' => 'International opportunities',
+            'view_all' => 'Browse all offers',
+            'unsubscribe' => 'Unsubscribe',
+            'footer' => 'You receive this email because you subscribed to the JBIS newsletter.',
+        ] : [
+            'greeting' => 'Bonjour'.($this->subscription->name ? ' '.$this->subscription->name : ''),
+            'intro' => 'Voici les dernières offres d\'emploi correspondant à vos préférences newsletter JBIS.',
+            'national_title' => 'Opportunités nationales (Cameroun)',
+            'international_title' => 'Opportunités internationales',
+            'view_all' => 'Voir toutes les offres',
+            'unsubscribe' => 'Se désabonner',
+            'footer' => 'Vous recevez cet e-mail car vous êtes inscrit à la newsletter JBIS.',
+        ];
+
+        return new Content(
+            view: 'emails.newsletter.offers',
+            with: [
+                'subscription' => $this->subscription,
+                'content' => $this->content,
+                'copy' => $copy,
+                'locale' => $this->language,
+                'logoUrl' => $appUrl.'/assets/img/logo-jbis.png',
+                'offersUrl' => $frontendUrl.'/offer',
+                'unsubscribeUrl' => $unsubscribeUrl,
+            ],
+        );
+    }
+}

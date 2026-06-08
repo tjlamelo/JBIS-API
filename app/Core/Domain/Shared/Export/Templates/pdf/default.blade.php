@@ -1,11 +1,9 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <title>{{ $meta['title'] ?? $definition->fileName }}</title>
+@extends('pdf.layout')
+
+@section('title', ($meta['title'] ?? $definition->fileName) . ' — JBIS')
+
+@push('head')
     <style>
-        @page { margin: 24px 28px; }
-        body { font-family: DejaVu Sans, sans-serif; font-size: 10px; color: #111827; }
         .header { border-bottom: 1px solid #e5e7eb; padding-bottom: 8px; margin-bottom: 16px; }
         .title { font-size: 16px; font-weight: bold; margin: 0; }
         .subtitle { color: #6b7280; font-size: 10px; margin: 2px 0 0; }
@@ -22,10 +20,11 @@
         }
         tbody tr:nth-child(even) td { background: #fafafa; }
         .empty { color: #9ca3af; font-style: italic; padding: 8px; }
-        .footer { position: fixed; bottom: -10px; left: 0; right: 0; text-align: center; color: #9ca3af; font-size: 8px; }
+        .doc-footer { margin-top: 12px; text-align: center; color: #9ca3af; font-size: 8px; }
     </style>
-</head>
-<body>
+@endpush
+
+@section('content')
     <div class="header">
         <p class="title">{{ $meta['title'] ?? $definition->fileName }}</p>
         @if (! empty($meta['subtitle']))
@@ -61,6 +60,5 @@
         @endif
     @endforeach
 
-    <div class="footer">{{ config('app.name', 'JBIS') }} — Export confidentiel</div>
-</body>
-</html>
+    <div class="doc-footer">{{ config('app.name', 'JBIS') }} — Export confidentiel</div>
+@endsection

@@ -199,7 +199,7 @@ abstract class BaseAsset implements AssetInterface
         $params['public_id'] = $source;
 
         $asset         = AssetDescriptor::fromParams($source, $params);
-        $configuration = new Configuration(Configuration::instance());
+        $configuration = clone Configuration::instance();
 
         # set v1 defaults
         if (! $configuration->url->isExplicitlySet('secure')) {
@@ -266,7 +266,15 @@ abstract class BaseAsset implements AssetInterface
      */
     public function configuration(Configuration|array $configuration): static
     {
-        $tempConfiguration = new Configuration($configuration, true); // TODO: improve performance here
+        if ($configuration instanceof Configuration) {
+            $this->cloud     = clone $configuration->cloud;
+            $this->urlConfig = clone $configuration->url;
+            $this->logging   = clone $configuration->logging;
+
+            return $this;
+        }
+
+        $tempConfiguration = new Configuration($configuration, true);
         $this->cloud       = $tempConfiguration->cloud;
         $this->urlConfig   = $tempConfiguration->url;
         $this->logging     = $tempConfiguration->logging;
@@ -369,10 +377,10 @@ abstract class BaseAsset implements AssetInterface
 
         foreach ([$this->cloud, $this->urlConfig] as $confSection) {
             $section = $confSection->jsonSerialize(false, $includeEmptyKeys, $includeEmptySections);
-            if (! $includeEmptySections && empty(array_values($section)[0])) {
+            if (! $includeEmptySections && empty(current($section))) {
                 continue;
             }
-            $json = array_merge($json, $section);
+            $json += $section;
         }
 
         return $json;

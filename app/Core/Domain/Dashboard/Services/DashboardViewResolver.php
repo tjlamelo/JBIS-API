@@ -9,16 +9,23 @@ use App\Core\Domain\Candidacy\Queries\ApplicationProgressQuery;
 use App\Core\Domain\Candidacy\States\ApplicationStatus;
 use App\Core\Domain\Dashboard\Queries\AdminDashboardStatsQuery;
 use App\Core\Domain\Dashboard\Queries\CandidateProfileCompletionQuery;
+use App\Core\Domain\Dashboard\Queries\RecruiterDashboardStatsQuery;
 use App\Core\Domain\Dashboard\Queries\StaffActivityFeedQuery;
+use App\Core\Domain\Dashboard\Queries\StaffDashboardStatsQuery;
 use App\Core\Domain\Identity\Support\ApplicationRole;
 use App\Core\Domain\Identity\Models\User;
+use App\Core\Infrastructure\Cache\AppCache;
+
 final class DashboardViewResolver
 {
     public function __construct(
         private readonly AdminDashboardStatsQuery $adminStats,
         private readonly StaffActivityFeedQuery $staffActivity,
+        private readonly StaffDashboardStatsQuery $staffStats,
+        private readonly RecruiterDashboardStatsQuery $recruiterStats,
         private readonly ApplicationProgressQuery $applicationProgress,
         private readonly CandidateProfileCompletionQuery $profileCompletion,
+        private readonly AppCache $cache,
     ) {}
 
     /**
@@ -26,12 +33,28 @@ final class DashboardViewResolver
      */
     public function resolve(User $user, string $locale = 'fr'): array
     {
+        return $this->cache->remember(
+            $this->cache->dashboardKey((int) $user->id, $locale),
+            60,
+            fn () => $this->resolveFresh($user, $locale),
+        );
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function resolveFresh(User $user, string $locale): array
+    {
         if ($this->hasAnyRole($user, [ApplicationRole::SUPERADMIN, ApplicationRole::ADMIN])) {
             return $this->adminPayload($user, $locale);
         }
 
         if ($this->hasRole($user, ApplicationRole::STAFF)) {
             return $this->staffPayload($user, $locale);
+        }
+
+        if ($this->hasRole($user, ApplicationRole::RECRUITER)) {
+            return $this->recruiterPayload($user);
         }
 
         return $this->candidatePayload($user, $locale);
@@ -45,9 +68,9 @@ final class DashboardViewResolver
         return [
             'variant' => 'admin',
             'stats' => $this->adminStats->execute(),
-            'my_activity' => $this->staffActivity->forActor((int) $user->id, 30),
+            'my_activity' => $this->staffActivity->forActor((int) $user->id, 30, $locale),
             'global_activity' => $this->hasRole($user, ApplicationRole::SUPERADMIN)
-                ? $this->staffActivity->globalRecent(40)
+                ? $this->staffActivity->globalRecent(40, $locale)
                 : null,
         ];
     }
@@ -59,7 +82,21 @@ final class DashboardViewResolver
     {
         return [
             'variant' => 'staff',
-            'my_activity' => $this->staffActivity->forActor((int) $user->id, 50),
+            'stats' => $this->staffStats->execute((int) $user->id),
+            'my_activity' => $this->staffActivity->forActor((int) $user->id, 50, $locale),
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function recruiterPayload(User $user): array
+    {
+        $data = $this->recruiterStats->forUser($user);
+
+        return [
+            'variant' => 'recruiter',
+            ...$data,
         ];
     }
 

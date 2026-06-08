@@ -2,22 +2,23 @@
 
 namespace App\Core\Domain\Identity\Models;
 
-use App\Core\Domain\Communication\Models\DiscoverySource;
-use App\Core\Domain\Identity\Concerns\AuditsModelChanges;
 use App\Core\Domain\Catalog\Models\Agency;
+use App\Core\Domain\Communication\Models\DiscoverySource;
+use App\Core\Domain\Identity\Concerns\AuditedModel;
+use App\Core\Domain\Recruiter\Enums\ProfileOrigin;
+use App\Core\Domain\Recruiter\Models\RecruiterOrganization;
+use App\Core\Domain\Recruiter\Models\RecruiterProfileSubmission;
 use App\Core\Domain\Shared\Geography\Models\City;
 use App\Core\Domain\Shared\Geography\Models\Country;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class UserProfile extends Model
+class UserProfile extends AuditedModel
 {
-    use AuditsModelChanges;
-
     protected $table = 'user_profiles';
 
     protected $fillable = [
         'user_id',
+        'profile_origin',
         'first_name',
         'last_name',
         'date_of_birth',
@@ -37,10 +38,13 @@ class UserProfile extends Model
         'is_approved',
         'approved_by',
         'agency_id',
+        'recruiter_organization_id',
+        'recruiter_submission_id',
         'total_years_of_experience',
     ];
 
     protected $casts = [
+        'profile_origin' => ProfileOrigin::class,
         'date_of_birth' => 'date',
         'pictures' => 'array',
         'number_of_children' => 'integer',
@@ -91,5 +95,15 @@ class UserProfile extends Model
     public function approver(): BelongsTo
     {
         return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    public function recruiterOrganization(): BelongsTo
+    {
+        return $this->belongsTo(RecruiterOrganization::class);
+    }
+
+    public function recruiterSubmission(): BelongsTo
+    {
+        return $this->belongsTo(RecruiterProfileSubmission::class, 'recruiter_submission_id');
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Core\Domain\Communication\Contracts\MailboxProvisioner;
+use App\Core\Domain\Communication\Contracts\SubdomainProvisioner;
 use App\Core\Domain\Communication\Contracts\SmsProvider;
 use App\Core\Domain\Communication\Events\MailCampaignDispatched;
 use App\Core\Domain\Communication\Events\SmsCampaignDispatched;
@@ -10,6 +11,7 @@ use App\Core\Domain\Communication\Exceptions\SmsProviderException;
 use App\Core\Domain\Communication\Listeners\RefreshMailCampaignStatsListener;
 use App\Core\Domain\Communication\Listeners\RefreshSmsCampaignStatsListener;
 use App\Core\Domain\Communication\Services\CpanelMailboxProvisionerService;
+use App\Core\Domain\Communication\Services\CpanelSubdomainProvisionerService;
 use App\Core\Domain\Workflow\Services\ProcessFlow\Contracts\ProcessFlowPdfRenderer;
 use App\Core\Domain\Workflow\Services\ProcessFlow\ProcessFlowScreenshotPdfRenderer;
 use App\Core\Domain\Identity\Models\User;
@@ -30,6 +32,7 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->bind(MailboxProvisioner::class, CpanelMailboxProvisionerService::class);
+        $this->app->bind(SubdomainProvisioner::class, CpanelSubdomainProvisionerService::class);
 
         $this->app->bind(ProcessFlowPdfRenderer::class, ProcessFlowScreenshotPdfRenderer::class);
 

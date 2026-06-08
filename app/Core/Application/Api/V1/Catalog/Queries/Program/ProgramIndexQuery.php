@@ -5,19 +5,28 @@ declare(strict_types=1);
 namespace App\Core\Application\Api\V1\Catalog\Queries\Program;
 
 use App\Core\Domain\Catalog\Models\Program;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\Request;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
 
 class ProgramIndexQuery extends QueryBuilder
 {
-    public function __construct()
+    public function __construct(?Request $request = null)
     {
-        parent::__construct(Program::query());
+        parent::__construct(Program::query(), $request ?? request());
 
         $this->allowedFilters([
             AllowedFilter::callback('search', fn ($query, $value) => $query->search((string) $value)),
 
-            AllowedFilter::exact('geographic_zone_id'),
+            AllowedFilter::callback('geographic_zone_id', function (Builder $query, $value): void {
+                $values = is_array($value) ? $value : explode(',', (string) $value);
+                $ids = array_values(array_filter(array_map('intval', $values)));
+                if ($ids === []) {
+                    return;
+                }
+                $query->whereIn('geographic_zone_id', $ids);
+            }),
             AllowedFilter::exact('status'),
 
             AllowedFilter::callback('is_featured', function ($query, $value): void {

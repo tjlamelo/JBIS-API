@@ -30,6 +30,7 @@ class UpdateUserSettingsRequest extends FormRequest
             'privacy' => ['sometimes', 'array'],
             'marketing' => ['sometimes', 'array'],
             'marketing.newsletter' => ['sometimes', 'boolean'],
+            'marketing.newsletter_scope' => ['sometimes', Rule::in(['national', 'international', 'both'])],
             'marketing.partner_offers' => ['sometimes', 'boolean'],
         ];
     }

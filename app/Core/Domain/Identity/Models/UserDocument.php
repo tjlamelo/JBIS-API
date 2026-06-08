@@ -4,20 +4,19 @@ declare(strict_types=1);
 
 namespace App\Core\Domain\Identity\Models;
 
-use App\Core\Domain\Identity\Concerns\AuditsModelChanges;
+use App\Core\Domain\Identity\Concerns\AuditedModel;
 use App\Core\Domain\Identity\States\Document\UserDocumentStatus;
 use App\Core\Domain\Location\Models\Country;
 use Database\Factories\UserDocumentFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Storage;
 
-class UserDocument extends Model
+class UserDocument extends AuditedModel
 {
-    use AuditsModelChanges, HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes;
 
     /** Disque local miroir (assets.jbis.cm), sans Cloudinary. */
     public const STORAGE_DISK = 'jbis_assets';

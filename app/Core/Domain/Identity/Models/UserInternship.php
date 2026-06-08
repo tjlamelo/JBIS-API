@@ -4,14 +4,11 @@ declare(strict_types=1);
 
 namespace App\Core\Domain\Identity\Models;
 
-use App\Core\Domain\Identity\Concerns\AuditsModelChanges;
-use Illuminate\Database\Eloquent\Model;
+use App\Core\Domain\Identity\Concerns\AuditedModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class UserInternship extends Model
+class UserInternship extends AuditedModel
 {
-    use AuditsModelChanges;
-
     protected $table = 'internships';
 
     protected $fillable = [

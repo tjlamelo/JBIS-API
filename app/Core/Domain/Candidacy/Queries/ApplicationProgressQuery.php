@@ -7,6 +7,8 @@ namespace App\Core\Domain\Candidacy\Queries;
 use App\Core\Domain\Candidacy\DTOs\ApplicationProgressView;
 use App\Core\Domain\Candidacy\Models\Application;
 use App\Core\Domain\Candidacy\States\ApplicationStepStatus;
+use App\Core\Domain\Identity\Support\UserPersonName;
+use Illuminate\Database\Eloquent\Collection;
 
 final class ApplicationProgressQuery
 {
@@ -21,7 +23,7 @@ final class ApplicationProgressQuery
             'steps.applicationDocuments.userDocument.documentType',
             'steps.installments',
             'steps.interview',
-            'events.actor:id,first_name,last_name',
+            ...UserPersonName::withProfile('events.actor'),
         ]);
 
         $steps = $application->steps;
@@ -47,9 +49,9 @@ final class ApplicationProgressQuery
     /**
      * Chargement minimal pour listes (dashboard candidat multi-dossiers).
      *
-     * @return \Illuminate\Database\Eloquent\Collection<int, Application>
+     * @return Collection<int, Application>
      */
-    public function listForUser(int $userId): \Illuminate\Database\Eloquent\Collection
+    public function listForUser(int $userId): Collection
     {
         return Application::query()
             ->where('user_id', $userId)

@@ -22,6 +22,7 @@ use App\Core\Domain\Identity\Exceptions\Document\DocumentStorageException;
 use App\Core\Domain\Identity\Models\DocumentType;
 use App\Core\Domain\Identity\Models\UserDocument;
 use App\Core\Domain\Identity\States\Document\UserDocumentStatus;
+use App\Core\Infrastructure\Cache\AppCache;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -41,14 +42,22 @@ final class UserDocumentController extends Controller
         private readonly ValidateUserDocumentAction $validateUserDocument,
         private readonly DownloadUserDocumentAction $downloadUserDocument,
         private readonly DownloadUserDocumentsZipAction $downloadUserDocumentsZip,
+        private readonly AppCache $cache,
     ) {}
 
     public function types(Request $request): JsonResponse
     {
         $includeAll = $request->boolean('all') && $request->user()?->can('viewAny', UserDocument::class);
+        $scope = $includeAll ? 'all' : 'candidate';
+
+        $types = $this->cache->remember(
+            $this->cache->referenceKey('document_types', app()->getLocale(), $scope),
+            3600,
+            fn () => DocumentType::catalogForApi(candidatesOnly: ! $includeAll),
+        );
 
         return BaseResponse::ok([
-            'types' => DocumentType::catalogForApi(candidatesOnly: ! $includeAll),
+            'types' => $types,
         ])->toJsonResponse();
     }
 

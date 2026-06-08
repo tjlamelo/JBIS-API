@@ -21,7 +21,10 @@ return [
 
     'allowed_origins' => $allowedOrigins,
 
-    'allowed_origins_patterns' => [],
+    'allowed_origins_patterns' => [
+        '#^https://([a-z0-9-]+\.)?recruteur\.jbis\.cm$#',
+        '#^https://api\.[a-z0-9-]+\.recruteur\.jbis\.cm$#',
+    ],
 
     'allowed_headers' => ['*'],
 

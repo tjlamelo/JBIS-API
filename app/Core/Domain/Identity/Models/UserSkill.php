@@ -4,15 +4,14 @@ declare(strict_types=1);
 
 namespace App\Core\Domain\Identity\Models;
 
-use App\Core\Domain\Identity\Concerns\AuditsModelChanges;
 use App\Core\Domain\Catalog\Models\Skill;
-use Illuminate\Database\Eloquent\Model;
+use App\Core\Domain\Identity\Concerns\AuditedModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class UserSkill extends Model
+class UserSkill extends AuditedModel
 {
-    use AuditsModelChanges, SoftDeletes;
+    use SoftDeletes;
 
     protected $table = 'user_skills';
 

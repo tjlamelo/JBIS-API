@@ -8,9 +8,11 @@ use App\Core\Domain\Candidacy\Exceptions\ApplicationEnrollmentException;
 use App\Core\Domain\Candidacy\Models\Application;
 use App\Core\Domain\Candidacy\Models\ApplicationStep;
 use App\Core\Domain\Candidacy\Services\ApplicationStepSnapshotBuilder;
+use App\Core\Domain\Candidacy\Services\OfferApplicationReadinessService;
 use App\Core\Domain\Candidacy\Services\PublishedProcessFlowResolver;
 use App\Core\Domain\Candidacy\States\ApplicationStatus;
 use App\Core\Domain\Candidacy\States\ApplicationStepStatus;
+use App\Core\Domain\Catalog\Models\Offer;
 use App\Core\Domain\Finance\Models\PaymentInstallment;
 use App\Core\Domain\Finance\Models\PaymentSchedule;
 use App\Core\Domain\Workflow\States\ProcessStepType;
@@ -23,6 +25,8 @@ final class CreateApplicationAction
     public function __construct(
         private readonly PublishedProcessFlowResolver $processFlowResolver,
         private readonly ApplicationStepSnapshotBuilder $snapshotBuilder,
+        private readonly OfferApplicationReadinessService $offerReadiness,
+        private readonly AttachOfferRequiredDocumentsAction $attachOfferDocuments,
     ) {}
 
     public function execute(
@@ -45,9 +49,24 @@ final class CreateApplicationAction
             throw ApplicationEnrollmentException::processFlowHasNoSteps();
         }
 
+        $initialStatus = ApplicationStatus::InProgress;
+        if ($offerId !== null) {
+            $offer = Offer::query()
+                ->with(['requiredDocuments', 'program.requiredDocuments'])
+                ->findOrFail($offerId);
+            $readiness = $this->offerReadiness->assess($offer, $user);
+
+            if (! $readiness->can_apply) {
+                throw ApplicationEnrollmentException::notEligible($readiness->blocking_reasons);
+            }
+
+            $initialStatus = ApplicationStatus::tryFrom($readiness->recommended_application_status)
+                ?? ApplicationStatus::InProgress;
+        }
+
         $now = Carbon::now();
 
-        return DB::transaction(function () use ($user, $offerId, $programId, $flow, $now): Application {
+        return DB::transaction(function () use ($user, $offerId, $programId, $flow, $now, $initialStatus): Application {
             $application = Application::query()->create([
                 'application_number' => $this->temporaryNumber(),
                 'user_id' => $user->id,
@@ -56,7 +75,7 @@ final class CreateApplicationAction
                 'process_flow_id' => $flow->id,
                 'flow_group_id' => $flow->flow_group_id,
                 'process_flow_version' => (int) $flow->version,
-                'status' => ApplicationStatus::InProgress->value,
+                'status' => $initialStatus->value,
                 'total_due' => 0,
                 'total_paid' => 0,
             ]);
@@ -74,7 +93,7 @@ final class CreateApplicationAction
                 ->get();
 
             $first = $steps->first();
-            if ($first !== null) {
+            if ($first !== null && $initialStatus === ApplicationStatus::InProgress) {
                 ApplicationStep::query()
                     ->whereKey($first->id)
                     ->update([
@@ -115,12 +134,17 @@ final class CreateApplicationAction
                 }
             }
 
+            if ($offerId !== null) {
+                $this->attachOfferDocuments->execute($application->fresh(), $user);
+            }
+
             return $application->fresh([
                 'steps' => fn ($q) => $q->orderBy('step_order'),
                 'currentStep',
                 'processFlow:id,version,flow_group_id,name',
                 'offer:id,title',
                 'program:id,name',
+                'documents.userDocument.documentType',
             ]);
         });
     }

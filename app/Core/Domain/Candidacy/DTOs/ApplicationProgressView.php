@@ -8,6 +8,7 @@ use App\Core\Domain\Candidacy\Models\Application;
 use App\Core\Domain\Candidacy\Models\ApplicationStep;
 use App\Core\Domain\Candidacy\Models\ApplicationStepEvent;
 use App\Core\Domain\Candidacy\States\ApplicationStepStatus;
+use App\Core\Domain\Identity\Support\UserPersonName;
 use Illuminate\Support\Collection;
 
 final readonly class ApplicationProgressView
@@ -156,11 +157,7 @@ final readonly class ApplicationProgressView
                 'id' => $event->id,
                 'action' => $event->action,
                 'application_step_id' => $event->application_step_id,
-                'actor' => $actor ? [
-                    'id' => $actor->id,
-                    'first_name' => $actor->first_name,
-                    'last_name' => $actor->last_name,
-                ] : null,
+                'actor' => $actor ? UserPersonName::toActorArray($actor) : null,
                 'meta' => $event->meta,
                 'created_at' => $event->created_at?->toIso8601String(),
             ];

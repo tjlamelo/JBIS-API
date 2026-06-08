@@ -133,8 +133,6 @@ class ArrayUtils
         callable|null $filterCallback = null,
         int $flag = 0
     ): string {
-        $filterCallback ??= fn($value) => ArrayUtils::safeFilterFunc($value);
-
         return self::safeImplode($glue, self::safeFilter($pieces, $filterCallback, $flag));
     }
 
@@ -146,13 +144,13 @@ class ArrayUtils
      */
     public static function safeImplode(array|string $glue, array|null $pieces): string
     {
-        if (! is_null($pieces)) {
-            array_walk(
-                $pieces,
-                static function (&$value) {
+        if ($pieces !== null) {
+            foreach ($pieces as &$value) {
+                if (is_float($value)) {
                     $value = TransformationUtils::floatToString($value);
                 }
-            );
+            }
+            unset($value);
         }
 
         return implode($glue, $pieces);
@@ -188,8 +186,16 @@ class ArrayUtils
      * @see strlen
      * @see empty
      */
-    protected static function safeFilterFunc(mixed $value): bool|int
+    public static function safeFilterFunc(mixed $value): bool|int
     {
+        if ($value === null) {
+            return 0;
+        }
+
+        if (is_string($value)) {
+            return $value !== '' ? 1 : 0;
+        }
+
         if (is_array($value)) {
             foreach ($value as $val) {
                 if (self::safeFilterFunc($val)) {
@@ -200,11 +206,7 @@ class ArrayUtils
             return false;
         }
 
-        if (is_null($value)) {
-            return 0;
-        }
-
-        return strlen($value);
+        return strlen((string) $value);
     }
 
     /**
@@ -220,9 +222,11 @@ class ArrayUtils
         callable|null $callback = null,
         int $flag = 0
     ): ?array {
-        $callback ??= fn($value) => ArrayUtils::safeFilterFunc($value);
+        if ($input === null) {
+            return null;
+        }
 
-        return is_null($input) ? $input : array_filter($input, $callback, $flag);
+        return array_filter($input, $callback ?? [self::class, 'safeFilterFunc'], $flag);
     }
 
     /**
@@ -439,7 +443,7 @@ class ArrayUtils
             return false;
         }
 
-        return $array !== array_values($array);
+        return ! array_is_list($array);
     }
 
     /**

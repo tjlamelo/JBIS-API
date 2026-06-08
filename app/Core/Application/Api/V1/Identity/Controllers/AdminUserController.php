@@ -8,9 +8,12 @@ use App\Core\Application\Api\Responses\BaseResponse;
 use App\Core\Application\Api\V1\Identity\Requests\StoreAdminUserRequest;
 use App\Core\Application\Api\V1\Identity\Requests\UpdateAdminUserActiveRequest;
 use App\Core\Application\Api\V1\Identity\Requests\UpdateAdminUserProfileApprovalRequest;
+use App\Core\Application\Api\V1\Identity\Requests\UpdateAdminUserProfileWizardStepRequest;
 use App\Core\Application\Api\V1\Identity\Requests\UpdateAdminUserRequest;
 use App\Core\Application\Api\V1\Identity\Resources\AdminUserResource;
+use App\Core\Application\Api\V1\Identity\Support\ProfileResponseMapper;
 use App\Core\Domain\Identity\Actions\Profile\ModerateUserProfileAction;
+use App\Core\Domain\Identity\Actions\Profile\UpdateAdminUserProfileWizardStepAction;
 use App\Core\Domain\Identity\Actions\User\CreateAdminUserAction;
 use App\Core\Domain\Identity\Actions\User\SendAdminUserPasswordResetAction;
 use App\Core\Domain\Identity\Actions\User\UpdateAdminUserAction;
@@ -224,4 +227,31 @@ final class AdminUserController extends Controller
 
     }
 
+    public function updateProfileStep(
+        UpdateAdminUserProfileWizardStepRequest $request,
+        User $user,
+        string $step,
+        UpdateAdminUserProfileWizardStepAction $updateProfileStep,
+        ProfileResponseMapper $profileResponseMapper,
+    ): JsonResponse {
+        try {
+            $profile = $updateProfileStep->execute(
+                $user,
+                $step,
+                $request->validated(),
+            );
+        } catch (\InvalidArgumentException $exception) {
+            return BaseResponse::unprocessableEntity([
+                'message' => $exception->getMessage(),
+            ])->toJsonResponse();
+        }
+
+        $user->load(['roles:id,name', 'profile.approver:id,name', 'sectors:id,name,slug']);
+
+        return BaseResponse::ok([
+            'message' => __('Profil mis a jour.'),
+            'profile' => $profileResponseMapper->toArray($profile),
+            'user' => new AdminUserResource($user),
+        ])->toJsonResponse();
+    }
 }

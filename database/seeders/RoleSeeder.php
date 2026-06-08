@@ -45,6 +45,8 @@ class RoleSeeder extends Seeder
                     P::name('offer', P::VIEW),
                 ])->pluck('name')->all(),
 
+                ApplicationRole::RECRUITER => $this->recruiterPermissions(),
+
                 default => [],
             };
 
@@ -74,6 +76,7 @@ class RoleSeeder extends Seeder
             'usertraining', 'userinternship', 'interestandhobby',
             'userpreferredcountry', 'uservisahistory', 'usernote',
             'application', 'offer', 'company', 'program', 'training', 'processflow', 'processstep',
+            'recruiterorganization', 'recruiteronboarding', 'recruiteroffer', 'recruitersubmission', 'recruiterassignment',
         ];
 
         $names = [P::ADMIN_ACCESS, P::PERMISSION_MANAGE];
@@ -118,6 +121,36 @@ class RoleSeeder extends Seeder
             P::name('usernote', P::CREATE),
             P::name('usernote', P::UPDATE),
             P::name('user', P::VIEW),
+            P::name('recruiterorganization', P::VIEW),
+            P::name('recruiteronboarding', P::VIEW),
+            P::name('recruiteronboarding', P::UPDATE),
+            P::name('recruiteroffer', P::VIEW),
+            P::name('recruiteroffer', P::UPDATE),
+            P::name('recruitersubmission', P::VIEW),
+            P::name('recruitersubmission', P::UPDATE),
+            P::name('recruiterassignment', P::VIEW),
+            P::name('recruiterassignment', P::CREATE),
+            P::name('recruiterassignment', P::UPDATE),
+        ];
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function recruiterPermissions(): array
+    {
+        return [
+            P::name('recruiterorganization', P::VIEW),
+            P::name('recruiteroffer', P::VIEW),
+            P::name('recruiteroffer', P::CREATE),
+            P::name('recruiteroffer', P::UPDATE),
+            P::name('recruitersubmission', P::VIEW),
+            P::name('recruitersubmission', P::CREATE),
+            P::name('recruitersubmission', P::UPDATE),
+            P::name('recruiterassignment', P::VIEW),
+            P::name('userprofile', P::VIEW),
+            P::name('userdocument', P::VIEW),
+            P::name('userdocument', P::CREATE),
         ];
     }
 }

@@ -21,3 +21,16 @@ Artisan::command('analytics:sync-ga4 {--date= : Date to sync (YYYY-MM-DD). Defau
 
     $this->info('GA4 sync dispatched for date: '.$date);
 })->purpose('Sync GA4 analytics and persist daily metrics to the database');
+
+Artisan::command('newsletter:send-offers {--limit= : Max subscribers to process}', function () {
+    $limit = $this->option('limit');
+    $stats = app(\App\Core\Domain\Communication\Actions\DispatchOfferNewslettersAction::class)
+        ->execute($limit !== null && $limit !== '' ? (int) $limit : null);
+
+    $this->info(sprintf(
+        'Newsletter offres : %d envoyée(s), %d ignorée(s), sur %d abonné(s).',
+        $stats['sent'],
+        $stats['skipped'],
+        $stats['total'],
+    ));
+})->purpose('Envoyer la newsletter offres national/international aux abonnés actifs');

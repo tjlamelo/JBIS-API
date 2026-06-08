@@ -5,11 +5,16 @@ declare(strict_types=1);
 namespace App\Core\Domain\Shared\Export\Sources;
 
 use App\Core\Domain\Identity\Models\User;
+use App\Core\Domain\Identity\Support\AdminUserSearchFilterApplicator;
 use App\Core\Domain\Shared\Export\Enums\ExportFieldType;
 use Illuminate\Database\Eloquent\Builder;
 
 final class UserExportSource extends AbstractEloquentExportSource
 {
+    public function __construct(
+        private readonly AdminUserSearchFilterApplicator $searchFilters,
+    ) {}
+
     public function key(): string
     {
         return 'users';
@@ -30,31 +35,9 @@ final class UserExportSource extends AbstractEloquentExportSource
         return ['profile'];
     }
 
-    protected function applySearch(Builder $query, string $term): void
-    {
-        $like = '%'.$term.'%';
-        $query->where(function (Builder $q) use ($like): void {
-            $q->where('name', 'like', $like)
-                ->orWhere('email', 'like', $like)
-                ->orWhere('phone_number1', 'like', $like);
-        });
-    }
-
     protected function applyCustomFilters(Builder $query, array $filters): Builder
     {
-        if (array_key_exists('active', $filters) && $filters['active'] !== null && $filters['active'] !== '') {
-            $query->where('active', filter_var($filters['active'], FILTER_VALIDATE_BOOLEAN));
-        }
-
-        if (! empty($filters['role']) && method_exists($query->getModel(), 'hasRole')) {
-            $query->whereHas('roles', fn (Builder $q) => $q->where('name', (string) $filters['role']));
-        }
-
-        if (! empty($filters['email_verified'])) {
-            $query->whereNotNull('email_verified_at');
-        }
-
-        return $query;
+        return $this->searchFilters->apply($query, $filters);
     }
 
     protected function fields(): array
@@ -80,6 +63,13 @@ final class UserExportSource extends AbstractEloquentExportSource
             $this->field('profile.number_of_children', 'Nb enfants', type: ExportFieldType::Integer, group: 'profil', requiresWith: ['profile']),
             $this->field('profile.matricule', 'Matricule', group: 'profil', requiresWith: ['profile']),
             $this->field('profile.is_approved', 'Profil approuvé', type: ExportFieldType::Boolean, group: 'profil', requiresWith: ['profile']),
+            $this->field(
+                'profile.total_years_of_experience',
+                'Années d\'expérience',
+                type: ExportFieldType::Integer,
+                group: 'profil',
+                requiresWith: ['profile'],
+            ),
 
             // --- Statistiques (relations)
             $this->field(

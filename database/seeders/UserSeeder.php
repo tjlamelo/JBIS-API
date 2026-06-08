@@ -47,6 +47,12 @@ class UserSeeder extends Seeder
             'role' => ApplicationRole::CANDIDATE,
             'phone' => '+237600000005',
         ],
+        [
+            'email' => 'recruiter@jbis.cm',
+            'name' => 'Recruteur Démo',
+            'role' => ApplicationRole::RECRUITER,
+            'phone' => '+237600000006',
+        ],
     ];
 
     public function run(): void

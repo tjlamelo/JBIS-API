@@ -70,11 +70,15 @@ class AdminOfferController extends Controller
     public function uploadPhoto(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'photo' => ['required', 'file', 'max:10240', 'mimes:jpg,jpeg,png,webp,pdf'],
+            'photo' => ['required_without:file,image', 'file', 'max:10240', 'mimes:jpg,jpeg,png,webp,pdf'],
+            'file' => ['required_without:photo,image', 'file', 'max:10240', 'mimes:jpg,jpeg,png,webp,pdf'],
+            'image' => ['required_without:photo,file', 'file', 'max:10240', 'mimes:jpg,jpeg,png,webp,pdf'],
         ]);
 
+        $file = $validated['photo'] ?? $validated['file'] ?? $validated['image'];
+
         $uploaded = $this->storeMediaAction->execute(
-            $validated['photo'],
+            $file,
             'catalog/offers/flyers'
         );
 

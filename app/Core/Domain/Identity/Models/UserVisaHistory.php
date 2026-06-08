@@ -4,16 +4,15 @@ declare(strict_types=1);
 
 namespace App\Core\Domain\Identity\Models;
 
-use App\Core\Domain\Identity\Concerns\AuditsModelChanges;
+use App\Core\Domain\Identity\Concerns\AuditedModel;
 use App\Core\Domain\Identity\States\VisaHistoryStatus;
 use App\Core\Domain\Location\Models\Country;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class UserVisaHistory extends Model
+class UserVisaHistory extends AuditedModel
 {
-    use AuditsModelChanges, SoftDeletes;
+    use SoftDeletes;
 
     protected $table = 'user_visa_histories';
 

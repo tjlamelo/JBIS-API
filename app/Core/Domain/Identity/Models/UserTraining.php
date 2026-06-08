@@ -4,15 +4,12 @@ declare(strict_types=1);
 
 namespace App\Core\Domain\Identity\Models;
 
-use App\Core\Domain\Identity\Concerns\AuditsModelChanges;
 use App\Core\Domain\Catalog\Models\Training;
-use Illuminate\Database\Eloquent\Model;
+use App\Core\Domain\Identity\Concerns\AuditedModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class UserTraining extends Model
+class UserTraining extends AuditedModel
 {
-    use AuditsModelChanges;
-
     protected $table = 'user_trainings';
 
     protected $fillable = [

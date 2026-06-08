@@ -11,8 +11,9 @@ final class ScreenshotPdfClient
 {
     /**
      * @param  array{top?: int, right?: int, bottom?: int, left?: int}  $margins
+     * @param  array{headerImage?: string, footerImage?: string, headerHeightMm?: float, footerHeightMm?: float}|null  $headerFooter
      */
-    public function htmlToPdf(string $html, string $paper = 'a4', array $margins = []): string
+    public function htmlToPdf(string $html, string $paper = 'a4', array $margins = [], ?array $headerFooter = null): string
     {
         $baseUrl = (string) config('screenshot-service.url', '');
         $token = (string) config('screenshot-service.token', '');
@@ -29,11 +30,12 @@ final class ScreenshotPdfClient
                 ->withToken($token)
                 ->withHeaders(['X-Internal-Token' => $token])
                 ->accept('application/pdf')
-                ->post($endpoint, [
+                ->post($endpoint, array_filter([
                     'html' => $html,
                     'paper' => $paper,
                     'margins' => $margins,
-                ]);
+                    'headerFooter' => $headerFooter,
+                ], static fn (mixed $value): bool => $value !== null));
         } catch (\Throwable $e) {
             throw ScreenshotServiceException::unreachable($e->getMessage());
         }

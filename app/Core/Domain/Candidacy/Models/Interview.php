@@ -5,15 +5,14 @@ declare(strict_types=1);
 namespace App\Core\Domain\Candidacy\Models;
 
 use App\Core\Domain\Catalog\Models\Company;
-use App\Core\Domain\Identity\Concerns\AuditsModelChanges;
+use App\Core\Domain\Identity\Concerns\AuditedModel;
 use App\Core\Domain\Identity\Models\UserDocument;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Interview extends Model
+class Interview extends AuditedModel
 {
-    use AuditsModelChanges, SoftDeletes;
+    use SoftDeletes;
 
     protected $table = 'interviews';
 

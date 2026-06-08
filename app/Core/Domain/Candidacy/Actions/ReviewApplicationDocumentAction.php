@@ -6,6 +6,7 @@ namespace App\Core\Domain\Candidacy\Actions;
 
 use App\Core\Domain\Candidacy\Models\ApplicationDocument;
 use App\Core\Domain\Candidacy\Services\ApplicationActivityLogger;
+use App\Core\Domain\Identity\Support\UserPersonName;
 use Illuminate\Support\Carbon;
 
 final class ReviewApplicationDocumentAction
@@ -41,6 +42,9 @@ final class ReviewApplicationDocumentAction
             ],
         );
 
-        return $document->fresh(['userDocument.documentType', 'reviewer:id,first_name,last_name']);
+        return $document->fresh([
+            'userDocument.documentType',
+            ...UserPersonName::withProfile('reviewer'),
+        ]);
     }
 }

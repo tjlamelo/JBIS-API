@@ -31,10 +31,7 @@ final class StoreInterestAndHobbyRequest extends FormRequest
 
             'title' => ['required', 'string', 'max:255'],
 
-            'category' => ['nullable', 'string', 'max:100'],
-
         ];
 
     }
-
 }

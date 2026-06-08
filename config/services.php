@@ -59,6 +59,25 @@ return [
         'token' => env('CPANEL_TOKEN'),
         'primary_domain' => env('CPANEL_PRIMARY_DOMAIN'),
         'timeout' => (int) env('CPANEL_TIMEOUT', 15),
+        'recruiter_base_domain' => env('CPANEL_RECRUITER_BASE_DOMAIN', env('CPANEL_PRIMARY_DOMAIN', 'jbis.cm')),
+        'recruiter_portal_prefix' => env('CPANEL_RECRUITER_PORTAL_PREFIX', 'recruteur'),
+        'recruiter_docroot' => env('CPANEL_RECRUITER_DOCROOT'),
+    ],
+
+    'recruiter' => [
+        'onboarding_enabled' => (bool) env('RECRUITER_ONBOARDING_ENABLED', true),
+        'notify_email' => env('RECRUITER_PORTAL_NOTIFY_EMAIL'),
+        'frontend_url' => env('FRONTEND_URL', 'http://localhost:3000'),
+        'auto_provision_on_approval' => (bool) env('RECRUITER_AUTO_PROVISION_ON_APPROVAL', false),
+    ],
+
+    'newsletter' => [
+        'frontend_url' => env('FRONTEND_URL', 'http://localhost:3000'),
+        'unsubscribe_url' => env('NEWSLETTER_UNSUBSCRIBE_URL', env('FRONTEND_URL', 'http://localhost:3000').'/newsletter/unsubscribe'),
+        'cameroon_country_code' => env('NEWSLETTER_CAMEROON_COUNTRY_CODE', 'CM'),
+        'max_offers_per_section' => (int) env('NEWSLETTER_MAX_OFFERS_PER_SECTION', 8),
+        'offer_lookback_days' => (int) env('NEWSLETTER_OFFER_LOOKBACK_DAYS', 14),
+        'schedule_enabled' => (bool) env('NEWSLETTER_SCHEDULE_ENABLED', true),
     ],
 
 ];

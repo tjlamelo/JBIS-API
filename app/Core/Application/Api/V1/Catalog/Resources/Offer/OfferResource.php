@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Core\Application\Api\V1\Catalog\Resources\Offer;
 
+use App\Core\Application\Api\Support\TranslatableColumnResolver;
 use App\Core\Domain\Location\Models\LanguageLevel;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -133,12 +134,12 @@ class OfferResource extends JsonResource
 
             'required_documents' => $this->requiredDocuments->map(fn ($d) => [
                 'id' => $d->id,
-                'name' => $d->name,
+                'name' => TranslatableColumnResolver::resolve($d->name),
                 'is_mandatory' => (bool) $d->pivot->is_mandatory,
                 'sort_order' => (int) ($d->pivot->sort_order ?? 0),
                 'type' => $d->type,
                 'slug' => $d->slug,
-                'description' => $d->description,
+                'description' => TranslatableColumnResolver::resolve($d->description),
             ]),
 
             'program' => $this->program ? [

@@ -19,6 +19,8 @@ class SuspiciousAccountActivityNotification extends Notification implements Shou
         private readonly string $ip,
         private readonly string $device,
         private readonly array $flags = [],
+        private readonly ?int $riskScore = null,
+        private readonly ?string $riskLevel = null,
     ) {}
 
     /**
@@ -40,6 +42,10 @@ class SuspiciousAccountActivityNotification extends Notification implements Shou
 
         if ($this->flags !== []) {
             $message->line('Signaux : '.implode(', ', $this->flags));
+        }
+
+        if ($this->riskScore !== null) {
+            $message->line('Score de risque : '.$this->riskScore.($this->riskLevel ? ' ('.$this->riskLevel.')' : ''));
         }
 
         return $message

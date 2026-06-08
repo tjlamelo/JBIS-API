@@ -4,15 +4,12 @@ declare(strict_types=1);
 
 namespace App\Core\Domain\Identity\Models;
 
-use App\Core\Domain\Identity\Concerns\AuditsModelChanges;
+use App\Core\Domain\Identity\Concerns\AuditedModel;
 use App\Core\Domain\Location\Models\Country;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class UserPreferredCountry extends Model
+class UserPreferredCountry extends AuditedModel
 {
-    use AuditsModelChanges;
-
     protected $table = 'user_preferred_countries';
 
     protected $fillable = [

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Core\Domain\Identity\Models;
 
+use App\Core\Application\Api\Support\TranslatableColumnResolver;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -28,6 +29,7 @@ class DocumentType extends Model
     ];
 
     protected $casts = [
+        'label' => 'array',
         'unique_per_user' => 'boolean',
         'requires_expiry_date' => 'boolean',
         'requires_document_number' => 'boolean',
@@ -101,6 +103,11 @@ class DocumentType extends Model
             : self::defaultAllowedMimeTypes();
     }
 
+    public function resolvedLabel(?string $locale = null): string
+    {
+        return TranslatableColumnResolver::resolve($this->label, $locale);
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -110,7 +117,7 @@ class DocumentType extends Model
             'id' => $this->id,
             'value' => $this->code,
             'code' => $this->code,
-            'label' => $this->label,
+            'label' => $this->resolvedLabel(),
             'unique_per_user' => $this->isUniquePerUser(),
             'allows_multiple' => $this->allowsMultiple(),
             'requires_expiry_date' => $this->requiresExpiryDate(),

@@ -45,7 +45,7 @@ final class InterestAndHobbyController extends Controller
 
         return BaseResponse::ok([
 
-            'data' => InterestAndHobbyResource::collection($items->items()),
+            'data' => InterestAndHobbyResource::collection($items->items())->resolve($request),
 
             'meta' => [
 
@@ -118,5 +118,4 @@ final class InterestAndHobbyController extends Controller
         return BaseResponse::ok(['message' => __('Centre d\'intérêt supprimé.')])->toJsonResponse();
 
     }
-
 }

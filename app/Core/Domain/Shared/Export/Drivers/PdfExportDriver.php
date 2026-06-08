@@ -9,32 +9,22 @@ use App\Core\Domain\Shared\Export\Contracts\ResolvedSheet;
 use App\Core\Domain\Shared\Export\DTOs\ExportDefinitionDto;
 use App\Core\Domain\Shared\Export\DTOs\ExportResultDto;
 use App\Core\Domain\Shared\Export\Enums\ExportFormat;
-use App\Core\Domain\Shared\Export\Exceptions\MissingDependencyException;
 use App\Core\Domain\Shared\Export\Support\FilenameBuilder;
 use App\Core\Domain\Shared\Export\Support\HtmlTemplateRenderer;
-use Barryvdh\DomPDF\Facade\Pdf as DomPdf;
+use App\Core\Domain\Shared\Export\Support\PdfLayoutMetrics;
+use App\Core\Domain\Shared\Screenshot\Services\ScreenshotPdfClient;
 use Illuminate\Contracts\View\Factory as ViewFactory;
 
 /**
- * Driver PDF basé sur barryvdh/laravel-dompdf.
+ * Driver PDF via jbis-screenshot (Puppeteer / Chrome).
  *
  * Trois modes de templating, par ordre de priorité :
  *
  *  1) meta.template_html  (string)
- *     → HTML brut envoyé par le front, avec placeholders {{ key }}.
- *       Le front maîtrise totalement la mise en page (logo, signatures,
- *       polices, CSS print…) et le module n'injecte que les données.
- *       Voir HtmlTemplateRenderer pour la syntaxe.
+ *  2) meta.template         (string : nom de vue Blade)
+ *  3) Par défaut            → exports::pdf.default
  *
- *  2) meta.template       (string : nom de vue Blade)
- *     → Template Blade nommé, livré côté API (ex. "exports::pdf.default"
- *       ou un template projet "exports.pdf.candidat-rapport").
- *
- *  3) Par défaut          → template intégré "exports::pdf.default".
- *
- * Options communes :
- *   - meta.orientation : "portrait" (défaut) | "landscape"
- *   - meta.paper       : "a4" (défaut), "letter", etc.
+ * Options : meta.orientation, meta.paper
  */
 final class PdfExportDriver implements ExportDriverInterface
 {
@@ -42,6 +32,7 @@ final class PdfExportDriver implements ExportDriverInterface
         private readonly FilenameBuilder $filenames,
         private readonly ViewFactory $views,
         private readonly HtmlTemplateRenderer $htmlRenderer,
+        private readonly ScreenshotPdfClient $screenshotPdfClient,
     ) {}
 
     public function format(): ExportFormat
@@ -56,21 +47,11 @@ final class PdfExportDriver implements ExportDriverInterface
 
     public function export(ExportDefinitionDto $definition, iterable $resolvedSheets): ExportResultDto
     {
-        if (! class_exists(DomPdf::class)) {
-            throw MissingDependencyException::forPackage('pdf', 'barryvdh/laravel-dompdf');
-        }
-
         $sheets = is_array($resolvedSheets) ? $resolvedSheets : iterator_to_array($resolvedSheets);
-
+        $paths = $this->filenames->build($definition->fileName, ExportFormat::Pdf);
         $html = $this->resolveHtml($definition, $sheets);
 
-        $orientation = (string) ($definition->meta['orientation'] ?? 'portrait');
-        $paper = (string) ($definition->meta['paper'] ?? 'a4');
-
-        $pdf = DomPdf::loadHTML($html)->setPaper($paper, $orientation);
-
-        $paths = $this->filenames->build($definition->fileName, ExportFormat::Pdf);
-        $pdf->save($paths['absolute_path']);
+        $this->writeScreenshotPdf($definition, $html, $paths['absolute_path']);
 
         return new ExportResultDto(
             absolutePath: $paths['absolute_path'],
@@ -84,14 +65,17 @@ final class PdfExportDriver implements ExportDriverInterface
      */
     private function resolveHtml(ExportDefinitionDto $definition, array $sheets): string
     {
-        // 1) Template HTML envoyé par le front
         $rawTemplate = $definition->meta['template_html'] ?? null;
         if (is_string($rawTemplate) && trim($rawTemplate) !== '') {
-            return $this->htmlRenderer->render($rawTemplate, $definition, $sheets);
+            $body = $this->htmlRenderer->render($rawTemplate, $definition, $sheets);
+
+            return $this->wrapWithPdfLayout(
+                $body,
+                (string) ($definition->meta['title'] ?? $definition->fileName),
+            );
         }
 
-        // 2) Template Blade nommé
-        $bladeView = (string) ($definition->meta['template'] ?? 'exports::pdf.default');
+        $bladeView = $this->resolveBladeView($definition);
         if (! $this->views->exists($bladeView)) {
             throw new \RuntimeException("Template Blade introuvable pour l'export PDF : « {$bladeView} »");
         }
@@ -102,6 +86,41 @@ final class PdfExportDriver implements ExportDriverInterface
             'meta' => $definition->meta,
             'generatedAt' => now(),
         ])->render();
+    }
+
+    private function wrapWithPdfLayout(string $bodyHtml, string $title): string
+    {
+        if (str_contains($bodyHtml, 'jbis-pdf-content')) {
+            return $bodyHtml;
+        }
+
+        if (! $this->views->exists('pdf.wrapper')) {
+            return $bodyHtml;
+        }
+
+        return $this->views->make('pdf.wrapper', [
+            'bodyHtml' => $bodyHtml,
+            'title' => $title,
+        ])->render();
+    }
+
+    private function resolveBladeView(ExportDefinitionDto $definition): string
+    {
+        return (string) ($definition->meta['template'] ?? 'exports::pdf.default');
+    }
+
+    private function writeScreenshotPdf(ExportDefinitionDto $definition, string $html, string $absolutePath): void
+    {
+        $paper = (string) ($definition->meta['paper'] ?? config('export-pdf.paper', 'a4'));
+        $pdfBinary = $this->screenshotPdfClient->htmlToPdf(
+            $html,
+            $paper,
+            PdfLayoutMetrics::printMarginsMm(),
+        );
+
+        if (file_put_contents($absolutePath, $pdfBinary) === false) {
+            throw new \RuntimeException('Impossible d\'écrire le fichier PDF exporté.');
+        }
     }
 
     /**

@@ -15,6 +15,8 @@ final class ApplicationRole
 
     public const PARTNER = 'partner';
 
+    public const RECRUITER = 'recruiter';
+
     public const CANDIDATE = 'candidate';
 
     /** @var list<string> */
@@ -30,6 +32,7 @@ final class ApplicationRole
         self::ADMIN,
         self::STAFF,
         self::PARTNER,
+        self::RECRUITER,
         self::CANDIDATE,
     ];
 
@@ -41,5 +44,10 @@ final class ApplicationRole
     public static function isCandidate(string $role): bool
     {
         return $role === self::CANDIDATE;
+    }
+
+    public static function isRecruiter(string $role): bool
+    {
+        return $role === self::RECRUITER;
     }
 }

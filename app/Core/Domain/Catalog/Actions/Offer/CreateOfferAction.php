@@ -7,9 +7,14 @@ namespace App\Core\Domain\Catalog\Actions\Offer;
 use App\Core\Domain\Catalog\DTOs\Offer\OfferDto;
 use App\Core\Domain\Catalog\Models\Offer;
 use App\Core\Domain\Location\Models\LanguageLevel;
+use App\Core\Infrastructure\Cache\CatalogCacheInvalidator;
 
 class CreateOfferAction
 {
+    public function __construct(
+        private readonly CatalogCacheInvalidator $catalogCache,
+    ) {}
+
     public function execute(OfferDto $dto): Offer
     {
         $attributes = $dto->toArray();
@@ -85,6 +90,9 @@ class CreateOfferAction
             );
         }
 
-        return $offer->refresh();
+        $offer = $offer->refresh();
+        $this->catalogCache->invalidate();
+
+        return $offer;
     }
 }

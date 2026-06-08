@@ -2,15 +2,14 @@
 
 namespace App\Core\Domain\Identity\Models;
 
-use App\Core\Domain\Identity\Concerns\AuditsModelChanges;
+use App\Core\Domain\Identity\Concerns\AuditedModel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Certification extends Model
+class Certification extends AuditedModel
 {
-    use AuditsModelChanges, HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes;
 
     protected $table = 'user_certifications';
 

@@ -13,6 +13,13 @@ class CpanelMailboxProvisionerService implements MailboxProvisioner
     public function createMailbox(string $localPart, string $password, ?int $quotaMb = null): MailboxCreationResultDto
     {
         $config = $this->resolveConfig();
+
+        return $this->createMailboxOnDomain($localPart, $config['domain'], $password, $quotaMb);
+    }
+
+    public function createMailboxOnDomain(string $localPart, string $domain, string $password, ?int $quotaMb = null): MailboxCreationResultDto
+    {
+        $config = $this->resolveConfig();
         $quota = $quotaMb ?? 1024;
 
         $response = Http::timeout($config['timeout'])
@@ -23,7 +30,7 @@ class CpanelMailboxProvisionerService implements MailboxProvisioner
             ->get($config['base_url'].'/Email/add_pop', [
                 'email' => $localPart,
                 'password' => $password,
-                'domain' => $config['domain'],
+                'domain' => $domain,
                 'quota' => max($quota, 0),
             ]);
 
@@ -32,7 +39,7 @@ class CpanelMailboxProvisionerService implements MailboxProvisioner
 
             return new MailboxCreationResultDto(
                 success: false,
-                email: sprintf('%s@%s', $localPart, $config['domain']),
+                email: sprintf('%s@%s', $localPart, $domain),
                 message: sprintf('Erreur HTTP cPanel: %s', (string) $response->status()),
                 rawError: $body !== '' ? $body : null,
             );
@@ -42,7 +49,7 @@ class CpanelMailboxProvisionerService implements MailboxProvisioner
         if (! is_array($payload)) {
             return new MailboxCreationResultDto(
                 success: false,
-                email: sprintf('%s@%s', $localPart, $config['domain']),
+                email: sprintf('%s@%s', $localPart, $domain),
                 message: 'Reponse cPanel invalide.',
                 rawError: (string) $response->body(),
             );
@@ -55,7 +62,7 @@ class CpanelMailboxProvisionerService implements MailboxProvisioner
         if ($status !== 1) {
             return new MailboxCreationResultDto(
                 success: false,
-                email: sprintf('%s@%s', $localPart, $config['domain']),
+                email: sprintf('%s@%s', $localPart, $domain),
                 message: $errorMessage ?: 'La creation de la boite mail a echoue.',
                 rawError: $errorMessage,
             );
@@ -63,7 +70,7 @@ class CpanelMailboxProvisionerService implements MailboxProvisioner
 
         return new MailboxCreationResultDto(
             success: true,
-            email: sprintf('%s@%s', $localPart, $config['domain']),
+            email: sprintf('%s@%s', $localPart, $domain),
             message: 'Boite mail creee avec succes.',
             rawError: null,
         );

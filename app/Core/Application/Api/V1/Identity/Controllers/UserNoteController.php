@@ -11,6 +11,7 @@ use App\Core\Application\Api\V1\Identity\Resources\UserNoteResource;
 use App\Core\Application\Api\V1\Identity\Support\ScopesUserOwnedIndex;
 use App\Core\Domain\Identity\Models\User;
 use App\Core\Domain\Identity\Models\UserNote;
+use App\Core\Domain\Identity\Support\UserPersonName;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -23,7 +24,7 @@ final class UserNoteController extends Controller
     {
         $this->authorize('viewAny', UserNote::class);
 
-        $query = UserNote::query()->with(['author:id,first_name,last_name,email']);
+        $query = UserNote::query()->with(UserPersonName::withProfile('author'));
         $this->scopeIndexToUser($request, $query, 'usernote');
 
         $items = $query->latest()->paginate((int) $request->integer('per_page', 20));
@@ -51,7 +52,7 @@ final class UserNoteController extends Controller
 
         return BaseResponse::created([
             'message' => __('Note enregistrée.'),
-            'note' => new UserNoteResource($note->load(['author:id,first_name,last_name,email'])),
+            'note' => new UserNoteResource($note->load(UserPersonName::withProfile('author'))),
         ])->toJsonResponse();
     }
 
@@ -61,7 +62,7 @@ final class UserNoteController extends Controller
 
         return BaseResponse::ok([
             'message' => __('Note mise à jour.'),
-            'note' => new UserNoteResource($userNote->fresh(['author:id,first_name,last_name,email'])),
+            'note' => new UserNoteResource($userNote->fresh(UserPersonName::withProfile('author'))),
         ])->toJsonResponse();
     }
 

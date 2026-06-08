@@ -6,8 +6,24 @@ namespace App\Core\Domain\Audit\Support;
 
 use App\Core\Domain\Candidacy\Models\Application;
 use App\Core\Domain\Candidacy\Models\Interview;
+use App\Core\Domain\Identity\Models\Archive;
+use App\Core\Domain\Identity\Models\Certification;
+use App\Core\Domain\Identity\Models\Education;
+use App\Core\Domain\Identity\Models\Experience;
+use App\Core\Domain\Identity\Models\InterestAndHobby;
+use App\Core\Domain\Identity\Models\Language;
 use App\Core\Domain\Identity\Models\User;
+use App\Core\Domain\Identity\Models\UserDocument;
+use App\Core\Domain\Identity\Models\UserInternship;
+use App\Core\Domain\Identity\Models\UserNote;
+use App\Core\Domain\Identity\Models\UserPreferredCountry;
+use App\Core\Domain\Identity\Models\UserProfile;
+use App\Core\Domain\Identity\Models\UserSkill;
+use App\Core\Domain\Identity\Models\UserTraining;
+use App\Core\Domain\Identity\Models\UserVisaHistory;
+use App\Core\Domain\Identity\Support\UserPersonName;
 use Illuminate\Database\Eloquent\Model;
+
 final class AuditCandidateResolver
 {
     /**
@@ -25,19 +41,15 @@ final class AuditCandidateResolver
         }
 
         $user = User::query()
-            ->select(['id', 'first_name', 'last_name', 'email'])
+            ->select(['id', 'name', 'email'])
+            ->with('profile:'.UserPersonName::PROFILE_COLUMNS)
             ->find($userId);
 
         if ($user === null) {
             return null;
         }
 
-        return [
-            'id' => $user->id,
-            'first_name' => (string) $user->first_name,
-            'last_name' => (string) $user->last_name,
-            'email' => (string) $user->email,
-        ];
+        return UserPersonName::toContactArray($user);
     }
 
     public static function resolveUserId(?Model $model): ?int
@@ -72,20 +84,20 @@ final class AuditCandidateResolver
         $map = [
             Application::class => 'Candidature',
             Interview::class => 'Entretien',
-            \App\Core\Domain\Identity\Models\Experience::class => 'Expérience',
-            \App\Core\Domain\Identity\Models\Education::class => 'Formation',
-            \App\Core\Domain\Identity\Models\Certification::class => 'Certification',
-            \App\Core\Domain\Identity\Models\Language::class => 'Langue',
-            \App\Core\Domain\Identity\Models\InterestAndHobby::class => 'Centre d\'intérêt',
-            \App\Core\Domain\Identity\Models\UserSkill::class => 'Compétence',
-            \App\Core\Domain\Identity\Models\UserTraining::class => 'Formation catalogue',
-            \App\Core\Domain\Identity\Models\UserInternship::class => 'Stage',
-            \App\Core\Domain\Identity\Models\UserVisaHistory::class => 'Visa',
-            \App\Core\Domain\Identity\Models\UserPreferredCountry::class => 'Pays préféré',
-            \App\Core\Domain\Identity\Models\UserNote::class => 'Note interne',
-            \App\Core\Domain\Identity\Models\UserDocument::class => 'Document',
-            \App\Core\Domain\Identity\Models\Archive::class => 'Archive',
-            \App\Core\Domain\Identity\Models\UserProfile::class => 'Profil',
+            Experience::class => 'Expérience',
+            Education::class => 'Formation',
+            Certification::class => 'Certification',
+            Language::class => 'Langue',
+            InterestAndHobby::class => 'Centre d\'intérêt',
+            UserSkill::class => 'Compétence',
+            UserTraining::class => 'Formation catalogue',
+            UserInternship::class => 'Stage',
+            UserVisaHistory::class => 'Visa',
+            UserPreferredCountry::class => 'Pays préféré',
+            UserNote::class => 'Note interne',
+            UserDocument::class => 'Document',
+            Archive::class => 'Archive',
+            UserProfile::class => 'Profil',
         ];
 
         return $map[$model::class] ?? class_basename($model);

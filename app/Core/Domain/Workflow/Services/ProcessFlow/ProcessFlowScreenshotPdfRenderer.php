@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Core\Domain\Workflow\Services\ProcessFlow;
 
+use App\Core\Domain\Shared\Export\Support\PdfLayoutMetrics;
 use App\Core\Domain\Shared\Screenshot\Exceptions\ScreenshotServiceException;
 use App\Core\Domain\Shared\Screenshot\Services\ScreenshotPdfClient;
 use App\Core\Domain\Workflow\DTOs\ProcessFlow\ProcessFlowPdfResult;
@@ -23,10 +24,12 @@ final class ProcessFlowScreenshotPdfRenderer implements ProcessFlowPdfRenderer
     {
         $html = $this->htmlBuilder->build($viewModel);
         $paper = (string) config('process-flow-pdf.paper', 'a4');
-        $margins = config('process-flow-pdf.margins', []);
-
         try {
-            $pdf = $this->screenshotPdfClient->htmlToPdf($html, $paper, is_array($margins) ? $margins : []);
+            $pdf = $this->screenshotPdfClient->htmlToPdf(
+                $html,
+                $paper,
+                PdfLayoutMetrics::printMarginsMm(),
+            );
         } catch (ScreenshotServiceException $e) {
             throw ProcessFlowPdfGenerationException::chromeUnavailable($e->getMessage());
         }

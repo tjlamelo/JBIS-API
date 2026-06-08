@@ -22,6 +22,7 @@ final class CandidateProfileCompletionQuery
             'educations',
             'certifications',
             'languages',
+            'documents',
         ]);
 
         $skillsCount = UserSkill::query()->where('user_id', $user->id)->count();
@@ -54,6 +55,7 @@ final class CandidateProfileCompletionQuery
                 'educations' => $user->educations_count,
                 'certifications' => $user->certifications_count,
                 'languages' => $user->languages_count,
+                'documents' => $user->documents_count,
                 'skills' => $skillsCount,
                 'trainings' => $trainingsCount,
                 'internships' => $internshipsCount,

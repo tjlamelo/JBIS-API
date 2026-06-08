@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Core\Domain\Identity\Actions\Settings;
 
+use App\Core\Domain\Communication\Actions\SyncUserNewsletterFromSettingsAction;
 use App\Core\Domain\Identity\DTOs\UserSettingsDto;
 use App\Core\Domain\Identity\Models\User;
 use App\Core\Domain\Identity\Models\UserSetting;
@@ -12,6 +13,7 @@ final class UpdateUserSettingsAction
 {
     public function __construct(
         private readonly EnsureUserSettingsAction $ensureUserSettings,
+        private readonly SyncUserNewsletterFromSettingsAction $syncNewsletter,
     ) {}
 
     public function execute(User $user, UserSettingsDto $dto): UserSetting
@@ -52,7 +54,12 @@ final class UpdateUserSettingsAction
         }
 
         $settings->save();
+        $settings->refresh();
 
-        return $settings->refresh();
+        if ($dto->has('marketing') || $dto->has('language')) {
+            $this->syncNewsletter->execute($user, $settings);
+        }
+
+        return $settings;
     }
 }

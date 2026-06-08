@@ -2,16 +2,15 @@
 
 namespace App\Core\Domain\Identity\Models;
 
-use App\Core\Domain\Identity\Concerns\AuditsModelChanges;
+use App\Core\Domain\Identity\Concerns\AuditedModel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Storage;
 
-class Archive extends Model
+class Archive extends AuditedModel
 {
-    use AuditsModelChanges, HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes;
 
     protected $table = 'archives';
 

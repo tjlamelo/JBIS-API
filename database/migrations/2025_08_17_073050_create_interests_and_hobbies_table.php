@@ -11,16 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-  Schema::create('interests_and_hobbies', function (Blueprint $table) {
-    $table->id();
-    $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-
-    // Identité du hobby
-    $table->string('title')->index(); // ex: "Production musicale", "Veille technologique"
-    $table->string('category')->nullable()->index(); // ex: "Sport", "Art", "Tech"
- 
-    $table->timestamps();
-});
+        Schema::create('interests_and_hobbies', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $table->string('title')->index();
+            $table->timestamps();
+        });
     }
 
     /**

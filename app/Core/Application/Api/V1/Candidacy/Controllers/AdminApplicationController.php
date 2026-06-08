@@ -7,6 +7,7 @@ namespace App\Core\Application\Api\V1\Candidacy\Controllers;
 use App\Core\Application\Api\Responses\BaseResponse;
 use App\Core\Domain\Candidacy\Models\Application;
 use App\Core\Domain\Candidacy\Queries\ApplicationProgressQuery;
+use App\Core\Domain\Identity\Support\UserPersonName;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -26,7 +27,7 @@ final class AdminApplicationController extends Controller
 
         $query = Application::query()
             ->with([
-                'user:id,first_name,last_name,email',
+                ...UserPersonName::withProfile('user'),
                 'currentStep:id,application_id,step_order,title,status',
                 'offer:id,title',
                 'program:id,name',
@@ -42,8 +43,10 @@ final class AdminApplicationController extends Controller
                 $q->where('application_number', 'like', "%{$search}%")
                     ->orWhereHas('user', fn ($u) => $u
                         ->where('email', 'like', "%{$search}%")
-                        ->orWhere('first_name', 'like', "%{$search}%")
-                        ->orWhere('last_name', 'like', "%{$search}%"));
+                        ->orWhere('name', 'like', "%{$search}%")
+                        ->orWhereHas('profile', fn ($profile) => $profile
+                            ->where('first_name', 'like', "%{$search}%")
+                            ->orWhere('last_name', 'like', "%{$search}%")));
             });
         }
 
@@ -67,12 +70,7 @@ final class AdminApplicationController extends Controller
                     'id' => $app->id,
                     'application_number' => $app->application_number,
                     'status' => $app->status instanceof \BackedEnum ? $app->status->value : $app->status,
-                    'user' => $app->user ? [
-                        'id' => $app->user->id,
-                        'first_name' => $app->user->first_name,
-                        'last_name' => $app->user->last_name,
-                        'email' => $app->user->email,
-                    ] : null,
+                    'user' => $app->user ? UserPersonName::toContactArray($app->user) : null,
                     'offer_label' => $app->offer ? $pick($app->offer->title) : null,
                     'program_label' => $app->program ? $pick($app->program->name) : null,
                     'current_step' => $app->currentStep ? [

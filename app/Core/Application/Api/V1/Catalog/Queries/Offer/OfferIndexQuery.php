@@ -7,6 +7,7 @@ namespace App\Core\Application\Api\V1\Catalog\Queries\Offer;
 use App\Core\Application\Api\V1\Catalog\Filters\Offer\OfferSearchFilter;
 use App\Core\Domain\Catalog\Models\ContractType;
 use App\Core\Domain\Catalog\Models\Offer;
+use App\Core\Domain\Location\Models\Country;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Spatie\QueryBuilder\AllowedFilter;
@@ -84,6 +85,40 @@ class OfferIndexQuery extends QueryBuilder
                 }
 
                 $query->where('meta->is_urgent', $boolValue);
+            }),
+
+            AllowedFilter::exact('work_mode'),
+
+            AllowedFilter::callback('salary_min', function (Builder $query, $value) {
+                $min = is_numeric($value) ? (float) $value : null;
+                if ($min === null || $min <= 0) {
+                    return;
+                }
+
+                $query->where(function (Builder $q) use ($min): void {
+                    $q->where(function (Builder $public) use ($min): void {
+                        $public->where('is_salary_public', true)
+                            ->where(function (Builder $salary) use ($min): void {
+                                $salary->where('salary_max', '>=', $min)
+                                    ->orWhere('salary_min', '>=', $min);
+                            });
+                    });
+                });
+            }),
+
+            AllowedFilter::callback('international', function (Builder $query, $value) {
+                $boolValue = filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+                if ($boolValue !== true) {
+                    return;
+                }
+
+                $cameroonId = Country::query()->where('code', 'CM')->value('id');
+                if ($cameroonId === null) {
+                    return;
+                }
+
+                $query->whereNotNull('country_id')
+                    ->where('country_id', '!=', $cameroonId);
             }),
         ])
             ->allowedSorts(['published_at', 'salary_min', 'created_at', 'title'])

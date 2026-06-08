@@ -7,10 +7,15 @@ namespace App\Core\Domain\Catalog\Actions\Offer;
 use App\Core\Domain\Catalog\DTOs\Offer\OfferDto;
 use App\Core\Domain\Catalog\Models\Offer;
 use App\Core\Domain\Location\Models\LanguageLevel;
+use App\Core\Infrastructure\Cache\CatalogCacheInvalidator;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class UpdateOfferAction
 {
+    public function __construct(
+        private readonly CatalogCacheInvalidator $catalogCache,
+    ) {}
+
     public function execute(int $offerId, OfferDto $dto): Offer
     {
         $attributes = $dto->toArray();
@@ -97,6 +102,9 @@ class UpdateOfferAction
             );
         }
 
-        return $offer->refresh();
+        $offer = $offer->refresh();
+        $this->catalogCache->invalidate();
+
+        return $offer;
     }
 }

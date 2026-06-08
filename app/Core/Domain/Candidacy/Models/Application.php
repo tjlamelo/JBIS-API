@@ -9,19 +9,18 @@ use App\Core\Domain\Catalog\Models\Offer;
 use App\Core\Domain\Catalog\Models\Program;
 use App\Core\Domain\Finance\Models\Payment;
 use App\Core\Domain\Finance\Models\PaymentSchedule;
-use App\Core\Domain\Identity\Concerns\AuditsModelChanges;
+use App\Core\Domain\Identity\Concerns\AuditedModel;
 use App\Core\Domain\Identity\Models\User;
 use App\Core\Domain\Identity\Models\UserDocument;
 use App\Core\Domain\Workflow\Models\ProcessFlow;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Application extends Model
+class Application extends AuditedModel
 {
-    use AuditsModelChanges, SoftDeletes;
+    use SoftDeletes;
 
     protected $table = 'applications';
 
