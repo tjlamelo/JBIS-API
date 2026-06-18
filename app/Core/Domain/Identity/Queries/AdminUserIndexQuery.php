@@ -27,7 +27,7 @@ final class AdminUserIndexQuery
         }
 
         $query = User::query()
-            ->with(['roles:id,name', 'sectors:id,name,slug', 'profile']);
+            ->with(['roles:id,name', 'sectors:id,name,slug', 'profile', 'trades:id,name,slug']);
 
         $this->filters->apply($query, $request->query());
 

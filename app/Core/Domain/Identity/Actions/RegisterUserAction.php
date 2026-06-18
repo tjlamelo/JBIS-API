@@ -2,6 +2,7 @@
 
 namespace App\Core\Domain\Identity\Actions;
 
+use App\Core\Domain\Identity\Actions\Consent\RecordMandatoryRegistrationConsentsAction;
 use App\Core\Domain\Identity\Actions\Settings\EnsureUserSettingsAction;
 use App\Core\Domain\Identity\DTOs\DeviceContextDto;
 use App\Core\Domain\Identity\Models\User;
@@ -15,6 +16,7 @@ class RegisterUserAction
         private readonly CreatesNewUsers $createsNewUsers,
         private readonly UserDeviceSecurityService $userDeviceSecurityService,
         private readonly EnsureUserSettingsAction $ensureUserSettings,
+        private readonly RecordMandatoryRegistrationConsentsAction $recordMandatoryRegistrationConsents,
     ) {}
 
     /**
@@ -37,6 +39,12 @@ class RegisterUserAction
         event(new Registered($user));
 
         $this->ensureUserSettings->execute($user);
+
+        $this->recordMandatoryRegistrationConsents->execute(
+            $user,
+            $deviceContext->ip,
+            $deviceContext->userAgent,
+        );
 
         $tokenName = (string) ($data['device_name'] ?? 'api');
         $accessToken = $user->createToken($tokenName);

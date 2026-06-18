@@ -46,6 +46,7 @@ use App\Core\Application\Api\V1\Document\Controllers\UserDocumentController;
 use App\Core\Application\Api\V1\Export\Controllers\ExportController;
 use App\Core\Application\Api\V1\Export\Controllers\ExportSchemaController;
 use App\Core\Application\Api\V1\Identity\Controllers\AdminLegalDocumentController;
+use App\Core\Application\Api\V1\Identity\Controllers\AdminUserDossierController;
 use App\Core\Application\Api\V1\Identity\Controllers\AdminUserController;
 use App\Core\Application\Api\V1\Identity\Controllers\AdminUserSearchFiltersController;
 use App\Core\Application\Api\V1\Identity\Controllers\ArchiveController;
@@ -227,6 +228,8 @@ Route::prefix('v1')->group(function (): void {
             Route::get('/stats', [AdminUserController::class, 'stats']);
             Route::get('/', [AdminUserController::class, 'index']);
             Route::post('/', [AdminUserController::class, 'store']);
+            Route::get('/{user}/consents', [AdminUserDossierController::class, 'consents']);
+            Route::get('/{user}/settings', [AdminUserDossierController::class, 'settings']);
             Route::get('/{user}', [AdminUserController::class, 'show']);
             Route::put('/{user}', [AdminUserController::class, 'update']);
             Route::patch('/{user}/active', [AdminUserController::class, 'updateActive']);

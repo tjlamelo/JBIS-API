@@ -33,7 +33,7 @@ class AdminOfferController extends Controller
     public function index(OfferIndexQuery $query): JsonResponse
     {
         // On s'assure que la Query charge les relations nécessaires pour la table
-        $offers = $query->with(['company', 'category', 'country', 'city', 'contractType', 'offerType', 'workSchedule', 'educationLevel', 'benefits', 'languages', 'skills.category', 'requiredDocuments'])
+        $offers = $query->with(['company', 'category', 'country', 'city', 'trade', 'contractType', 'offerType', 'workSchedule', 'educationLevel', 'benefits', 'languages', 'skills.category', 'requiredDocuments'])
             ->paginate(request()->integer('per_page', 15));
 
         return BaseResponse::ok([
@@ -60,7 +60,7 @@ class AdminOfferController extends Controller
     {
         // IMPORTANT : On charge les relations pour que le frontend JBIS ait accès
         // à offer.company.name, offer.category.name, etc.
-        $offer->load(['company', 'category', 'country', 'city', 'program', 'contractType', 'offerType', 'workSchedule', 'educationLevel', 'benefits', 'languages', 'skills.category', 'requiredDocuments']);
+        $offer->load(['company', 'category', 'country', 'city', 'trade', 'program', 'contractType', 'offerType', 'workSchedule', 'educationLevel', 'benefits', 'languages', 'skills.category', 'requiredDocuments']);
 
         return BaseResponse::ok([
             'offer' => new OfferResource($offer),

@@ -25,7 +25,7 @@ final class AdminUserSearchFiltersController extends Controller
         $locale = app()->getLocale();
 
         $options = $this->cache->remember(
-            $this->cache->referenceKey('admin_user_search_options', $locale),
+            $this->cache->referenceKey('admin_user_search_options_v2', $locale),
             3600,
             fn () => $this->schema->optionLists($locale),
         );

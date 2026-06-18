@@ -10,7 +10,10 @@ use App\Core\Domain\Catalog\Models\Category;
 use App\Core\Domain\Catalog\Models\Skill;
 use App\Core\Domain\Catalog\Models\SkillCategory;
 use App\Core\Domain\Catalog\Models\Training;
+use App\Core\Domain\Catalog\Models\Trade;
 use App\Core\Domain\Communication\Models\DiscoverySource;
+use App\Core\Domain\Identity\Enums\CareerIntent;
+use App\Core\Domain\Identity\Enums\ProfileType;
 use App\Core\Domain\Identity\Models\DocumentType;
 use App\Core\Domain\Location\Models\City;
 use App\Core\Domain\Location\Models\Country;
@@ -168,6 +171,22 @@ final class AdminUserSearchFilterSchema
                 'options_source' => 'discovery_sources',
             ],
             [
+                'key' => 'profile_type',
+                'type' => 'select',
+                'label' => 'Type de profil',
+                'description' => 'Étudiant, travailleur, en recherche, etc.',
+                'group' => 'identite',
+                'options' => self::profileTypeOptions(),
+            ],
+            [
+                'key' => 'career_intent',
+                'type' => 'select',
+                'label' => 'Objectif JBIS',
+                'description' => 'Projet déclaré lors de l\'onboarding',
+                'group' => 'identite',
+                'options' => self::careerIntentOptions(),
+            ],
+            [
                 'key' => 'has_matricule',
                 'type' => 'tristate',
                 'label' => 'Matricule renseigné',
@@ -179,8 +198,8 @@ final class AdminUserSearchFilterSchema
             [
                 'key' => 'sector_ids',
                 'type' => 'multiselect',
-                'label' => 'Domaines / secteurs ciblés',
-                'description' => 'Secteurs d\'activité visés par le candidat',
+                'label' => 'Domaines / secteurs',
+                'description' => 'Secteurs visés (y compris via les métiers déclarés)',
                 'group' => 'domaines',
                 'options_source' => 'sectors',
             ],
@@ -219,15 +238,35 @@ final class AdminUserSearchFilterSchema
 
             // —— Parcours professionnel ——
             [
+                'key' => 'trade_ids',
+                'type' => 'multiselect',
+                'label' => 'Métiers visés',
+                'description' => 'Métiers précis renseignés dans le parcours candidat',
+                'group' => 'parcours',
+                'options_source' => 'trades',
+            ],
+            [
+                'key' => 'trade_match',
+                'type' => 'select',
+                'label' => 'Correspondance métiers',
+                'group' => 'parcours',
+                'options' => [
+                    ['value' => 'any', 'label' => 'Au moins un métier'],
+                    ['value' => 'all', 'label' => 'Tous les métiers sélectionnés'],
+                ],
+            ],
+            [
                 'key' => 'min_years_experience',
                 'type' => 'number',
-                'label' => 'Expérience totale (min. années)',
+                'label' => 'Expérience métier (min. années)',
+                'description' => 'Années déclarées sur au moins un métier',
                 'group' => 'parcours',
             ],
             [
                 'key' => 'max_years_experience',
                 'type' => 'number',
-                'label' => 'Expérience totale (max. années)',
+                'label' => 'Expérience métier (max. années)',
+                'description' => 'Aucun métier au-delà de ce seuil',
                 'group' => 'parcours',
             ],
             [
@@ -265,6 +304,14 @@ final class AdminUserSearchFilterSchema
             ],
 
             // —— Formation & diplômes ——
+            [
+                'key' => 'highest_education_level_id',
+                'type' => 'select',
+                'label' => 'Diplôme le plus élevé (profil)',
+                'description' => 'Niveau renseigné sur la fiche profil',
+                'group' => 'formation',
+                'options_source' => 'education_levels',
+            ],
             [
                 'key' => 'education_level_id',
                 'type' => 'select',
@@ -628,6 +675,15 @@ final class AdminUserSearchFilterSchema
                 'value' => (string) $s->id,
                 'label' => $s->getTranslation('name', $locale),
             ])->values()->all(),
+            'trades' => Trade::query()
+                ->where('is_active', true)
+                ->orderBy('name->'.$locale)
+                ->limit(500)
+                ->get()
+                ->map(fn (Trade $trade) => [
+                    'value' => (string) $trade->id,
+                    'label' => $trade->getTranslation('name', $locale),
+                ])->values()->all(),
             'languages' => Language::query()->orderBy('name->'.$locale)->get()->map(fn (Language $l) => [
                 'value' => (string) $l->id,
                 'label' => $l->getTranslation('name', $locale),
@@ -726,6 +782,33 @@ final class AdminUserSearchFilterSchema
             ['value' => 'PENDING', 'label' => 'En attente'],
             ['value' => 'APPROVED', 'label' => 'Approuvé'],
             ['value' => 'REJECTED', 'label' => 'Refusé'],
+        ];
+    }
+
+    /**
+     * @return list<array{value: string, label: string}>
+     */
+    private static function profileTypeOptions(): array
+    {
+        return [
+            ['value' => ProfileType::Student->value, 'label' => 'Étudiant(e)'],
+            ['value' => ProfileType::RecentGraduate->value, 'label' => 'Jeune diplômé(e)'],
+            ['value' => ProfileType::ActiveWorker->value, 'label' => 'Travailleur actif'],
+            ['value' => ProfileType::JobSeeker->value, 'label' => 'En recherche d\'emploi'],
+            ['value' => ProfileType::Exploring->value, 'label' => 'Découverte JBIS'],
+        ];
+    }
+
+    /**
+     * @return list<array{value: string, label: string}>
+     */
+    private static function careerIntentOptions(): array
+    {
+        return [
+            ['value' => CareerIntent::WorkAbroad->value, 'label' => 'Travailler à l\'étranger'],
+            ['value' => CareerIntent::WorkLocal->value, 'label' => 'Travailler au Cameroun'],
+            ['value' => CareerIntent::VisaSupport->value, 'label' => 'Accompagnement visa & mobilité'],
+            ['value' => CareerIntent::Explore->value, 'label' => 'Découverte JBIS'],
         ];
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Core\Application\Api\V1\Auth\Actions;
 
+use App\Core\Domain\Identity\Actions\Consent\RecordMandatoryRegistrationConsentsAction;
 use App\Core\Domain\Identity\Models\User;
 use App\Core\Domain\Identity\Models\UserProfile;
 use App\Core\Domain\Identity\Support\ApplicationRole;
@@ -13,6 +14,10 @@ use Laravel\Socialite\Facades\Socialite;
 
 class HandleGoogleCallbackAction
 {
+    public function __construct(
+        private readonly RecordMandatoryRegistrationConsentsAction $recordMandatoryRegistrationConsents,
+    ) {}
+
     /**
      * @return array{success: bool, value: string}
      */
@@ -62,6 +67,8 @@ class HandleGoogleCallbackAction
                 'auth_provider' => 'google',
             ]);
             $user->assignRole(ApplicationRole::CANDIDATE);
+
+            $this->recordMandatoryRegistrationConsents->execute($user);
         }
 
         if (! $user->hasVerifiedEmail()) {

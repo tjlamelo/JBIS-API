@@ -27,9 +27,10 @@ return new class extends Migration
             $table->foreignId('offer_type_id')->nullable();
             $table->foreignId('work_schedule_id')->nullable();
             $table->foreignId('education_level_id')->nullable();
+            // FK vers trades ajoutée dans la migration create_trades_table (ordre des migrations).
+            $table->unsignedBigInteger('trade_id')->nullable()->index();
 
             // --- JSON (Spatie Translatable) ---
-            $table->json('title');
             $table->json('description')->nullable();
             $table->json('slug');
 
@@ -77,14 +78,12 @@ return new class extends Migration
             // --- COLONNES GÉNÉRÉES (FullText) ---
             $table->string('slug_fr')->storedAs("JSON_UNQUOTE(JSON_EXTRACT(slug, '$.fr'))")->unique();
             $table->string('slug_en')->storedAs("JSON_UNQUOTE(JSON_EXTRACT(slug, '$.en'))")->nullable();
-            $table->text('title_fr')->storedAs("JSON_UNQUOTE(JSON_EXTRACT(title, '$.fr'))");
-            $table->text('title_en')->storedAs("JSON_UNQUOTE(JSON_EXTRACT(title, '$.en'))");
             $table->text('description_fr')->storedAs("COALESCE(JSON_UNQUOTE(JSON_EXTRACT(description, '$.fr')), '')");
             $table->text('description_en')->storedAs("COALESCE(JSON_UNQUOTE(JSON_EXTRACT(description, '$.en')), '')");
 
             // --- INDEX FULLTEXT ---
-            $table->fullText(['title_fr', 'description_fr'], 'offers_fr_fulltext');
-            $table->fullText(['title_en', 'description_en'], 'offers_en_fulltext');
+            $table->fullText(['description_fr'], 'offers_fr_fulltext');
+            $table->fullText(['description_en'], 'offers_en_fulltext');
         });
     }
 

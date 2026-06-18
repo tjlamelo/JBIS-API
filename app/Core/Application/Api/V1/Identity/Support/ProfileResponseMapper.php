@@ -26,10 +26,12 @@ final class ProfileResponseMapper
             'first_name' => $profile->first_name,
             'last_name' => $profile->last_name,
             'date_of_birth' => $profile->date_of_birth?->format('Y-m-d'),
+            'age' => $profile->age(),
             'place_of_birth' => $profile->place_of_birth,
             'nationality_country_id' => $profile->nationality_country_id,
             'residence_city' => $profile->residence_city,
             'career_intent' => $profile->career_intent,
+            'profile_type' => $profile->profile_type,
             'highest_education_level_id' => $profile->highest_education_level_id,
             'highest_education_level' => $profile->highestEducationLevel ? [
                 'id' => $profile->highestEducationLevel->id,

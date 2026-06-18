@@ -33,12 +33,12 @@ class Offer extends Model
     protected $table = 'offers';
 
     public array $translatable = [
-        'title', 'description', 'specific_documents',
+        'description', 'specific_documents',
         'responsibilities', 'requirements', 'slug',
     ];
 
     protected $fillable = [
-        'title', 'description', 'slug',
+        'description', 'slug', 'trade_id',
         'salary_min', 'salary_max', 'currency', 'is_salary_public',
         'available_positions', 'address', 'work_mode',
         'category_id', 'contract_type_id', 'city_id', 'country_id',
@@ -129,6 +129,27 @@ class Offer extends Model
         return $this->belongsTo(Category::class, 'category_id');
     }
 
+    public function trade(): BelongsTo
+    {
+        return $this->belongsTo(Trade::class);
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function resolvedTitleTranslations(): array
+    {
+        if ($this->relationLoaded('trade') && $this->trade) {
+            return $this->trade->getTranslations('name');
+        }
+
+        if ($this->trade_id) {
+            return Trade::query()->find($this->trade_id)?->getTranslations('name') ?? [];
+        }
+
+        return [];
+    }
+
     public function benefits(): BelongsToMany
     {
         return $this->belongsToMany(Benefit::class);
@@ -190,20 +211,41 @@ class Offer extends Model
             app(DeleteMediaAction::class)->execute($optimizedPath, $rawPath, $cloudinaryId);
         });
 
-        static::saving(function ($offer) {
+        static::saving(function (Offer $offer): void {
             $offer->meta = array_merge([
                 'is_featured' => false,
                 'is_urgent' => false,
                 'seo' => ['robots' => 'index, follow'],
             ], $offer->meta ?? []);
 
-            if (empty($offer->getTranslations('slug'))) {
-                $slugs = [];
-                $uniqueSuffix = Str::random(5);
-                foreach ($offer->getTranslations('title') as $locale => $title) {
-                    $slugs[$locale] = Str::slug($title).'-'.$uniqueSuffix;
+            if ($offer->trade_id && ($offer->isDirty('trade_id') || ! $offer->category_id)) {
+                $trade = $offer->relationLoaded('trade')
+                    ? $offer->trade
+                    : Trade::query()->find($offer->trade_id);
+
+                if ($trade) {
+                    $offer->category_id = $trade->category_id;
                 }
-                $offer->setTranslations('slug', $slugs);
+            }
+
+            if (empty($offer->getTranslations('slug')) && $offer->trade_id) {
+                $trade = $offer->relationLoaded('trade')
+                    ? $offer->trade
+                    : Trade::query()->find($offer->trade_id);
+
+                if ($trade) {
+                    $slugs = [];
+                    $uniqueSuffix = Str::random(5);
+                    foreach ($trade->getTranslations('name') as $locale => $name) {
+                        if ($name !== '') {
+                            $slugs[$locale] = Str::slug($name).'-'.$uniqueSuffix;
+                        }
+                    }
+
+                    if ($slugs !== []) {
+                        $offer->setTranslations('slug', $slugs);
+                    }
+                }
             }
         });
     }

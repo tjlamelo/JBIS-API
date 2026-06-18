@@ -31,6 +31,7 @@ final class UpdateMyProfileWizardStepAction
             'nationality_country_id',
             'residence_city',
             'career_intent',
+            'profile_type',
             'highest_education_level_id',
             'gender',
             'marital_status',

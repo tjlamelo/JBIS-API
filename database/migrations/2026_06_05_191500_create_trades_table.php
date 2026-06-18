@@ -29,10 +29,22 @@ return new class extends Migration
 
             $table->unique(['user_id', 'trade_id'], 'user_trade_unique');
         });
+
+        if (Schema::hasTable('offers')) {
+            Schema::table('offers', function (Blueprint $table) {
+                $table->foreign('trade_id')->references('id')->on('trades')->nullOnDelete();
+            });
+        }
     }
 
     public function down(): void
     {
+        if (Schema::hasTable('offers')) {
+            Schema::table('offers', function (Blueprint $table) {
+                $table->dropForeign(['trade_id']);
+            });
+        }
+
         Schema::dropIfExists('user_trade');
 
         Schema::dropIfExists('trades');

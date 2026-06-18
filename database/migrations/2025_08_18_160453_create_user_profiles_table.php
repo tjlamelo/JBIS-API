@@ -31,6 +31,7 @@ return new class extends Migration {
             $table->foreignId('nationality_country_id')->nullable()->constrained('countries');
             $table->string('residence_city', 120)->nullable();
             $table->string('career_intent', 32)->nullable()->index();
+            $table->string('profile_type', 32)->nullable()->index();
             $table->foreignId('highest_education_level_id')
                 ->nullable()
                 ->constrained('education_levels')

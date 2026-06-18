@@ -53,6 +53,7 @@ class PublicOfferController extends Controller
                         'company',
                         'country',
                         'category',
+                        'trade',
                         'city.region',
                         'contractType',
                         'benefits',

@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Api\V1\Catalog;
 
+use App\Core\Domain\Catalog\Models\Category;
 use App\Core\Domain\Catalog\Models\ContractType;
 use App\Core\Domain\Catalog\Models\Offer;
+use App\Core\Domain\Catalog\Models\Trade;
 use App\Core\Domain\Catalog\States\OfferStatus;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
@@ -19,8 +21,22 @@ class JobOfferFilterTest extends TestCase
     #[Test]
     public function it_filters_offers_by_search_term_in_french(): void
     {
+        $category = Category::query()->create([
+            'name' => ['fr' => 'Informatique', 'en' => 'IT'],
+            'slug' => 'it-'.Str::lower(Str::random(6)),
+            'description' => ['fr' => 'IT', 'en' => 'IT'],
+        ]);
+
+        $trade = Trade::query()->create([
+            'category_id' => $category->id,
+            'name' => ['fr' => 'Expert Laravel', 'en' => 'Laravel Expert'],
+            'slug' => 'expert-laravel-'.Str::lower(Str::random(6)),
+            'is_active' => true,
+        ]);
+
         Offer::factory()->create([
-            'title' => ['fr' => 'Expert Laravel', 'en' => 'Laravel Expert'],
+            'trade_id' => $trade->id,
+            'description' => ['fr' => 'Poste expert sur des projets Laravel.', 'en' => 'Expert Laravel role.'],
             'status' => OfferStatus::Published,
         ]);
 

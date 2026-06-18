@@ -22,9 +22,7 @@ class UpdateOfferRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'title' => ['sometimes', 'array'],
-            'title.fr' => ['nullable', 'string', 'max:255'],
-            'title.en' => ['nullable', 'string', 'max:255'],
+            'trade_id' => ['sometimes', 'integer', 'exists:trades,id'],
             'description' => ['sometimes', 'nullable', 'array'],
             'description.fr' => ['nullable', 'string'],
             'description.en' => ['nullable', 'string'],

@@ -15,9 +15,9 @@ final class SubmitRecruiterOfferAction
             throw new \InvalidArgumentException(__('Cette offre ne peut plus être modifiée.'));
         }
 
-        $title = $submission->payload['title'] ?? null;
-        if (! is_array($title) || empty($title['fr'] ?? $title['en'] ?? null)) {
-            throw new \InvalidArgumentException(__('Le titre de l\'offre est requis.'));
+        $tradeId = $submission->payload['trade_id'] ?? null;
+        if (! is_numeric($tradeId) || (int) $tradeId <= 0) {
+            throw new \InvalidArgumentException(__('Le métier de l\'offre est requis.'));
         }
 
         $submission->status = RecruiterOfferSubmissionStatus::Submitted;

@@ -12,7 +12,7 @@ readonly class OfferDto
         /** @var array<int,string> */
         public array $provided_keys,
         public ?int $id,
-        public array $title,
+        public ?int $trade_id,
         public ?array $description = null,
         public ?string $photo = null,
         public ?array $photo_media = null,
@@ -55,8 +55,9 @@ readonly class OfferDto
     public static function fromRequest(Request $request): self
     {
         return new self(
+            provided_keys: [],
             id: $request->filled('id') ? (int) $request->input('id') : null,
-            title: $request->input('title', []),
+            trade_id: $request->integer('trade_id') ?: null,
             description: $request->input('description'),
             photo: $request->input('photo'),
             photo_media: $request->input('photo_media'),
@@ -115,7 +116,7 @@ readonly class OfferDto
         return new self(
             provided_keys: $providedKeys,
             id: isset($data['id']) ? (int) $data['id'] : null,
-            title: (array) ($data['title'] ?? []),
+            trade_id: isset($data['trade_id']) ? (int) $data['trade_id'] : null,
             description: isset($data['description']) && is_array($data['description']) ? $data['description'] : null,
             photo: isset($data['photo']) ? (string) $data['photo'] : null,
             photo_media: array_key_exists('photo_media', $data)

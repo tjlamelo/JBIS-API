@@ -26,6 +26,7 @@ class UserProfile extends AuditedModel
         'nationality_country_id',
         'residence_city',
         'career_intent',
+        'profile_type',
         'highest_education_level_id',
         'address',
         'phone_number2',
@@ -104,5 +105,14 @@ class UserProfile extends AuditedModel
     public function recruiterSubmission(): BelongsTo
     {
         return $this->belongsTo(RecruiterProfileSubmission::class, 'recruiter_submission_id');
+    }
+
+    public function age(): ?int
+    {
+        if ($this->date_of_birth === null) {
+            return null;
+        }
+
+        return (int) $this->date_of_birth->age;
     }
 }

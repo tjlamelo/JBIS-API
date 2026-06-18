@@ -17,7 +17,7 @@ final class ProcessFlowPrintMapper
 {
     public function map(ProcessFlow $flow, string $locale = 'fr'): ProcessFlowPrintViewModel
     {
-        $flow->loadMissing(['program', 'offer', 'country', 'sections.steps']);
+        $flow->loadMissing(['program', 'offer.trade', 'country', 'sections.steps']);
 
         $locale = $this->normalizeLocale($locale);
         $documentLabels = $this->resolveDocumentTypeLabels($flow, $locale);
@@ -50,7 +50,7 @@ final class ProcessFlowPrintMapper
             version: (int) $flow->version,
             generatedAt: Carbon::now()->locale($locale)->isoFormat('LLL'),
             programLabel: $flow->program ? $this->trans($flow->program, 'name', $locale) : null,
-            offerLabel: $flow->offer ? $this->trans($flow->offer, 'title', $locale) : null,
+            offerLabel: $flow->offer ? $this->offerLabel($flow->offer, $locale) : null,
             countryLabel: $flow->country ? $this->trans($flow->country, 'name', $locale) : null,
             stepsCount: $stepsCount,
             fileOpeningFeeLabel: $opening > 0
@@ -169,6 +169,14 @@ final class ProcessFlowPrintMapper
         }
 
         return (string) $type->code;
+    }
+
+    private function offerLabel(\App\Core\Domain\Catalog\Models\Offer $offer, string $locale): string
+    {
+        $translations = $offer->resolvedTitleTranslations();
+        $value = trim((string) ($translations[$locale] ?? $translations[$locale === 'fr' ? 'en' : 'fr'] ?? ''));
+
+        return $value;
     }
 
     private function trans(object $model, string $field, string $locale): string

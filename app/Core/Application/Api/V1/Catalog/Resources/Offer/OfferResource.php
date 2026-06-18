@@ -28,7 +28,14 @@ class OfferResource extends JsonResource
 
         return [
             'id' => $this->id,
-            'title' => $this->getTranslations('title'),
+            'title' => $this->resolvedTitleTranslations(),
+            'trade_id' => $this->trade_id,
+            'trade' => $this->whenLoaded('trade', fn () => [
+                'id' => $this->trade->id,
+                'name' => $this->trade->getTranslations('name'),
+                'slug' => $this->trade->slug,
+                'category_id' => $this->trade->category_id,
+            ]),
             'slug' => $this->getTranslations('slug'),
             'description' => $this->getTranslations('description'),
             'photo' => $this->photo,

@@ -40,7 +40,7 @@ class ProcessFlowResource extends JsonResource
             ]),
             'offer' => $this->whenLoaded('offer', fn () => [
                 'id' => $this->offer?->id,
-                'title' => $this->offer?->getTranslations('title'),
+                'title' => $this->offer?->resolvedTitleTranslations() ?? [],
             ]),
             'country' => $this->whenLoaded('country', fn () => [
                 'id' => $this->country?->id,

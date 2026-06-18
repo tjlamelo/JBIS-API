@@ -11,6 +11,7 @@ use App\Core\Domain\Location\Models\Country;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Spatie\QueryBuilder\AllowedFilter;
+use Spatie\QueryBuilder\AllowedSort;
 use Spatie\QueryBuilder\QueryBuilder;
 
 class OfferIndexQuery extends QueryBuilder
@@ -18,7 +19,7 @@ class OfferIndexQuery extends QueryBuilder
     public function __construct(Request $request)
     {
         // 1. Optimisation N+1 : On charge toutes les relations nécessaires au rendu
-        $query = Offer::query()->with(['company', 'program', 'category', 'country']);
+        $query = Offer::query()->with(['company', 'program', 'category', 'country', 'trade']);
 
         parent::__construct($query, $request);
 
@@ -121,7 +122,17 @@ class OfferIndexQuery extends QueryBuilder
                     ->where('country_id', '!=', $cameroonId);
             }),
         ])
-            ->allowedSorts(['published_at', 'salary_min', 'created_at', 'title'])
+            ->allowedSorts([
+                'published_at',
+                'salary_min',
+                'created_at',
+                AllowedSort::callback('title', function (Builder $query, bool $descending): void {
+                    $direction = $descending ? 'desc' : 'asc';
+                    $query->leftJoin('trades', 'offers.trade_id', '=', 'trades.id')
+                        ->orderByRaw("JSON_UNQUOTE(JSON_EXTRACT(trades.name, '$.fr')) {$direction}")
+                        ->select('offers.*');
+                }),
+            ])
             ->defaultSort('-published_at');
     }
 }

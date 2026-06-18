@@ -27,15 +27,18 @@ final class OfferExportSource extends AbstractEloquentExportSource
 
     public function defaultWith(): array
     {
-        return ['company', 'program', 'category', 'contractType', 'offerType', 'city', 'country'];
+        return ['company', 'program', 'category', 'contractType', 'offerType', 'city', 'country', 'trade'];
     }
 
     protected function applySearch(Builder $query, string $term): void
     {
         $like = '%'.$term.'%';
         $query->where(function (Builder $q) use ($like): void {
-            $q->where('title->fr', 'like', $like)
-                ->orWhere('title->en', 'like', $like);
+            $q->whereHas('trade', function (Builder $trade) use ($like): void {
+                $trade->where('name->fr', 'like', $like)
+                    ->orWhere('name->en', 'like', $like);
+            })->orWhere('description->fr', 'like', $like)
+                ->orWhere('description->en', 'like', $like);
         });
     }
 
@@ -60,7 +63,7 @@ final class OfferExportSource extends AbstractEloquentExportSource
     {
         return [
             $this->field('id', 'ID', type: ExportFieldType::Integer, group: 'offre'),
-            $this->field('title', 'Titre', type: ExportFieldType::Translatable, group: 'offre'),
+            $this->field('trade.name', 'Métier', type: ExportFieldType::Translatable, group: 'offre', requiresWith: ['trade']),
             $this->field('slug', 'Slug', type: ExportFieldType::Translatable, group: 'offre'),
             $this->field('status', 'Statut', type: ExportFieldType::Enum, group: 'offre'),
             $this->field('work_mode', 'Mode de travail', group: 'offre'),

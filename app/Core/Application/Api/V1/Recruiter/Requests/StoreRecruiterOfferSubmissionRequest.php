@@ -19,9 +19,7 @@ final class StoreRecruiterOfferSubmissionRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'title' => ['required', 'array'],
-            'title.fr' => ['nullable', 'string', 'max:255'],
-            'title.en' => ['nullable', 'string', 'max:255'],
+            'trade_id' => ['required', 'integer', 'exists:trades,id'],
             'description' => ['nullable', 'array'],
             'company_id' => ['nullable', 'integer', 'exists:companies,id'],
             'category_id' => ['nullable', 'integer'],

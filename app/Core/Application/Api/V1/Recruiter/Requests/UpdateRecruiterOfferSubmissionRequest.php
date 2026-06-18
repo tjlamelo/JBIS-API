@@ -19,9 +19,7 @@ final class UpdateRecruiterOfferSubmissionRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'title' => ['sometimes', 'array'],
-            'title.fr' => ['nullable', 'string', 'max:255'],
-            'title.en' => ['nullable', 'string', 'max:255'],
+            'trade_id' => ['sometimes', 'integer', 'exists:trades,id'],
             'description' => ['sometimes', 'array'],
             'company_id' => ['nullable', 'integer', 'exists:companies,id'],
             'category_id' => ['nullable', 'integer'],

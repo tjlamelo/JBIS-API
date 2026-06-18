@@ -23,9 +23,7 @@ class StoreOfferRequest extends FormRequest
     {
         return [
             // --- CHAMPS MULTILINGUES (SPATIE) ---
-            'title' => ['required', 'array'],
-            'title.fr' => ['required', 'string', 'max:255'],
-            'title.en' => ['nullable', 'string', 'max:255'],
+            'trade_id' => ['required', 'integer', 'exists:trades,id'],
 
             'description' => ['nullable', 'array'],
             'description.fr' => ['nullable', 'string'],
@@ -46,7 +44,7 @@ class StoreOfferRequest extends FormRequest
             'specific_documents.en' => ['nullable', 'string'],
 
             // --- CHAMPS STANDARDS ---
-            'location' => ['required', 'string', 'max:255'],
+            'address' => ['required', 'string', 'max:255'],
             'salary_min' => ['nullable', 'numeric', 'min:0'],
             'salary_max' => ['nullable', 'numeric', 'min:0', 'gte:salary_min'],
             'currency' => ['nullable', 'string', 'max:10'],
@@ -55,7 +53,6 @@ class StoreOfferRequest extends FormRequest
             'work_mode' => ['nullable', 'string', 'max:50'],
             'available_positions' => ['nullable', 'integer', 'min:1'],
             'region' => ['nullable', 'string', 'max:255'],
-            'address' => ['nullable', 'string', 'max:255'],
             'language' => ['nullable', 'string', 'max:10'],
             'meta' => ['nullable', 'array'],
             'meta.is_featured' => ['nullable', 'boolean'],

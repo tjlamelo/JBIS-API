@@ -12,58 +12,64 @@ class OfferBuilder extends Builder
     /**
      * Recherche FullText optimisée avec calcul de pertinence.
      */
-public function search(string $term): self
-{
-    $trimmedTerm = trim($term);
-    if (empty($trimmedTerm)) return $this;
+    public function search(string $term): self
+    {
+        $trimmedTerm = trim($term);
+        if (empty($trimmedTerm)) {
+            return $this;
+        }
 
-    return $this->where(function (Builder $query) use ($trimmedTerm): void {
-        $locale = app()->getLocale();
-        $lang = in_array($locale, ['fr', 'en']) ? $locale : 'fr';
-        $fulltextColumns = "title_{$lang}, description_{$lang}";
+        return $this->where(function (Builder $query) use ($trimmedTerm): void {
+            $locale = app()->getLocale();
+            $lang = in_array($locale, ['fr', 'en']) ? $locale : 'fr';
+            $fulltextColumns = "description_{$lang}";
 
-        // 1. NETTOYAGE RIGOUREUX
-        // On ne garde que les lettres, chiffres et espaces
-        $cleanTerm = preg_replace('/[^a-zA-Z0-9\s]/', ' ', $trimmedTerm);
-        $cleanTerm = trim(preg_replace('/\s+/', ' ', $cleanTerm));
+            $cleanTerm = preg_replace('/[^a-zA-Z0-9\s]/', ' ', $trimmedTerm);
+            $cleanTerm = trim(preg_replace('/\s+/', ' ', (string) $cleanTerm));
 
-        // 2. PRÉPARATION DU TERME BOOLEAN (Souple)
-        $words = explode(' ', $cleanTerm);
-        $booleanTerm = '';
-        
-        foreach ($words as $word) {
-            $len = strlen($word);
-            if ($len >= 3) {
-                // 🟢 MOTS LONGS : Obligatoires (+) avec recherche partielle (*)
-                $booleanTerm .= "+{$word}* ";
-            } elseif ($len > 0) {
-                // 🟡 MOTS COURTS (ex: H, F) : Optionnels (pas de +)
-                // Ils boostent le score s'ils sont là, mais ne bloquent pas la recherche
-                $booleanTerm .= "{$word}* ";
+            $words = explode(' ', $cleanTerm);
+            $booleanTerm = '';
+
+            foreach ($words as $word) {
+                $len = strlen($word);
+                if ($len >= 3) {
+                    $booleanTerm .= "+{$word}* ";
+                } elseif ($len > 0) {
+                    $booleanTerm .= "{$word}* ";
+                }
             }
-        }
-        $booleanTerm = trim($booleanTerm);
+            $booleanTerm = trim($booleanTerm);
 
-        // Fallback si aucun terme n'est exploitable
-        if (empty($booleanTerm)) {
-            $query->where("title->{$locale}", 'like', "%{$trimmedTerm}%");
-            return;
-        }
+            if (empty($booleanTerm)) {
+                $query->where(function (Builder $inner) use ($trimmedTerm, $locale): void {
+                    $inner->whereHas('trade', function (Builder $trade) use ($trimmedTerm, $locale): void {
+                        $trade->where("name->{$locale}", 'like', "%{$trimmedTerm}%");
+                    })->orWhere("description->{$locale}", 'like', "%{$trimmedTerm}%");
+                });
 
-        // 3. CALCUL DU SCORE (Pour le classement qualitatif)
-        // On utilise le mode NATURAL LANGUAGE pour une pertinence humaine
-        $this->selectRaw("*, 
-            MATCH({$fulltextColumns}) AGAINST(? IN NATURAL LANGUAGE MODE) as relevance_score", 
-            [$cleanTerm]
-        );
+                return;
+            }
 
-        // 4. FILTRE DYNAMIQUE (Mode BOOLEAN)
-        $query->whereRaw(
-            "MATCH({$fulltextColumns}) AGAINST(? IN BOOLEAN MODE)", 
-            [$booleanTerm]
-        );
-    });
-}
+            $this->selectRaw("*, 
+                MATCH({$fulltextColumns}) AGAINST(? IN NATURAL LANGUAGE MODE) as relevance_score",
+                [$cleanTerm]
+            );
+
+            $query->where(function (Builder $inner) use ($booleanTerm, $fulltextColumns, $words, $locale): void {
+                $inner->whereRaw(
+                    "MATCH({$fulltextColumns}) AGAINST(? IN BOOLEAN MODE)",
+                    [$booleanTerm]
+                )->orWhereHas('trade', function (Builder $trade) use ($words, $locale): void {
+                    foreach ($words as $word) {
+                        if (strlen($word) >= 2) {
+                            $trade->where("name->{$locale}", 'like', "%{$word}%");
+                        }
+                    }
+                });
+            });
+        });
+    }
+
     /**
      * Filtre les offres qui sont strictement publiées.
      */
@@ -79,7 +85,7 @@ public function search(string $term): self
     {
         return $this->where(function (Builder $query) {
             $query->whereNull('expiration_date')
-                  ->orWhere('expiration_date', '>=', now());
+                ->orWhere('expiration_date', '>=', now());
         });
     }
 

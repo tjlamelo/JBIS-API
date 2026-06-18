@@ -18,7 +18,7 @@ class OfferShortResource extends JsonResource
             'id' => $this->id,
 
             // ✅ CORRECTION : Utiliser 'title' car 'name' n'existe pas sur le modèle Offer
-            'title' => $this->getTranslations('title'),
+            'title' => $this->resolvedTitleTranslations(),
             'slug' => $this->getTranslations('slug'),
 
             'photo' => $this->photo,

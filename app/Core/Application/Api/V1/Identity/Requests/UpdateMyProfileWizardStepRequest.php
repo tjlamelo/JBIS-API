@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Core\Application\Api\V1\Identity\Requests;
 
 use App\Core\Domain\Identity\Enums\CareerIntent;
+use App\Core\Domain\Identity\Enums\ProfileType;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -24,11 +25,17 @@ final class UpdateMyProfileWizardStepRequest extends FormRequest
             'personal' => [
                 'first_name' => ['nullable', 'string', 'max:50'],
                 'last_name' => ['nullable', 'string', 'max:50'],
-                'date_of_birth' => ['nullable', 'date'],
+                'date_of_birth' => [
+                    'nullable',
+                    'date',
+                    'before_or_equal:'.now()->subYears(18)->toDateString(),
+                    'after:1940-01-01',
+                ],
                 'place_of_birth' => ['nullable', 'string', 'max:25'],
                 'nationality_country_id' => ['nullable', 'integer', 'exists:countries,id'],
                 'residence_city' => ['nullable', 'string', 'max:120'],
                 'career_intent' => ['nullable', 'string', Rule::in(CareerIntent::values())],
+                'profile_type' => ['nullable', 'string', Rule::in(ProfileType::values())],
                 'highest_education_level_id' => ['nullable', 'integer', 'exists:education_levels,id'],
                 'trades' => ['sometimes', 'array', 'min:1'],
                 'trades.*.trade_id' => ['required', 'integer', 'exists:trades,id'],

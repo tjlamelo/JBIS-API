@@ -11,6 +11,7 @@ use App\Core\Domain\Catalog\Models\OfferType;
 use App\Core\Domain\Catalog\Models\WorkSchedule;
 use App\Core\Domain\Catalog\Models\EducationLevel;
 use App\Core\Domain\Catalog\Models\Benefit;
+use App\Core\Domain\Catalog\Models\Trade;
 use App\Core\Domain\Location\Models\City;
 use App\Core\Domain\Identity\Models\User;
 use App\Core\Domain\Candidacy\Models\RequiredDocument;
@@ -47,9 +48,12 @@ class OfferSeeder extends Seeder
         $amanTaxi = Company::where('name', 'Aman Taxi Dubai')->first();
         $benefits = Benefit::limit(3)->get();
 
+        $taxiTrade = Trade::query()->where('slug', 'taxi-driver')->first();
+        $fullstackTrade = Trade::query()->where('slug', 'full-stack-developer')->first();
+
         $offers = [
             [
-                'title' => ['fr' => 'Chauffeur de Taxi (H/F)', 'en' => 'Taxi Driver'],
+                'trade_id' => $taxiTrade?->id,
                 'city_id' => $cityDubai?->id,
                 'country_id' => $cityDubai?->region->country_id,
                 'category_id' => $transpCat?->id,
@@ -67,7 +71,7 @@ class OfferSeeder extends Seeder
                 'status' => 'PUBLISHED',
             ],
             [
-                'title' => ['fr' => 'Développeur Fullstack', 'en' => 'Fullstack Developer'],
+                'trade_id' => $fullstackTrade?->id,
                 'city_id' => $cityToronto?->id,
                 'country_id' => $cityToronto?->region->country_id,
                 'category_id' => $itCat?->id,
@@ -87,11 +91,21 @@ class OfferSeeder extends Seeder
         ];
 
         foreach ($offers as $o) {
-            $slugFr = Str::slug($o['title']['fr']);
-            $slugEn = Str::slug($o['title']['en']);
+            if (empty($o['trade_id'])) {
+                continue;
+            }
+
+            $trade = Trade::query()->find($o['trade_id']);
+            if (! $trade) {
+                continue;
+            }
+
+            $slugFr = Str::slug($trade->getTranslation('name', 'fr', false)).'-'.Str::random(5);
+            $slugEn = Str::slug($trade->getTranslation('name', 'en', false)).'-'.Str::random(5);
             
             $attributes = [
                 'user_id'           => $admin?->id,
+                'trade_id'          => $trade->id,
                 'country_id'        => $o['country_id'],
                 'city_id'           => $o['city_id'],
                 'category_id' => $o['category_id'],
@@ -101,7 +115,6 @@ class OfferSeeder extends Seeder
                 'education_level_id'=> $o['education_level_id'],
                 'company_id'        => $o['company_id'],
                 'program_id'        => $o['program_id'],
-                'title'             => $o['title'],
                 'slug'              => [
                     'fr' => $slugFr,
                     'en' => $slugEn,
@@ -139,7 +152,7 @@ class OfferSeeder extends Seeder
             $offer->benefits()->syncWithoutDetaching($benefits->pluck('id')->all());
 
             // Liaison des documents requis via la pivot offer_required_document
-            if (str_contains(Str::lower($o['title']['fr']), 'développeur')) {
+            if ($trade->slug === 'full-stack-developer') {
                 $docs = RequiredDocument::whereIn('slug', [
                     'passeport-valide',
                     'diplome-le-plus-eleve',

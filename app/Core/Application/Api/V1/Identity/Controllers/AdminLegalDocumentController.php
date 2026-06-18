@@ -7,6 +7,7 @@ namespace App\Core\Application\Api\V1\Identity\Controllers;
 use App\Core\Application\Api\Responses\BaseResponse;
 use App\Core\Application\Api\V1\Identity\Requests\PublishLegalDocumentRequest;
 use App\Core\Application\Api\V1\Identity\Resources\LegalDocumentResource;
+use App\Core\Domain\Identity\Actions\Legal\DispatchLegalDocumentUpdateNotificationsAction;
 use App\Core\Domain\Identity\Actions\Legal\PublishLegalDocumentAction;
 use App\Core\Domain\Identity\Models\LegalDocument;
 use App\Http\Controllers\Controller;
@@ -17,6 +18,7 @@ final class AdminLegalDocumentController extends Controller
 {
     public function __construct(
         private readonly PublishLegalDocumentAction $publishLegalDocument,
+        private readonly DispatchLegalDocumentUpdateNotificationsAction $dispatchLegalDocumentNotifications,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -51,9 +53,12 @@ final class AdminLegalDocumentController extends Controller
             publisher: $request->user(),
         );
 
+        $notificationsQueued = $this->dispatchLegalDocumentNotifications->execute($document);
+
         return BaseResponse::created([
             'message' => __('Document publié. Les utilisateurs devront accepter cette version si requis.'),
             'document' => new LegalDocumentResource($document),
+            'notifications_queued' => $notificationsQueued,
         ])->toJsonResponse();
     }
 

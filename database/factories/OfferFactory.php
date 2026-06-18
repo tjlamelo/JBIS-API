@@ -5,6 +5,7 @@ namespace Database\Factories;
 use App\Core\Domain\Catalog\Models\ContractType;
 use App\Core\Domain\Catalog\Models\Offer;
 use App\Core\Domain\Catalog\Models\Category;
+use App\Core\Domain\Catalog\Models\Trade;
 use App\Core\Domain\Catalog\States\OfferStatus;
 use App\Core\Domain\Location\Models\Country;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -19,15 +20,26 @@ class OfferFactory extends Factory
         $salaryMin = $this->faker->numberBetween(1500, 3000);
         $salaryMax = $salaryMin + $this->faker->numberBetween(500, 2000);
 
-        $titleFr = $this->faker->jobTitle().' (H/F)';
-        $titleEn = $this->faker->jobTitle();
+        $trade = Trade::query()->inRandomOrder()->first();
+        if (! $trade) {
+            $categoryId = Category::query()->inRandomOrder()->value('id');
+            $trade = Trade::query()->create([
+                'category_id' => $categoryId,
+                'name' => [
+                    'fr' => $this->faker->jobTitle().' (H/F)',
+                    'en' => $this->faker->jobTitle(),
+                ],
+                'slug' => Str::slug($this->faker->unique()->jobTitle()),
+                'is_active' => true,
+            ]);
+        }
+
+        $titleFr = $trade->getTranslation('name', 'fr', false);
+        $titleEn = $trade->getTranslation('name', 'en', false);
         $uniqueSuffix = Str::random(5);
 
         return [
-            'title' => [
-                'fr' => $titleFr,
-                'en' => $titleEn,
-            ],
+            'trade_id' => $trade->id,
             'description' => [
                 'fr' => 'Description en français : '.$this->faker->paragraph(4),
                 'en' => 'English description: '.$this->faker->paragraph(4),
@@ -39,7 +51,7 @@ class OfferFactory extends Factory
             'address' => $this->faker->streetAddress(),
             'work_mode' => $this->faker->randomElement(['on-site', 'hybrid', 'remote']),
             'country_id' => Country::query()->inRandomOrder()->value('id'),
-            'category_id' => Category::query()->inRandomOrder()->value('id'),
+            'category_id' => $trade->category_id,
             'contract_type_id' => ContractType::query()->inRandomOrder()->value('id'),
             'city_id' => null,
             'salary_min' => $salaryMin,

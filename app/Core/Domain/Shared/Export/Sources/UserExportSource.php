@@ -62,6 +62,8 @@ final class UserExportSource extends AbstractEloquentExportSource
             $this->field('profile.marital_status', 'Situation matrimoniale', group: 'profil', requiresWith: ['profile']),
             $this->field('profile.number_of_children', 'Nb enfants', type: ExportFieldType::Integer, group: 'profil', requiresWith: ['profile']),
             $this->field('profile.matricule', 'Matricule', group: 'profil', requiresWith: ['profile']),
+            $this->field('profile.profile_type', 'Type de profil', group: 'profil', requiresWith: ['profile']),
+            $this->field('profile.career_intent', 'Objectif JBIS', group: 'profil', requiresWith: ['profile']),
             $this->field('profile.is_approved', 'Profil approuvé', type: ExportFieldType::Boolean, group: 'profil', requiresWith: ['profile']),
 
             // --- Statistiques (relations)

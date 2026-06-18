@@ -50,7 +50,7 @@ final class OfferNewsletterContentBuilder
         $since = now()->subDays((int) config('services.newsletter.offer_lookback_days', 14));
 
         $query = Offer::query()
-            ->with(['company:id,name', 'country:id,name,code', 'city:id,name'])
+            ->with(['company:id,name', 'country:id,name,code', 'city:id,name', 'trade:id,name,slug'])
             ->where('status', OfferStatus::Published)
             ->where(function ($q): void {
                 $q->whereNull('expiration_date')->orWhere('expiration_date', '>=', now());
@@ -83,7 +83,7 @@ final class OfferNewsletterContentBuilder
 
         return [
             'id' => $offer->id,
-            'title' => TranslatableColumnResolver::resolve($offer->title, $locale),
+            'title' => TranslatableColumnResolver::resolve($offer->resolvedTitleTranslations(), $locale),
             'slug' => $slug,
             'url' => $slug !== '' ? "{$frontend}/offer/{$slug}" : "{$frontend}/offer",
             'company' => $offer->is_company_public ? ($offer->company?->name ?? null) : null,

@@ -140,7 +140,9 @@ class RequiredDocumentSeeder extends Seeder
         // --- 3. LIAISON AUX OFFRES (Via Pivot) ---
 
         // Offre Développeur
-        $offerDev = Offer::where('title->fr', 'LIKE', '%Développeur%')->first();
+        $offerDev = Offer::query()
+            ->whereHas('trade', fn ($query) => $query->where('slug', 'full-stack-developer'))
+            ->first();
         if ($offerDev) {
             $devDocs = RequiredDocument::whereIn('slug', [
                 'passeport-valide',

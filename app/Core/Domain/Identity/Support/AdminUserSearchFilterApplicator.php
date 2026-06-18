@@ -152,6 +152,20 @@ final class AdminUserSearchFilterApplicator
             $query->whereHas('profile', fn (Builder $q) => $q->where('discovery_source_id', (int) $params['discovery_source_id']));
         }
 
+        $profileType = trim((string) ($params['profile_type'] ?? ''));
+        if ($profileType !== '') {
+            $query->whereHas('profile', fn (Builder $q) => $q->where('profile_type', $profileType));
+        }
+
+        $careerIntent = trim((string) ($params['career_intent'] ?? ''));
+        if ($careerIntent !== '') {
+            $query->whereHas('profile', fn (Builder $q) => $q->where('career_intent', $careerIntent));
+        }
+
+        if (! empty($params['highest_education_level_id'])) {
+            $query->whereHas('profile', fn (Builder $q) => $q->where('highest_education_level_id', (int) $params['highest_education_level_id']));
+        }
+
         $this->applyTristate(
             $query,
             $params['has_matricule'] ?? null,
@@ -175,10 +189,16 @@ final class AdminUserSearchFilterApplicator
             $matchAll = ($params['sector_match'] ?? 'any') === 'all';
             if ($matchAll) {
                 foreach ($sectorIds as $sectorId) {
-                    $query->whereHas('sectors', fn (Builder $q) => $q->where('categories.id', $sectorId));
+                    $query->where(function (Builder $outer) use ($sectorId): void {
+                        $outer->whereHas('sectors', fn (Builder $q) => $q->where('categories.id', $sectorId))
+                            ->orWhereHas('trades', fn (Builder $q) => $q->where('trades.category_id', $sectorId));
+                    });
                 }
             } else {
-                $query->whereHas('sectors', fn (Builder $q) => $q->whereIn('categories.id', $sectorIds));
+                $query->where(function (Builder $outer) use ($sectorIds): void {
+                    $outer->whereHas('sectors', fn (Builder $q) => $q->whereIn('categories.id', $sectorIds))
+                        ->orWhereHas('trades', fn (Builder $q) => $q->whereIn('trades.category_id', $sectorIds));
+                });
             }
         }
 
@@ -205,6 +225,18 @@ final class AdminUserSearchFilterApplicator
      */
     private function applyCareerFilters(Builder $query, array $params): void
     {
+        $tradeIds = $this->parseIntList($params['trade_ids'] ?? null);
+        if ($tradeIds !== []) {
+            $matchAll = ($params['trade_match'] ?? 'any') === 'all';
+            if ($matchAll) {
+                foreach ($tradeIds as $tradeId) {
+                    $query->whereHas('trades', fn (Builder $q) => $q->where('trades.id', $tradeId));
+                }
+            } else {
+                $query->whereHas('trades', fn (Builder $q) => $q->whereIn('trades.id', $tradeIds));
+            }
+        }
+
         if (isset($params['min_years_experience']) && $params['min_years_experience'] !== '') {
             $min = (int) $params['min_years_experience'];
             $query->whereHas('trades', fn (Builder $q) => $q->where('user_trade.years_of_experience', '>=', $min));

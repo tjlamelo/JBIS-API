@@ -44,6 +44,15 @@ final class AdminUserResource extends JsonResource
                     'name' => $sector->getTranslations('name'),
                 ])->values()->all(),
             ),
+            'trades' => $this->when(
+                $this->relationLoaded('trades'),
+                fn () => $this->trades->map(static fn ($trade) => [
+                    'id' => $trade->id,
+                    'slug' => $trade->slug,
+                    'name' => $trade->getTranslations('name'),
+                    'years_of_experience' => $trade->pivot?->years_of_experience,
+                ])->values()->all(),
+            ),
         ];
     }
 }

@@ -6,6 +6,8 @@ namespace Tests\Feature\Api\V1\Recruiter;
 
 use App\Core\Domain\Identity\Models\User;
 use App\Core\Domain\Identity\Support\ApplicationRole;
+use App\Core\Domain\Catalog\Models\Category;
+use App\Core\Domain\Catalog\Models\Trade;
 use App\Core\Domain\Recruiter\Enums\RecruiterOrganizationStatus;
 use App\Core\Domain\Recruiter\Models\RecruiterOrganization;
 use Database\Seeders\PermissionSeeder;
@@ -221,8 +223,20 @@ class RecruiterPortalTest extends TestCase
         [$recruiter, $organization] = $this->makeRecruiterWithOrganization();
         Sanctum::actingAs($recruiter);
 
+        $category = Category::query()->create([
+            'name' => ['fr' => 'Informatique', 'en' => 'IT'],
+            'slug' => 'it-recruiter-test',
+            'description' => ['fr' => 'IT', 'en' => 'IT'],
+        ]);
+        $trade = Trade::query()->create([
+            'category_id' => $category->id,
+            'name' => ['fr' => 'Développeur Laravel', 'en' => 'Laravel Developer'],
+            'slug' => 'laravel-developer-test',
+            'is_active' => true,
+        ]);
+
         $offerSubmissionId = (int) $this->postJson('/api/v1/recruiter/offers', [
-            'title' => ['fr' => 'Développeur Laravel'],
+            'trade_id' => $trade->id,
             'description' => ['fr' => 'Mission longue durée'],
         ])->json('data.submission.id');
 
