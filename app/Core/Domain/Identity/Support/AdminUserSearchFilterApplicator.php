@@ -138,8 +138,10 @@ final class AdminUserSearchFilterApplicator
             $query->whereHas('profile', fn (Builder $q) => $q->where('nationality_country_id', (int) $params['nationality_country_id']));
         }
 
-        if (! empty($params['residence_city_id'])) {
-            $query->whereHas('profile', fn (Builder $q) => $q->where('residence_city_id', (int) $params['residence_city_id']));
+        $residenceCity = trim((string) ($params['residence_city'] ?? ''));
+        if ($residenceCity !== '') {
+            $like = '%'.$residenceCity.'%';
+            $query->whereHas('profile', fn (Builder $q) => $q->where('residence_city', 'like', $like));
         }
 
         if (! empty($params['agency_id'])) {
@@ -173,10 +175,10 @@ final class AdminUserSearchFilterApplicator
             $matchAll = ($params['sector_match'] ?? 'any') === 'all';
             if ($matchAll) {
                 foreach ($sectorIds as $sectorId) {
-                    $query->whereHas('sectors', fn (Builder $q) => $q->where('offer_categories.id', $sectorId));
+                    $query->whereHas('sectors', fn (Builder $q) => $q->where('categories.id', $sectorId));
                 }
             } else {
-                $query->whereHas('sectors', fn (Builder $q) => $q->whereIn('offer_categories.id', $sectorIds));
+                $query->whereHas('sectors', fn (Builder $q) => $q->whereIn('categories.id', $sectorIds));
             }
         }
 
@@ -204,11 +206,13 @@ final class AdminUserSearchFilterApplicator
     private function applyCareerFilters(Builder $query, array $params): void
     {
         if (isset($params['min_years_experience']) && $params['min_years_experience'] !== '') {
-            $query->whereHas('profile', fn (Builder $q) => $q->where('total_years_of_experience', '>=', (int) $params['min_years_experience']));
+            $min = (int) $params['min_years_experience'];
+            $query->whereHas('trades', fn (Builder $q) => $q->where('user_trade.years_of_experience', '>=', $min));
         }
 
         if (isset($params['max_years_experience']) && $params['max_years_experience'] !== '') {
-            $query->whereHas('profile', fn (Builder $q) => $q->where('total_years_of_experience', '<=', (int) $params['max_years_experience']));
+            $max = (int) $params['max_years_experience'];
+            $query->whereDoesntHave('trades', fn (Builder $q) => $q->where('user_trade.years_of_experience', '>', $max));
         }
 
         if (! empty($params['min_experiences'])) {
@@ -450,9 +454,9 @@ final class AdminUserSearchFilterApplicator
             }
         }
 
-        if (! empty($params['offer_category_id'])) {
-            $categoryId = (int) $params['offer_category_id'];
-            $query->whereHas('applications.offer', fn (Builder $q) => $q->where('offer_category_id', $categoryId));
+        if (! empty($params['category_id'])) {
+            $categoryId = (int) $params['category_id'];
+            $query->whereHas('applications.offer', fn (Builder $q) => $q->where('category_id', $categoryId));
         }
     }
 

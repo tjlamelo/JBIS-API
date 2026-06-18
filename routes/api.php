@@ -10,6 +10,7 @@ use App\Core\Application\Api\V1\Candidacy\Controllers\AdminAppointmentController
 use App\Core\Application\Api\V1\Candidacy\Controllers\ApplicationController;
 use App\Core\Application\Api\V1\Candidacy\Controllers\ApplicationDocumentController;
 use App\Core\Application\Api\V1\Candidacy\Controllers\OfferApplicationReadinessController;
+use App\Core\Application\Api\V1\Catalog\Controllers\AdminCatalogController;
 use App\Core\Application\Api\V1\Catalog\Controllers\BenefitController;
 use App\Core\Application\Api\V1\Catalog\Controllers\CityController;
 use App\Core\Application\Api\V1\Catalog\Controllers\CompanyController;
@@ -20,7 +21,8 @@ use App\Core\Application\Api\V1\Catalog\Controllers\LanguageController;
 use App\Core\Application\Api\V1\Catalog\Controllers\LanguageLevelController;
 use App\Core\Application\Api\V1\Catalog\Controllers\Offer\AdminOfferController;
 use App\Core\Application\Api\V1\Catalog\Controllers\Offer\ForceDeleteOfferController;
-use App\Core\Application\Api\V1\Catalog\Controllers\Offer\OfferCategoryController;
+use App\Core\Application\Api\V1\Catalog\Controllers\CategoryController;
+use App\Core\Application\Api\V1\Catalog\Controllers\TradeController;
 use App\Core\Application\Api\V1\Catalog\Controllers\Offer\OfferFacetController;
 use App\Core\Application\Api\V1\Catalog\Controllers\Offer\OfferFilterController;
 use App\Core\Application\Api\V1\Catalog\Controllers\Offer\PublicOfferController;
@@ -30,7 +32,8 @@ use App\Core\Application\Api\V1\Catalog\Controllers\Program\AdminProgramControll
 use App\Core\Application\Api\V1\Catalog\Controllers\Program\ProgramFacetController;
 use App\Core\Application\Api\V1\Catalog\Controllers\Program\ProgramFilterController;
 use App\Core\Application\Api\V1\Catalog\Controllers\Program\PublicProgramController;
-use App\Core\Application\Api\V1\Catalog\Controllers\RequiredDocumentController;
+use App\Core\Application\Api\V1\Catalog\Controllers\GeographicZoneController;
+use App\Core\Application\Api\V1\Catalog\Controllers\RegionController;
 use App\Core\Application\Api\V1\Catalog\Controllers\SkillCategoryController;
 use App\Core\Application\Api\V1\Catalog\Controllers\SkillController;
 use App\Core\Application\Api\V1\Catalog\Controllers\Training\AdminTrainingController;
@@ -293,10 +296,22 @@ Route::prefix('v1')->group(function (): void {
                 Route::delete('/{processStep}', [AdminProcessStepController::class, 'destroy']);
             });
 
+            Route::prefix('admin/referentials')->middleware('can:admin.access')->group(function (): void {
+                Route::get('/', [AdminCatalogController::class, 'resources']);
+                Route::get('/{resource}', [AdminCatalogController::class, 'index']);
+                Route::post('/{resource}', [AdminCatalogController::class, 'store']);
+                Route::get('/{resource}/{id}', [AdminCatalogController::class, 'show'])->whereNumber('id');
+                Route::put('/{resource}/{id}', [AdminCatalogController::class, 'update'])->whereNumber('id');
+                Route::delete('/{resource}/{id}', [AdminCatalogController::class, 'destroy'])->whereNumber('id');
+            });
+
             // Listes de sÃ©lection (Dropdowns / Catalogues de rÃ©fÃ©rence)
-            Route::get('/categories', [OfferCategoryController::class, 'index']);
+            Route::get('/categories', [CategoryController::class, 'index']);
+            Route::get('/trades', [TradeController::class, 'index']);
             Route::get('/companies', [CompanyController::class, 'index']);
             Route::get('/countries', [CountryController::class, 'index']);
+            Route::get('/geographic-zones', [GeographicZoneController::class, 'index']);
+            Route::get('/regions', [RegionController::class, 'index']);
             Route::get('/cities', [CityController::class, 'index']);
             Route::get('/benefits', [BenefitController::class, 'index']);
             Route::get('/contract-types', [ContractTypeController::class, 'index']);

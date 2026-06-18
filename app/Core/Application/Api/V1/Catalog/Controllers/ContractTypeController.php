@@ -21,7 +21,7 @@ class ContractTypeController extends Controller
                     ->orWhere('name->en', 'like', "%{$search}%")
                     ->orWhere('slug', 'like', "%{$search}%");
             })
-            ->select(['id', 'name', 'slug', 'color_code'])
+            ->select(['id', 'name', 'slug'])
             ->orderByDesc('id')
             ->paginate(20);
 

@@ -3,12 +3,12 @@
 namespace App\Core\Domain\Identity\Models;
 
 use App\Core\Domain\Catalog\Models\Agency;
+use App\Core\Domain\Catalog\Models\EducationLevel;
 use App\Core\Domain\Communication\Models\DiscoverySource;
 use App\Core\Domain\Identity\Concerns\AuditedModel;
 use App\Core\Domain\Recruiter\Enums\ProfileOrigin;
 use App\Core\Domain\Recruiter\Models\RecruiterOrganization;
 use App\Core\Domain\Recruiter\Models\RecruiterProfileSubmission;
-use App\Core\Domain\Shared\Geography\Models\City;
 use App\Core\Domain\Shared\Geography\Models\Country;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -24,7 +24,9 @@ class UserProfile extends AuditedModel
         'date_of_birth',
         'place_of_birth',
         'nationality_country_id',
-        'residence_city_id',
+        'residence_city',
+        'career_intent',
+        'highest_education_level_id',
         'address',
         'phone_number2',
         'phone_number3',
@@ -40,7 +42,6 @@ class UserProfile extends AuditedModel
         'agency_id',
         'recruiter_organization_id',
         'recruiter_submission_id',
-        'total_years_of_experience',
     ];
 
     protected $casts = [
@@ -50,6 +51,7 @@ class UserProfile extends AuditedModel
         'number_of_children' => 'integer',
         'is_approved' => 'boolean',
         'agency_id' => 'integer',
+        'highest_education_level_id' => 'integer',
     ];
 
     /**
@@ -74,19 +76,16 @@ class UserProfile extends AuditedModel
     }
 
     /**
-     * Ville de résidence
-     */
-    public function city(): BelongsTo
-    {
-        return $this->belongsTo(City::class, 'residence_city_id');
-    }
-
-    /**
      * Agence JBIS de rattachement
      */
     public function agency(): BelongsTo
     {
         return $this->belongsTo(Agency::class, 'agency_id');
+    }
+
+    public function highestEducationLevel(): BelongsTo
+    {
+        return $this->belongsTo(EducationLevel::class, 'highest_education_level_id');
     }
 
     /**

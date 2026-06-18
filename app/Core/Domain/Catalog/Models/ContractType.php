@@ -27,7 +27,6 @@ class ContractType extends Model
     protected $fillable = [
         'name',
         'slug',
-        'color_code',
     ];
 
     // --- RELATIONS ---

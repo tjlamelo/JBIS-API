@@ -15,7 +15,6 @@ return new class extends Migration
         $table->id();
         $table->json('name'); // Traduisible (fr/en)
         $table->string('slug')->unique();
-        $table->string('icon')->nullable(); // Nom de l'icône Lucide
         $table->integer('sort_order')->default(0);
         $table->boolean('is_active')->default(true);
         $table->timestamps();

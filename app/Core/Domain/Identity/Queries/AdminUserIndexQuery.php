@@ -21,7 +21,7 @@ final class AdminUserIndexQuery
         $sortBy = (string) $request->query('sort_by', 'created_at');
         $sortDir = strtolower((string) $request->query('sort_dir', 'desc')) === 'asc' ? 'asc' : 'desc';
 
-        $allowedSort = ['created_at', 'name', 'email', 'updated_at', 'total_years_of_experience', 'date_of_birth'];
+        $allowedSort = ['created_at', 'name', 'email', 'updated_at', 'date_of_birth'];
         if (! in_array($sortBy, $allowedSort, true)) {
             $sortBy = 'created_at';
         }
@@ -31,7 +31,7 @@ final class AdminUserIndexQuery
 
         $this->filters->apply($query, $request->query());
 
-        if (in_array($sortBy, ['total_years_of_experience', 'date_of_birth'], true)) {
+        if ($sortBy === 'date_of_birth') {
             $query->leftJoin('user_profiles', 'users.id', '=', 'user_profiles.user_id')
                 ->select('users.*')
                 ->orderBy('user_profiles.'.$sortBy, $sortDir);

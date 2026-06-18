@@ -19,7 +19,6 @@ class GeographicZone extends Model
     protected $fillable = [
         'name',
         'slug',
-        'icon',
         'sort_order',
         'is_active'
     ];

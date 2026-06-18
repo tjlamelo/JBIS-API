@@ -14,7 +14,7 @@ class Country extends Model
 {
     use HasFactory, HasTranslations;
 
-    protected $fillable = ['name', 'code', 'flag', 'phone_code', 'is_active'];
+    protected $fillable = ['name', 'code', 'phone_code', 'is_active'];
 
     public $translatable = ['name'];
 

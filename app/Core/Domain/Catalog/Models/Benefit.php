@@ -15,7 +15,7 @@ class Benefit extends Model
 
     public array $translatable = ['name'];
 
-    protected $fillable = ['name', 'slug', 'icon'];
+    protected $fillable = ['name', 'slug'];
 
     /**
      * Relation Many-to-Many avec les offres.

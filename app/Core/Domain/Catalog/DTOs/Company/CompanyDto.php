@@ -16,7 +16,7 @@ readonly class CompanyDto
         public array $provided_keys,
         public string $name,
         public ?string $slug = null,
-        public ?int $offer_category_id = null,
+        public ?int $category_id = null,
         public ?int $country_id = null,
         public ?int $city_id = null,
         public ?string $address = null,
@@ -46,8 +46,8 @@ readonly class CompanyDto
             provided_keys: array_values($providedKeys),
             name: (string) ($data['name'] ?? ''),
             slug: isset($data['slug']) && $data['slug'] !== '' ? (string) $data['slug'] : null,
-            offer_category_id: array_key_exists('offer_category_id', $data) && $data['offer_category_id'] !== null && $data['offer_category_id'] !== ''
-                ? (int) $data['offer_category_id']
+            category_id: array_key_exists('category_id', $data) && $data['category_id'] !== null && $data['category_id'] !== ''
+                ? (int) $data['category_id']
                 : null,
             country_id: array_key_exists('country_id', $data) && $data['country_id'] !== null && $data['country_id'] !== ''
                 ? (int) $data['country_id']

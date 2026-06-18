@@ -24,7 +24,6 @@ return new class extends Migration
             $table->id();
             $table->json('name');
             $table->string('code', 10)->unique();
-            $table->string('flag_icon')->nullable();
             $table->timestamps();
         });
 

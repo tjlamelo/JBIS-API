@@ -30,6 +30,7 @@ class UserDevice extends Model
     protected $casts = [
         'is_trusted' => 'boolean',
         'risk_flags' => 'array',
+        'last_risk_assessment' => 'array',
         'last_login_at' => 'datetime',
         'first_seen_at' => 'datetime',
         'last_seen_at' => 'datetime',

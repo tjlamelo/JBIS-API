@@ -55,7 +55,6 @@ class OfferResource extends JsonResource
             'contract_type' => [
                 'id' => $this->contractType?->id,
                 'name' => $this->contractType?->name,
-                'color_code' => $this->contractType?->color_code,
             ],
             'offer_type' => [
                 'id' => $this->offerType?->id,
@@ -76,7 +75,7 @@ class OfferResource extends JsonResource
             'offer_type_id' => $this->offer_type_id,
             'work_schedule_id' => $this->work_schedule_id,
             'education_level_id' => $this->education_level_id,
-            'offer_category_id' => $this->offer_category_id,
+            'category_id' => $this->category_id,
             'company_id' => $this->company_id,
             'program_id' => $this->program_id,
 
@@ -95,7 +94,7 @@ class OfferResource extends JsonResource
                 'id' => $this->category->id,
                 'name' => $this->category->name,
                 'slug' => $this->category->slug,
-                'icon' => $this->category->icon,
+                'description' => $this->category->description,
             ] : null,
 
             // 🟢 AJOUT DES RELATIONS MANQUANTES
@@ -103,7 +102,6 @@ class OfferResource extends JsonResource
                 'id' => $b->id,
                 'name' => $b->getTranslations('name'),
                 'slug' => $b->slug,
-                'icon' => $b->icon,
             ]),
             'languages' => $this->languages->map(function ($l) use ($languageLevelsById) {
                 $level = ($l->pivot?->language_level_id ?? null) ? $languageLevelsById->get((int) $l->pivot->language_level_id) : null;

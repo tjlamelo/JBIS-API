@@ -20,7 +20,7 @@ return new class extends Migration
             $table->string('job_title')->index();
             $table->string('company_name')->index();
             $table->string('company_website')->nullable();
-            $table->foreignId('industry_id')->nullable()->constrained('offer_categories')->nullOnDelete();
+            $table->foreignId('industry_id')->nullable()->constrained('categories')->nullOnDelete();
 
             // Localisation
             $table->foreignId('country_id')->nullable()->constrained('countries')->nullOnDelete();

@@ -3,7 +3,7 @@
 namespace Database\Factories;
 
 use App\Core\Domain\Catalog\Models\Company;
-use App\Core\Domain\Catalog\Models\OfferCategory;
+use App\Core\Domain\Catalog\Models\Category;
 use App\Core\Domain\Catalog\States\CompanyStatus;
 use App\Core\Domain\Catalog\States\CompanyType;
 use App\Core\Domain\Location\Models\City;
@@ -22,7 +22,7 @@ class CompanyFactory extends Factory
         return [
             'name' => $name,
             'slug' => Str::slug($name).'-'.Str::random(5),
-            'offer_category_id' => OfferCategory::query()->inRandomOrder()->value('id'),
+            'category_id' => Category::query()->inRandomOrder()->value('id'),
             'country_id' => Country::query()->inRandomOrder()->value('id'),
             'city_id' => City::query()->inRandomOrder()->value('id'),
             'address' => $this->faker->streetAddress(),

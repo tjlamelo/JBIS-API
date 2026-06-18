@@ -23,7 +23,9 @@ final class UpdateAdminUserProfileWizardStepAction
             'date_of_birth',
             'place_of_birth',
             'nationality_country_id',
-            'residence_city_id',
+            'residence_city',
+            'career_intent',
+            'highest_education_level_id',
             'gender',
             'marital_status',
             'number_of_children',
@@ -35,7 +37,6 @@ final class UpdateAdminUserProfileWizardStepAction
             'email_institutional',
         ],
         'professional' => [
-            'total_years_of_experience',
             'matricule',
             'agency_id',
             'bio',

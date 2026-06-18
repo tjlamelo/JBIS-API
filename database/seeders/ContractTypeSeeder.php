@@ -11,17 +11,16 @@ class ContractTypeSeeder extends Seeder
     public function run(): void
     {
         $types = [
-            ['fr' => 'CDI', 'en' => 'Full-time', 'color' => '#00ff88'],
-            ['fr' => 'CDD', 'en' => 'Fixed-term', 'color' => '#00d1ff'],
-            ['fr' => 'Freelance', 'en' => 'Freelance', 'color' => '#d4af37'],
-            ['fr' => 'Stage', 'en' => 'Internship', 'color' => '#ff00ff'],
+            ['fr' => 'CDI', 'en' => 'Full-time'],
+            ['fr' => 'CDD', 'en' => 'Fixed-term'],
+            ['fr' => 'Freelance', 'en' => 'Freelance'],
+            ['fr' => 'Stage', 'en' => 'Internship'],
         ];
 
         foreach ($types as $type) {
             $slug = Str::slug($type['en']);
 
             $contractType = ContractType::query()->firstOrNew(['slug' => $slug]);
-            $contractType->color_code = $type['color'];
             $contractType->setTranslations('name', [
                 'fr' => $type['fr'],
                 'en' => $type['en'],

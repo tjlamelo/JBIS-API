@@ -28,7 +28,7 @@ class OfferFacetController
             300,
             function () use ($request) {
             return [
-                'categories' => $this->facetCounts($request, 'offer_category_id'),
+                'categories' => $this->facetCounts($request, 'category_id'),
                 'countries' => $this->facetCounts($request, 'country_id'),
                 'contract_types' => $this->contractTypeFacetCounts($request),
                 'work_modes' => $this->workModeFacetCounts($request),

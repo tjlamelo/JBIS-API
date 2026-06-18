@@ -23,7 +23,7 @@ class Company extends Model
     protected $fillable = [
         'name',
         'slug',
-        'offer_category_id',
+        'category_id',
         'country_id',
         'city_id',
         'address',
@@ -54,7 +54,7 @@ class Company extends Model
 
     public function category(): BelongsTo
     {
-        return $this->belongsTo(OfferCategory::class, 'offer_category_id');
+        return $this->belongsTo(Category::class, 'category_id');
     }
 
     public function country(): BelongsTo

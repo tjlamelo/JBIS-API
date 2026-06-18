@@ -22,7 +22,7 @@ class Education extends AuditedModel
         'institution_name',
         'field_of_study',
         'country_id',
-        'residence_city_id',
+        'residence_city',
         'start_date',
         'end_date',
         'is_current',

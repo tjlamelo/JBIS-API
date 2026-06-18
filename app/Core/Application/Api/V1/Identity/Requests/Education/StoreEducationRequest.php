@@ -41,7 +41,7 @@ final class StoreEducationRequest extends FormRequest
 
             'country_id' => ['nullable', 'integer', 'exists:countries,id'],
 
-            'residence_city_id' => ['nullable', 'integer', 'exists:cities,id'],
+            'residence_city' => ['nullable', 'string', 'max:120'],
 
             'start_date' => ['required', 'date'],
 

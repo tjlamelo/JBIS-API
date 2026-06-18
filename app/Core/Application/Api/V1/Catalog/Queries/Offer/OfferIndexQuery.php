@@ -28,14 +28,14 @@ class OfferIndexQuery extends QueryBuilder
 
             AllowedFilter::exact('status'),
 
-            // 🔥 Catégorie : On accepte 'offer_category_id' (depuis le front) OU 'category'
-            AllowedFilter::callback('offer_category_id', function (Builder $query, $value) {
+            // 🔥 Catégorie : On accepte 'category_id' (depuis le front) OU 'category'
+            AllowedFilter::callback('category_id', function (Builder $query, $value) {
                 $values = is_array($value) ? $value : explode(',', (string) $value);
-                $query->whereIn('offer_category_id', $values);
+                $query->whereIn('category_id', $values);
             }),
             AllowedFilter::callback('category', function (Builder $query, $value) {
                 $values = is_array($value) ? $value : explode(',', (string) $value);
-                $query->whereIn('offer_category_id', $values);
+                $query->whereIn('category_id', $values);
             }),
 
             // 🔥 Pays : On utilise country_id pour correspondre à ta nouvelle migration

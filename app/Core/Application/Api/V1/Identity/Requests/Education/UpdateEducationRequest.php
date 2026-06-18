@@ -38,7 +38,7 @@ final class UpdateEducationRequest extends FormRequest
 
             'country_id' => ['sometimes', 'nullable', 'integer', 'exists:countries,id'],
 
-            'residence_city_id' => ['sometimes', 'nullable', 'integer', 'exists:cities,id'],
+            'residence_city' => ['sometimes', 'nullable', 'string', 'max:120'],
 
             'start_date' => ['sometimes', 'date'],
 

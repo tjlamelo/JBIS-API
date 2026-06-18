@@ -3,7 +3,7 @@
 namespace Database\Seeders;
 
 use App\Core\Domain\Catalog\Models\Offer;
-use App\Core\Domain\Catalog\Models\OfferCategory;
+use App\Core\Domain\Catalog\Models\Category;
 use App\Core\Domain\Catalog\Models\Company;
 use App\Core\Domain\Catalog\Models\Program;
 use App\Core\Domain\Catalog\Models\ContractType;
@@ -24,8 +24,8 @@ class OfferSeeder extends Seeder
         $admin = User::where('email', 'admin@jbis.cm')->first();
         
         // Référentiels principaux
-        $itCat = OfferCategory::where('name->fr', 'LIKE', '%Informatique%')->first();
-        $transpCat = OfferCategory::where('name->fr', 'LIKE', '%Logistique%')->first();
+        $itCat = Category::where('name->fr', 'LIKE', '%Informatique%')->first();
+        $transpCat = Category::where('name->fr', 'LIKE', '%Logistique%')->first();
         
         // slug est une string dans la migration contract_types
         $contractCDI = ContractType::where('slug', 'full-time')->first();
@@ -52,7 +52,7 @@ class OfferSeeder extends Seeder
                 'title' => ['fr' => 'Chauffeur de Taxi (H/F)', 'en' => 'Taxi Driver'],
                 'city_id' => $cityDubai?->id,
                 'country_id' => $cityDubai?->region->country_id,
-                'offer_category_id' => $transpCat?->id,
+                'category_id' => $transpCat?->id,
                 'contract_type_id' => $contractCDD?->id,
                 'offer_type_id' => $offerTypeJob?->id,
                 'work_schedule_id' => $workScheduleRotating?->id,
@@ -70,7 +70,7 @@ class OfferSeeder extends Seeder
                 'title' => ['fr' => 'Développeur Fullstack', 'en' => 'Fullstack Developer'],
                 'city_id' => $cityToronto?->id,
                 'country_id' => $cityToronto?->region->country_id,
-                'offer_category_id' => $itCat?->id,
+                'category_id' => $itCat?->id,
                 'contract_type_id' => $contractCDI?->id,
                 'offer_type_id' => $offerTypeJob?->id,
                 'work_schedule_id' => $workScheduleDay?->id,
@@ -94,7 +94,7 @@ class OfferSeeder extends Seeder
                 'user_id'           => $admin?->id,
                 'country_id'        => $o['country_id'],
                 'city_id'           => $o['city_id'],
-                'offer_category_id' => $o['offer_category_id'],
+                'category_id' => $o['category_id'],
                 'contract_type_id'  => $o['contract_type_id'],
                 'offer_type_id'     => $o['offer_type_id'],
                 'work_schedule_id'  => $o['work_schedule_id'],

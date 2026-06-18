@@ -4,6 +4,7 @@ namespace App\Core\Application\Api\V1\Auth\Actions;
 
 use App\Core\Domain\Identity\Models\User;
 use App\Core\Domain\Identity\Models\UserProfile;
+use App\Core\Domain\Identity\Support\ApplicationRole;
 use Exception;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Hash;
@@ -42,14 +43,26 @@ class HandleGoogleCallbackAction
 
         $name = (string) ($googleUser->getName() ?? $googleUser->getNickname() ?? 'Google User');
 
-        $user = User::query()->firstOrCreate(
-            ['email' => $email],
-            [
+        $user = User::query()->where('email', $email)->first();
+
+        if ($user !== null && $user->auth_provider !== 'google') {
+            return [
+                'success' => false,
+                'value' => 'password_account',
+            ];
+        }
+
+        if ($user === null) {
+            $user = User::create([
                 'name' => $name,
+                'email' => $email,
                 'password' => Hash::make(Str::random(40)),
                 'email_verified_at' => now(),
-            ]
-        );
+                'active' => true,
+                'auth_provider' => 'google',
+            ]);
+            $user->assignRole(ApplicationRole::CANDIDATE);
+        }
 
         if (! $user->hasVerifiedEmail()) {
             $user->forceFill(['email_verified_at' => now()])->save();

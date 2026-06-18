@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Core\Domain\Identity\Actions\Profile;
 
+use App\Core\Domain\Identity\Actions\User\SyncUserTradesAction;
 use App\Core\Domain\Identity\Exceptions\ProfileLockedException;
 use App\Core\Domain\Identity\Models\User;
 use App\Core\Domain\Identity\Models\UserProfile;
@@ -15,6 +16,7 @@ final class UpdateMyProfileWizardStepAction
 {
     public function __construct(
         private readonly ProfilePicturesSerializer $picturesSerializer,
+        private readonly SyncUserTradesAction $syncUserTrades,
     ) {}
 
     private const STAFF_ROLES = ApplicationRole::STAFF_ROLES;
@@ -27,7 +29,9 @@ final class UpdateMyProfileWizardStepAction
             'date_of_birth',
             'place_of_birth',
             'nationality_country_id',
-            'residence_city_id',
+            'residence_city',
+            'career_intent',
+            'highest_education_level_id',
             'gender',
             'marital_status',
             'number_of_children',
@@ -39,7 +43,6 @@ final class UpdateMyProfileWizardStepAction
             'email_institutional',
         ],
         'professional' => [
-            'total_years_of_experience',
             'matricule',
             'agency_id',
             'bio',
@@ -83,13 +86,17 @@ final class UpdateMyProfileWizardStepAction
 
         $profile->fill($attributes);
 
+        if ($step === 'personal' && isset($payload['trades']) && is_array($payload['trades'])) {
+            $this->syncUserTrades->execute($user, $payload['trades']);
+        }
+
         if ($user->hasAnyRole(self::STAFF_ROLES)) {
             $profile->is_approved = true;
             $profile->approved_by = $user->id;
         }
 
         $profile->save();
-        $profile->loadMissing('approver:id,name');
+        $profile->loadMissing(['approver:id,name', 'highestEducationLevel:id,name,slug']);
 
         return $profile;
     }

@@ -10,31 +10,31 @@ return new class extends Migration {
      */
     public function up(): void
     {
-      Schema::create('archives', function (Blueprint $table) {
-    $table->id();
-    $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+        Schema::create('archives', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
 
-    // Informations du fichier
-    $table->string('original_name');      // ex: "devis_travaux_final.pdf"
-    $table->string('stored_name');        // ex: "archives/2026/05/abc123xyz.pdf"
-    
-    // Métadonnées pour la gestion universelle
-    $table->string('file_type', 50);      // ex: pdf, image, video, archive, document
-    $table->string('extension', 10);      // ex: pdf, jpg, zip, docx
-    $table->string('mime_type');          // ex: application/pdf, image/jpeg
-    $table->unsignedBigInteger('size');   // Taille en octets (Bytes)
+            // Informations du fichier
+            $table->string('original_name');      // ex: "devis_travaux_final.pdf"
+            $table->string('stored_name');        // ex: "archives/2026/05/abc123xyz.pdf"
 
-    // Organisation
-    $table->string('category')->nullable()->index(); // ex: LOGS, RH, ADMIN
-    $table->text('description')->nullable();
+            // Métadonnées pour la gestion universelle
+            $table->string('file_type', 50);      // ex: pdf, image, video, archive, document
+            $table->string('extension', 10);      // ex: pdf, jpg, zip, docx
+            $table->string('mime_type');          // ex: application/pdf, image/jpeg
+            $table->unsignedBigInteger('size');   // Taille en octets (Bytes)
 
-    // Configuration de stockage
-    $table->string('disk')->default('local');
-    $table->boolean('is_public')->default(false);
+            // Organisation
+            $table->string('category')->nullable()->index(); // ex: LOGS, RH, ADMIN
+            $table->text('description')->nullable();
 
-    $table->timestamps();
-    $table->softDeletes();
-});
+            // Configuration de stockage
+            $table->string('disk')->default('local');
+            $table->boolean('is_public')->default(false);
+
+            $table->timestamps();
+            $table->softDeletes();
+        });
     }
 
     /**

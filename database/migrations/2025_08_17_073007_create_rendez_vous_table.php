@@ -32,6 +32,18 @@ return new class extends Migration
             // Détails logistiques
             $table->string('subject')->nullable();
             $table->text('message')->nullable();
+
+            $table->foreignId('discovery_source_id')
+                ->nullable()
+                ->constrained('discovery_sources')
+                ->nullOnDelete();
+            $table->string('discovery_source_other', 255)->nullable();
+            $table->string('utm_source', 128)->nullable();
+            $table->string('utm_medium', 128)->nullable();
+            $table->string('utm_campaign', 128)->nullable();
+            $table->ipAddress('ip_address')->nullable();
+            $table->text('user_agent')->nullable();
+
             $table->enum('type', ['IN_PERSON', 'ONLINE', 'PHONE'])->default('IN_PERSON');
             $table->string('meeting_link')->nullable(); // Si ONLINE (Meet, Zoom)
 

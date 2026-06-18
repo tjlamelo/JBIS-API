@@ -21,19 +21,10 @@ return new class extends Migration
             $table->json('meta')->nullable();
             $table->timestamp('occurred_at')->useCurrent()->index();
         });
-
-        Schema::table('user_devices', function (Blueprint $table) {
-            $table->string('risk_level', 20)->default('low')->after('risk_score');
-            $table->json('last_risk_assessment')->nullable()->after('risk_flags');
-        });
     }
 
     public function down(): void
     {
-        Schema::table('user_devices', function (Blueprint $table) {
-            $table->dropColumn(['risk_level', 'last_risk_assessment']);
-        });
-
         Schema::dropIfExists('user_security_events');
     }
 };

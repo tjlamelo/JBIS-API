@@ -21,7 +21,7 @@ class LanguageController extends Controller
                     ->orWhere('name->en', 'like', "%{$search}%")
                     ->orWhere('code', 'like', "%{$search}%");
             })
-            ->select(['id', 'name', 'code', 'flag_icon'])
+            ->select(['id', 'name', 'code'])
             ->orderByDesc('id')
             ->paginate(20);
 

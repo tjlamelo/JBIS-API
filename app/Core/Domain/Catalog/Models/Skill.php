@@ -21,16 +21,19 @@ class Skill extends Model
         'name',
         'slug',
         'skill_category_id',
+        'category_id',
     ];
 
-    public function category(): BelongsTo
+    public function skillCategory(): BelongsTo
     {
         return $this->belongsTo(SkillCategory::class, 'skill_category_id');
     }
 
-    /**
-     * Les offres qui requièrent cette compétence.
-     */
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(Category::class, 'category_id');
+    }
+
     public function offers(): BelongsToMany
     {
         return $this->belongsToMany(Offer::class, 'offer_skill')

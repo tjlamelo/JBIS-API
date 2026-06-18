@@ -24,7 +24,7 @@ return new class extends Migration
             $table->string('field_of_study')->nullable();
 
             $table->foreignId('country_id')->nullable()->constrained('countries')->nullOnDelete();
-            $table->foreignId('residence_city_id')->nullable()->constrained('cities');
+            $table->string('residence_city', 120)->nullable();
 
             $table->date('start_date');
             $table->date('end_date')->nullable();

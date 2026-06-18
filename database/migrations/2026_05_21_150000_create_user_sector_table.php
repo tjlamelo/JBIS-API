@@ -11,10 +11,10 @@ return new class extends Migration
         Schema::create('user_sector', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('offer_category_id')->constrained('offer_categories')->cascadeOnDelete();
+            $table->foreignId('category_id')->constrained('categories')->cascadeOnDelete();
             $table->timestamps();
 
-            $table->unique(['user_id', 'offer_category_id'], 'user_sector_unique');
+            $table->unique(['user_id', 'category_id'], 'user_sector_unique');
         });
     }
 

@@ -25,7 +25,7 @@ final class EducationResource extends JsonResource
             'institution_name' => $this->institution_name,
             'field_of_study' => $this->field_of_study,
             'country_id' => $this->country_id,
-            'residence_city_id' => $this->residence_city_id,
+            'residence_city' => $this->residence_city,
             'start_date' => $this->start_date?->toDateString(),
             'end_date' => $this->end_date?->toDateString(),
             'is_current' => $this->is_current,

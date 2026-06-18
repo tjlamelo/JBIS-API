@@ -9,7 +9,7 @@ use App\Core\Domain\Identity\Models\User;
 final class SyncUserSectorsAction
 {
     /**
-     * @param  list<int>|null  $sectorIds  offer_category ids
+     * @param  list<int>|null  $sectorIds  category ids
      */
     public function execute(User $user, ?array $sectorIds): void
     {

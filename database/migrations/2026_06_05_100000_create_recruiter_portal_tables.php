@@ -67,16 +67,17 @@ return new class extends Migration
 
         if (Schema::hasTable('user_profiles')) {
             Schema::table('user_profiles', function (Blueprint $table): void {
-                if (! Schema::hasColumn('user_profiles', 'profile_origin')) {
-                    $table->string('profile_origin', 16)->default('self')->after('user_id');
+                if (Schema::hasColumn('user_profiles', 'recruiter_organization_id')) {
+                    $table->foreign('recruiter_organization_id')
+                        ->references('id')
+                        ->on('recruiter_organizations')
+                        ->nullOnDelete();
                 }
-                if (! Schema::hasColumn('user_profiles', 'recruiter_organization_id')) {
-                    $table->foreignId('recruiter_organization_id')->nullable()->after('agency_id')
-                        ->constrained('recruiter_organizations')->nullOnDelete();
-                }
-                if (! Schema::hasColumn('user_profiles', 'recruiter_submission_id')) {
-                    $table->foreignId('recruiter_submission_id')->nullable()->after('recruiter_organization_id')
-                        ->constrained('recruiter_profile_submissions')->nullOnDelete();
+                if (Schema::hasColumn('user_profiles', 'recruiter_submission_id')) {
+                    $table->foreign('recruiter_submission_id')
+                        ->references('id')
+                        ->on('recruiter_profile_submissions')
+                        ->nullOnDelete();
                 }
             });
         }
@@ -87,13 +88,10 @@ return new class extends Migration
         if (Schema::hasTable('user_profiles')) {
             Schema::table('user_profiles', function (Blueprint $table): void {
                 if (Schema::hasColumn('user_profiles', 'recruiter_submission_id')) {
-                    $table->dropConstrainedForeignId('recruiter_submission_id');
+                    $table->dropForeign(['recruiter_submission_id']);
                 }
                 if (Schema::hasColumn('user_profiles', 'recruiter_organization_id')) {
-                    $table->dropConstrainedForeignId('recruiter_organization_id');
-                }
-                if (Schema::hasColumn('user_profiles', 'profile_origin')) {
-                    $table->dropColumn('profile_origin');
+                    $table->dropForeign(['recruiter_organization_id']);
                 }
             });
         }

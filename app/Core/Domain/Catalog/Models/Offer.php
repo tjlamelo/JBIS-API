@@ -41,7 +41,7 @@ class Offer extends Model
         'title', 'description', 'slug',
         'salary_min', 'salary_max', 'currency', 'is_salary_public',
         'available_positions', 'address', 'work_mode',
-        'offer_category_id', 'contract_type_id', 'city_id', 'country_id',
+        'category_id', 'contract_type_id', 'city_id', 'country_id',
         'company_id', 'program_id', 'user_id',
         'offer_type_id', 'work_schedule_id', 'education_level_id',
         'meta', 'published_at', 'expiration_date', 'status', 'is_company_public',
@@ -126,7 +126,7 @@ class Offer extends Model
 
     public function category(): BelongsTo
     {
-        return $this->belongsTo(OfferCategory::class, 'offer_category_id');
+        return $this->belongsTo(Category::class, 'category_id');
     }
 
     public function benefits(): BelongsToMany

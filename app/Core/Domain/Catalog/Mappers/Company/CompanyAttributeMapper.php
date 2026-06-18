@@ -19,8 +19,8 @@ final class CompanyAttributeMapper
             $company->slug = $dto->slug;
         }
 
-        if ($isCreate || $dto->has('offer_category_id')) {
-            $company->offer_category_id = $dto->offer_category_id;
+        if ($isCreate || $dto->has('category_id')) {
+            $company->category_id = $dto->category_id;
         }
 
         if ($isCreate || $dto->has('country_id')) {

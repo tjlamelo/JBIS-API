@@ -6,7 +6,7 @@ namespace App\Core\Domain\Identity\Support;
 
 use App\Core\Domain\Catalog\Models\Agency;
 use App\Core\Domain\Catalog\Models\EducationLevel;
-use App\Core\Domain\Catalog\Models\OfferCategory;
+use App\Core\Domain\Catalog\Models\Category;
 use App\Core\Domain\Catalog\Models\Skill;
 use App\Core\Domain\Catalog\Models\SkillCategory;
 use App\Core\Domain\Catalog\Models\Training;
@@ -148,11 +148,10 @@ final class AdminUserSearchFilterSchema
                 'options_source' => 'countries',
             ],
             [
-                'key' => 'residence_city_id',
-                'type' => 'select',
+                'key' => 'residence_city',
+                'type' => 'text',
                 'label' => 'Ville de résidence',
                 'group' => 'identite',
-                'options_source' => 'cities',
             ],
             [
                 'key' => 'agency_id',
@@ -485,7 +484,7 @@ final class AdminUserSearchFilterSchema
                 ],
             ],
             [
-                'key' => 'offer_category_id',
+                'key' => 'category_id',
                 'type' => 'select',
                 'label' => 'Secteur de l\'offre candidatée',
                 'group' => 'candidatures',
@@ -625,7 +624,7 @@ final class AdminUserSearchFilterSchema
                 'value' => (string) $a->id,
                 'label' => $a->getTranslation('name', $locale),
             ])->values()->all(),
-            'sectors' => OfferCategory::query()->orderBy('name->'.$locale)->get()->map(fn (OfferCategory $s) => [
+            'sectors' => Category::query()->orderBy('name->'.$locale)->get()->map(fn (Category $s) => [
                 'value' => (string) $s->id,
                 'label' => $s->getTranslation('name', $locale),
             ])->values()->all(),
@@ -694,7 +693,6 @@ final class AdminUserSearchFilterSchema
             ['value' => 'updated_at', 'label' => 'Dernière mise à jour'],
             ['value' => 'name', 'label' => 'Nom'],
             ['value' => 'email', 'label' => 'Email'],
-            ['value' => 'total_years_of_experience', 'label' => 'Années d\'expérience'],
             ['value' => 'date_of_birth', 'label' => 'Date de naissance'],
         ];
     }

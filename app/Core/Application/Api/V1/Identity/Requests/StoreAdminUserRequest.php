@@ -26,7 +26,7 @@ final class StoreAdminUserRequest extends FormRequest
             'roles' => ['sometimes', 'array', 'min:1'],
             'roles.*' => ['string', Rule::exists('roles', 'name')],
             'sector_ids' => ['sometimes', 'array'],
-            'sector_ids.*' => ['integer', 'exists:offer_categories,id'],
+            'sector_ids.*' => ['integer', 'exists:categories,id'],
         ];
     }
 }

@@ -69,13 +69,16 @@ class OfferDependenciesSeeder extends Seeder
             ]);
         }
 
-        // 3) Offer category (offers.offer_category_id)
-        $category = DB::table('offer_categories')->where('slug', 'it-technology')->first();
+        // 3) Offer category (offers.category_id)
+        $category = DB::table('categories')->where('slug', 'it-technology')->first();
         if (! $category) {
-            DB::table('offer_categories')->insert([
+            DB::table('categories')->insert([
                 'name' => json_encode(['fr' => 'Informatique & Technologie', 'en' => 'IT & Technology'], JSON_UNESCAPED_UNICODE),
                 'slug' => 'it-technology',
-                'icon' => 'computer-chip',
+                'description' => json_encode([
+                    'fr' => 'Informatique, développement logiciel et technologies numériques.',
+                    'en' => 'IT, software development and digital technologies.',
+                ], JSON_UNESCAPED_UNICODE),
                 'is_active' => true,
                 'created_at' => $now,
                 'updated_at' => $now,
@@ -88,7 +91,6 @@ class OfferDependenciesSeeder extends Seeder
             DB::table('contract_types')->insert([
                 'name' => json_encode(['fr' => 'CDI', 'en' => 'Full-time'], JSON_UNESCAPED_UNICODE),
                 'slug' => 'full-time',
-                'color_code' => '#00ff88',
                 'created_at' => $now,
                 'updated_at' => $now,
             ]);
@@ -99,12 +101,12 @@ class OfferDependenciesSeeder extends Seeder
         if (! $company) {
             $countryRow = DB::table('countries')->where('code', 'CM')->first();
             $cityRow = DB::table('cities')->where('slug', 'yaounde')->first();
-            $categoryRow = DB::table('offer_categories')->where('slug', 'it-technology')->first();
+            $categoryRow = DB::table('categories')->where('slug', 'it-technology')->first();
 
             DB::table('companies')->insert([
                 'name' => 'JBIS Demo Company',
                 'slug' => 'jbis-demo-company',
-                'offer_category_id' => $categoryRow?->id,
+                'category_id' => $categoryRow?->id,
                 'country_id' => $countryRow?->id,
                 'city_id' => $cityRow?->id,
                 'address' => 'Yaounde Centre',

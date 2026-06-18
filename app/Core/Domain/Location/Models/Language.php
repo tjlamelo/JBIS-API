@@ -16,7 +16,7 @@ class Language extends Model
 
     public array $translatable = ['name'];
 
-    protected $fillable = ['name', 'code', 'flag_icon'];
+    protected $fillable = ['name', 'code'];
 
     /**
      * Relation avec les Programmes (Général)

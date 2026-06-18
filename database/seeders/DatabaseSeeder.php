@@ -27,7 +27,8 @@ class DatabaseSeeder extends Seeder
             DocumentTypeSeeder::class,
             OfferDependenciesSeeder::class, // Assure les FK minimales pour offers
             GeographicZoneSeeder::class, // Zones mondiales (Nécessaire pour Programs)
-            OfferCategorySeeder::class,  // Catégories de métiers (Nécessaire pour Offers)
+            CategorySeeder::class,  // Catégories de métiers (Nécessaire pour Offers)
+            TradeSeeder::class,       // Métiers rattachés aux catégories
             ContractTypeSeeder::class,   // Types de contrats (Nécessaire pour Offers)
             OfferTypeSeeder::class,      // Types d'offre (FK offers.offer_type_id)
             WorkScheduleSeeder::class,   // Horaires de travail (FK offers.work_schedule_id)

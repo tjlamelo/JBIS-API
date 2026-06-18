@@ -67,7 +67,7 @@ class StoreOfferRequest extends FormRequest
 
             // --- CLÉS ÉTRANGÈRES ---
             'country_id' => ['required', 'integer', 'exists:countries,id'],
-            'offer_category_id' => ['nullable', 'integer', 'exists:offer_categories,id'],
+            'category_id' => ['nullable', 'integer', 'exists:categories,id'],
             'contract_type_id' => ['nullable', 'integer', 'exists:contract_types,id'],
             'offer_type_id' => ['nullable', 'integer', 'exists:offer_types,id'],
             'work_schedule_id' => ['nullable', 'integer', 'exists:work_schedules,id'],

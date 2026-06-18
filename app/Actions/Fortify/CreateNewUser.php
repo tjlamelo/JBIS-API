@@ -43,6 +43,7 @@ class CreateNewUser implements CreatesNewUsers
             'phone_number1' => $input['phone_number1'] ?? null,
             'password' => Hash::make($input['password']),
             'active' => true,
+            'auth_provider' => 'local',
         ]);
 
         $user->assignRole(ApplicationRole::CANDIDATE);

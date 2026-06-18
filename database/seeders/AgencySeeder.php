@@ -40,16 +40,6 @@ class AgencySeeder extends Seeder
                 'description_fr' => 'Agence située à Douala.',
                 'description_en' => 'Agency located in Douala.',
             ],
-            [
-                'name_fr' => 'Agence Buea',
-                'name_en' => 'Buea Agency',
-                'city_slug' => 'buea',
-                'address' => "Immeuble Book's n'Things, face université, 4ème étage porte 403",
-                'email' => 'agence.buea@jbis.cm',
-                'phones' => ['+237671808580'],
-                'description_fr' => 'Agence située à Buea.',
-                'description_en' => 'Agency located in Buea.',
-            ],
         ];
 
         foreach ($items as $item) {

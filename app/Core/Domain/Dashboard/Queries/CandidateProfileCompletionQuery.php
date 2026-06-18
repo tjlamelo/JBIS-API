@@ -23,6 +23,8 @@ final class CandidateProfileCompletionQuery
             'certifications',
             'languages',
             'documents',
+            'preferredCountries',
+            'visaHistories',
         ]);
 
         $skillsCount = UserSkill::query()->where('user_id', $user->id)->count();
@@ -40,6 +42,7 @@ final class CandidateProfileCompletionQuery
             'education' => $user->educations_count > 0 ? 100 : 0,
             'certifications' => $user->certifications_count > 0 ? 100 : 0,
             'languages' => $user->languages_count > 0 ? 100 : 0,
+            'mobility' => ($user->preferred_countries_count > 0 || $user->visa_histories_count > 0) ? 100 : 0,
         ];
 
         $values = array_values($sections);
@@ -60,6 +63,8 @@ final class CandidateProfileCompletionQuery
                 'trainings' => $trainingsCount,
                 'internships' => $internshipsCount,
                 'interests' => $interestsCount,
+                'preferred_countries' => $user->preferred_countries_count,
+                'visa_histories' => $user->visa_histories_count,
             ],
         ];
     }
@@ -75,6 +80,7 @@ final class CandidateProfileCompletionQuery
             $profile->last_name ?? null,
             $profile->date_of_birth ?? null,
             $profile->nationality_country_id ?? null,
+            $profile->highest_education_level_id ?? null,
         ];
         $filled = count(array_filter($fields, fn ($v) => $v !== null && $v !== ''));
 
@@ -108,7 +114,7 @@ final class CandidateProfileCompletionQuery
         if (! empty($profile->bio)) {
             $score += 50;
         }
-        if ($profile->total_years_of_experience !== null) {
+        if (! empty($profile->agency_id)) {
             $score += 50;
         }
 

@@ -24,7 +24,7 @@ final class UpdateRecruiterOfferSubmissionRequest extends FormRequest
             'title.en' => ['nullable', 'string', 'max:255'],
             'description' => ['sometimes', 'array'],
             'company_id' => ['nullable', 'integer', 'exists:companies,id'],
-            'offer_category_id' => ['nullable', 'integer'],
+            'category_id' => ['nullable', 'integer'],
             'contract_type_id' => ['nullable', 'integer'],
             'country_id' => ['nullable', 'integer'],
             'city_id' => ['nullable', 'integer'],

@@ -66,6 +66,8 @@ class UserSetting extends Model
         return [
             'profile_visible_to_partners' => false,
             'show_online_status' => false,
+            'onboarding_completed_at' => null,
+            'onboarding_skipped_at' => null,
         ];
     }
 

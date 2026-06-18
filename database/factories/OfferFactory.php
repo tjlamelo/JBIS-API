@@ -4,7 +4,7 @@ namespace Database\Factories;
 
 use App\Core\Domain\Catalog\Models\ContractType;
 use App\Core\Domain\Catalog\Models\Offer;
-use App\Core\Domain\Catalog\Models\OfferCategory;
+use App\Core\Domain\Catalog\Models\Category;
 use App\Core\Domain\Catalog\States\OfferStatus;
 use App\Core\Domain\Location\Models\Country;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -39,7 +39,7 @@ class OfferFactory extends Factory
             'address' => $this->faker->streetAddress(),
             'work_mode' => $this->faker->randomElement(['on-site', 'hybrid', 'remote']),
             'country_id' => Country::query()->inRandomOrder()->value('id'),
-            'offer_category_id' => OfferCategory::query()->inRandomOrder()->value('id'),
+            'category_id' => Category::query()->inRandomOrder()->value('id'),
             'contract_type_id' => ContractType::query()->inRandomOrder()->value('id'),
             'city_id' => null,
             'salary_min' => $salaryMin,

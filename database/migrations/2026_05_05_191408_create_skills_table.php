@@ -6,14 +6,11 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('skill_categories', function (Blueprint $table) {
             $table->id();
-            $table->json('name'); // Traduisible
+            $table->json('name');
             $table->string('slug')->unique();
             $table->timestamps();
             $table->softDeletes();
@@ -21,12 +18,14 @@ return new class extends Migration
 
         Schema::create('skills', function (Blueprint $table) {
             $table->id();
-            $table->json('name'); // Traduisible
+            $table->json('name');
             $table->string('slug')->unique();
             $table->foreignId('skill_category_id')->nullable()->constrained('skill_categories')->nullOnDelete();
+            $table->foreignId('category_id')->nullable()->constrained('categories')->nullOnDelete();
             $table->timestamps();
             $table->softDeletes();
         });
+
         Schema::create('user_skills', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
@@ -34,29 +33,23 @@ return new class extends Migration
             $table->integer('years_of_experience')->nullable();
             $table->enum('level', ['BEGINNER', 'INTERMEDIATE', 'ADVANCED', 'EXPERT'])->default('BEGINNER');
             $table->timestamps();
-
             $table->softDeletes();
         });
+
         Schema::create('offer_skill', function (Blueprint $table) {
             $table->id();
             $table->foreignId('offer_id')->constrained()->cascadeOnDelete();
             $table->foreignId('skill_id')->constrained()->cascadeOnDelete();
-
-            // Optionnel : niveau requis pour cette offre spécifique
-            $table->string('level')->nullable(); // ex: 'Expert', 'Intermediate', 'Beginner'
-
+            $table->string('level')->nullable();
             $table->timestamps();
-
             $table->softDeletes();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('offer_skill');
+        Schema::dropIfExists('user_skills');
         Schema::dropIfExists('skills');
         Schema::dropIfExists('skill_categories');
     }

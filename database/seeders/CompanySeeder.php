@@ -3,7 +3,7 @@
 namespace Database\Seeders;
 
 use App\Core\Domain\Catalog\Models\Company;
-use App\Core\Domain\Catalog\Models\OfferCategory;
+use App\Core\Domain\Catalog\Models\Category;
 use App\Core\Domain\Catalog\States\CompanyStatus;
 use App\Core\Domain\Catalog\States\CompanyType;
 use App\Core\Domain\Location\Models\City;
@@ -15,10 +15,10 @@ class CompanySeeder extends Seeder
 {
     public function run(): void
     {
-        $transport = OfferCategory::query()->where('slug', 'transport-mobility')->first();
-        $health = OfferCategory::query()->where('slug', 'healthcare-medical')->first();
-        $it = OfferCategory::query()->where('slug', 'it-technology')->first();
-        $construction = OfferCategory::query()->where('slug', 'construction-civil-engineering')->first();
+        $transport = Category::query()->where('slug', 'transport-mobility')->first();
+        $health = Category::query()->where('slug', 'healthcare-medical')->first();
+        $it = Category::query()->where('slug', 'it-technology')->first();
+        $construction = Category::query()->where('slug', 'construction-civil-engineering')->first();
 
         $uae = Country::query()->where('code', 'AE')->first();
         $canada = Country::query()->where('code', 'CA')->first();
@@ -39,7 +39,7 @@ class CompanySeeder extends Seeder
                 'name' => 'Aman Taxi Dubai',
                 'logo' => 'https://res.cloudinary.com/votre-cloud/taxi-dubai.png',
                 'type' => CompanyType::Partner->value,
-                'offer_category_id' => $transport?->id,
+                'category_id' => $transport?->id,
                 'country_id' => $uae?->id,
                 'city_id' => $dubai,
             ],
@@ -47,7 +47,7 @@ class CompanySeeder extends Seeder
                 'name' => 'Dubai Taxi Corporation (DTC)',
                 'logo' => 'https://res.cloudinary.com/votre-cloud/dtc.png',
                 'type' => CompanyType::Employer->value,
-                'offer_category_id' => $transport?->id,
+                'category_id' => $transport?->id,
                 'country_id' => $uae?->id,
                 'city_id' => $dubai,
             ],
@@ -55,7 +55,7 @@ class CompanySeeder extends Seeder
                 'name' => 'Emirates Logistics',
                 'logo' => 'https://res.cloudinary.com/votre-cloud/emirates-log.png',
                 'type' => CompanyType::Partner->value,
-                'offer_category_id' => $transport?->id,
+                'category_id' => $transport?->id,
                 'country_id' => $uae?->id,
                 'city_id' => $dubai,
             ],
@@ -63,7 +63,7 @@ class CompanySeeder extends Seeder
                 'name' => 'Santé Québec Services',
                 'logo' => 'https://res.cloudinary.com/votre-cloud/quebec-health.png',
                 'type' => CompanyType::Employer->value,
-                'offer_category_id' => $health?->id,
+                'category_id' => $health?->id,
                 'country_id' => $canada?->id,
                 'city_id' => $montreal,
             ],
@@ -71,7 +71,7 @@ class CompanySeeder extends Seeder
                 'name' => 'Construction Montréal Inc.',
                 'logo' => 'https://res.cloudinary.com/votre-cloud/montreal-const.png',
                 'type' => CompanyType::Employer->value,
-                'offer_category_id' => $construction?->id,
+                'category_id' => $construction?->id,
                 'country_id' => $canada?->id,
                 'city_id' => $montreal,
             ],
@@ -79,7 +79,7 @@ class CompanySeeder extends Seeder
                 'name' => 'Tirana Tech Solutions',
                 'logo' => 'https://res.cloudinary.com/votre-cloud/tirana-tech.png',
                 'type' => CompanyType::Employer->value,
-                'offer_category_id' => $it?->id,
+                'category_id' => $it?->id,
                 'country_id' => $albania?->id,
                 'city_id' => $tirana,
             ],

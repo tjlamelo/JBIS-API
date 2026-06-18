@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Core\Application\Api\V1\Catalog\Controllers\Offer;
 
 use App\Core\Application\Api\Responses\BaseResponse;
-use App\Core\Domain\Catalog\Models\OfferCategory;
+use App\Core\Domain\Catalog\Models\Category;
 use App\Core\Domain\Location\Models\Country;
 use App\Core\Infrastructure\Cache\AppCache;
 use Illuminate\Http\JsonResponse;
@@ -35,7 +35,7 @@ class OfferFilterController
     private function buildFilters(string $locale): array
     {
         return [
-            'categories' => OfferCategory::where('is_active', true)
+            'categories' => Category::where('is_active', true)
                 ->get()
                 ->map(fn ($c) => [
                     'label' => $c->name,

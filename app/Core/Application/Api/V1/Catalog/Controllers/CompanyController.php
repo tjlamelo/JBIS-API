@@ -22,7 +22,7 @@ class CompanyController extends Controller
                 $query->where('name', 'like', "%{$search}%");
             })
             ->with(['category:id,name', 'country:id,name', 'city:id,name'])
-            ->select(['id', 'name', 'logo', 'offer_category_id', 'country_id', 'city_id', 'type'])
+            ->select(['id', 'name', 'logo', 'category_id', 'country_id', 'city_id', 'type'])
             ->paginate(15);
 
         return response()->json($companies);

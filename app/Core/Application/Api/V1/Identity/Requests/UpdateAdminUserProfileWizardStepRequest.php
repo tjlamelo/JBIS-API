@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Core\Application\Api\V1\Identity\Requests;
 
+use App\Core\Domain\Identity\Enums\CareerIntent;
 use App\Core\Domain\Identity\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -31,7 +32,9 @@ final class UpdateAdminUserProfileWizardStepRequest extends FormRequest
                 'date_of_birth' => ['nullable', 'date'],
                 'place_of_birth' => ['nullable', 'string', 'max:25'],
                 'nationality_country_id' => ['nullable', 'integer', 'exists:countries,id'],
-                'residence_city_id' => ['nullable', 'integer', 'exists:cities,id'],
+                'residence_city' => ['nullable', 'string', 'max:120'],
+                'career_intent' => ['nullable', 'string', Rule::in(CareerIntent::values())],
+                'highest_education_level_id' => ['nullable', 'integer', 'exists:education_levels,id'],
                 'gender' => ['nullable', Rule::in(['M', 'F'])],
                 'marital_status' => ['nullable', Rule::in(['SINGLE', 'MARRIED', 'DIVORCED', 'WIDOWED'])],
                 'number_of_children' => ['nullable', 'integer', 'min:0', 'max:20'],
@@ -53,7 +56,6 @@ final class UpdateAdminUserProfileWizardStepRequest extends FormRequest
                 'email_institutional' => ['nullable', 'email', 'max:100'],
             ],
             'professional' => [
-                'total_years_of_experience' => ['nullable', 'integer', 'min:0', 'max:80'],
                 'matricule' => ['nullable', 'string', 'max:50'],
                 'agency_id' => ['nullable', 'integer', 'exists:agencies,id'],
                 'bio' => ['nullable', 'string', 'max:5000'],

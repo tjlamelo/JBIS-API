@@ -5,7 +5,8 @@ namespace App\Core\Domain\Identity\Models;
 use App\Core\Domain\Candidacy\Models\Application;
 use App\Core\Domain\Catalog\Models\Offer;
 use App\Core\Domain\Recruiter\Models\RecruiterOrganization;
-use App\Core\Domain\Catalog\Models\OfferCategory;
+use App\Core\Domain\Catalog\Models\Category;
+use App\Core\Domain\Catalog\Models\Trade;
 use App\Core\Domain\Identity\Builders\UserBuilder;
 use App\Core\Domain\Identity\Concerns\HasPermissionOverrides;
 use App\Core\Domain\Identity\Support\ApplicationPermission;
@@ -78,6 +79,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'phone_number1',
         'password',
         'active',
+        'auth_provider',
     ];
 
     /**
@@ -118,7 +120,14 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function sectors(): BelongsToMany
     {
-        return $this->belongsToMany(OfferCategory::class, 'user_sector', 'user_id', 'offer_category_id')
+        return $this->belongsToMany(Category::class, 'user_sector', 'user_id', 'category_id')
+            ->withTimestamps();
+    }
+
+    public function trades(): BelongsToMany
+    {
+        return $this->belongsToMany(Trade::class, 'user_trade', 'user_id', 'trade_id')
+            ->withPivot('years_of_experience')
             ->withTimestamps();
     }
 

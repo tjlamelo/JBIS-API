@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->string('device_key'); // hash fingerprint navigateur/appareil
+            $table->unsignedBigInteger('personal_access_token_id')->nullable();
             $table->string('device_name', 120)->nullable();
             $table->string('ip', 45);
             $table->string('last_ip', 45)->nullable();
@@ -23,7 +24,9 @@ return new class extends Migration
             $table->timestamp('last_login_at')->nullable();
             $table->unsignedInteger('login_count')->default(0);
             $table->unsignedTinyInteger('risk_score')->default(0);
+            $table->string('risk_level', 20)->default('low');
             $table->json('risk_flags')->nullable();
+            $table->json('last_risk_assessment')->nullable();
             $table->timestamp('first_seen_at')->nullable();
             $table->timestamp('last_seen_at')->nullable();
             $table->timestamp('last_alerted_at')->nullable();
@@ -32,6 +35,7 @@ return new class extends Migration
 
             $table->unique(['user_id', 'device_key']);
             $table->index(['user_id', 'last_seen_at']);
+            $table->index(['user_id', 'personal_access_token_id']);
         });
     }
 

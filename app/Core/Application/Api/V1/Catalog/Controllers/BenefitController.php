@@ -21,7 +21,7 @@ class BenefitController extends Controller
                     ->orWhere('name->en', 'like', "%{$search}%")
                     ->orWhere('slug', 'like', "%{$search}%");
             })
-            ->select(['id', 'name', 'slug', 'icon'])
+            ->select(['id', 'name', 'slug'])
             ->orderByDesc('id')
             ->paginate(20);
 

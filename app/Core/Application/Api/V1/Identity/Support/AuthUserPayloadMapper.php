@@ -24,7 +24,7 @@ final class AuthUserPayloadMapper
      */
     public function toArray(User $user): array
     {
-        $user->loadMissing(['profile.approver:id,name', 'roles:id,name']);
+        $user->loadMissing(['profile.approver:id,name', 'profile.highestEducationLevel:id,name,slug', 'roles:id,name']);
 
         $profile = $user->profile;
 

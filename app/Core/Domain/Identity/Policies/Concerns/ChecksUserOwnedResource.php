@@ -38,7 +38,8 @@ trait ChecksUserOwnedResource
 
     public function store(User $user, User $target): bool
     {
-        return $this->permission($user, ApplicationPermission::CREATE) || $this->owns($user, $target);
+        return $this->permission($user, ApplicationPermission::CREATE)
+            || (int) $user->id === (int) $target->id;
     }
 
     public function update(User $user, Model $model): bool

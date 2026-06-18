@@ -26,6 +26,7 @@ final class UserSkillResource extends JsonResource
                 'id' => $this->skill?->id,
                 'name' => $this->skill?->name ?? null,
                 'slug' => $this->skill?->slug ?? null,
+                'category_id' => $this->skill?->category_id,
             ]),
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),

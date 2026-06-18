@@ -33,7 +33,6 @@ class ProgramFilterController
                         ->map(fn ($zone) => [
                             'label' => (string) $zone->name,
                             'value' => (string) $zone->id,
-                            'icon' => $zone->icon,
                         ])->values()->all(),
                 ],
             );

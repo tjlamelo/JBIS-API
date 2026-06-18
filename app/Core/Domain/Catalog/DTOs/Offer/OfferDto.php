@@ -33,7 +33,7 @@ readonly class OfferDto
         public ?array $meta = null,
 
         // Relations
-        public ?int $offer_category_id = null,
+        public ?int $category_id = null,
         public ?int $contract_type_id = null,
         public ?int $offer_type_id = null,
         public ?int $work_schedule_id = null,
@@ -73,7 +73,7 @@ readonly class OfferDto
             available_positions: $request->input('available_positions', 1),
             language: $request->input('language'),
             meta: $request->input('meta', []),
-            offer_category_id: $request->integer('offer_category_id') ?: null,
+            category_id: $request->integer('category_id') ?: null,
             contract_type_id: $request->integer('contract_type_id') ?: null,
             offer_type_id: $request->integer('offer_type_id') ?: null,
             work_schedule_id: $request->integer('work_schedule_id') ?: null,
@@ -134,7 +134,7 @@ readonly class OfferDto
             available_positions: (int) ($data['available_positions'] ?? 1),
             language: $data['language'] ?? null,
             meta: isset($data['meta']) && is_array($data['meta']) ? $data['meta'] : null,
-            offer_category_id: isset($data['offer_category_id']) ? (int) $data['offer_category_id'] : null,
+            category_id: isset($data['category_id']) ? (int) $data['category_id'] : null,
             contract_type_id: isset($data['contract_type_id']) ? (int) $data['contract_type_id'] : null,
             offer_type_id: isset($data['offer_type_id']) ? (int) $data['offer_type_id'] : null,
             work_schedule_id: isset($data['work_schedule_id']) ? (int) $data['work_schedule_id'] : null,

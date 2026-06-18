@@ -7,7 +7,7 @@ namespace App\Core\Application\Api\V1\Catalog\Resources\Offer;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class OfferCategoryResource extends JsonResource
+class CategoryResource extends JsonResource
 {
     /**
      * @return array<string, mixed>
@@ -18,7 +18,7 @@ class OfferCategoryResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name, // Traduit automatiquement via HasTranslations
             'slug' => $this->slug,
-            'icon' => $this->icon, // Utile pour afficher une icône spécifique en front
+            'description' => $this->description,
         ];
     }
 }

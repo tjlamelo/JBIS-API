@@ -23,6 +23,7 @@ return new class extends Migration
 
             // Paramètres complexes (Stockés en JSON)
             $table->json('notifications')->nullable(); // {email: true, sms: false, push: true}
+            $table->json('privacy')->nullable();
 
             $table->json('marketing')->nullable();     // {newsletter: true, partner_offers: false}
 

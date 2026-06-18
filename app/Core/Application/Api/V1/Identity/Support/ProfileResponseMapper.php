@@ -28,7 +28,14 @@ final class ProfileResponseMapper
             'date_of_birth' => $profile->date_of_birth?->format('Y-m-d'),
             'place_of_birth' => $profile->place_of_birth,
             'nationality_country_id' => $profile->nationality_country_id,
-            'residence_city_id' => $profile->residence_city_id,
+            'residence_city' => $profile->residence_city,
+            'career_intent' => $profile->career_intent,
+            'highest_education_level_id' => $profile->highest_education_level_id,
+            'highest_education_level' => $profile->highestEducationLevel ? [
+                'id' => $profile->highestEducationLevel->id,
+                'name' => $profile->highestEducationLevel->getTranslations('name'),
+                'slug' => $profile->highestEducationLevel->slug,
+            ] : null,
             'gender' => $profile->gender,
             'marital_status' => $profile->marital_status,
             'number_of_children' => $profile->number_of_children,
@@ -36,11 +43,12 @@ final class ProfileResponseMapper
             'phone_number2' => $profile->phone_number2,
             'phone_number3' => $profile->phone_number3,
             'email_institutional' => $profile->email_institutional,
-            'total_years_of_experience' => $profile->total_years_of_experience,
             'matricule' => $profile->matricule,
             'agency_id' => $profile->agency_id,
             'bio' => $profile->bio,
             'pictures' => $this->picturesSerializer->toUrls($profile->pictures),
+            'discovery_source_id' => $profile->discovery_source_id,
+            'discovery_source_other' => $profile->discovery_source_other,
         ];
     }
 }

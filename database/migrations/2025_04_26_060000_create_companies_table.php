@@ -14,9 +14,9 @@ return new class extends Migration
             $table->string('name');
             $table->string('slug')->unique();
 
-            $table->foreignId('offer_category_id')
+            $table->foreignId('category_id')
                 ->nullable()
-                ->constrained('offer_categories')
+                ->constrained('categories')
                 ->nullOnDelete();
 
             $table->foreignId('country_id')
@@ -48,7 +48,7 @@ return new class extends Migration
             $table->timestamps();
 
             $table->index(['country_id', 'city_id'], 'companies_geo_idx');
-            $table->index(['offer_category_id', 'status'], 'companies_sector_status_idx');
+            $table->index(['category_id', 'status'], 'companies_category_status_idx');
         });
     }
 
