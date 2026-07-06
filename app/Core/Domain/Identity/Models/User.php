@@ -3,10 +3,11 @@
 namespace App\Core\Domain\Identity\Models;
 
 use App\Core\Domain\Candidacy\Models\Application;
+use App\Core\Domain\Candidacy\Models\CandidateLanguageCourse;
 use App\Core\Domain\Catalog\Models\Offer;
 use App\Core\Domain\Recruiter\Models\RecruiterOrganization;
-use App\Core\Domain\Catalog\Models\Category;
 use App\Core\Domain\Catalog\Models\Trade;
+use Illuminate\Support\Collection;
 use App\Core\Domain\Identity\Builders\UserBuilder;
 use App\Core\Domain\Identity\Concerns\HasPermissionOverrides;
 use App\Core\Domain\Identity\Support\ApplicationPermission;
@@ -118,10 +119,22 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasOne(UserProfile::class);
     }
 
-    public function sectors(): BelongsToMany
+    /**
+     * Secteurs déduits des métiers sélectionnés (plus de pivot user_sector).
+     *
+     * @return Collection<int, \App\Core\Domain\Catalog\Models\Category>
+     */
+    public function sectorsFromTrades(): Collection
     {
-        return $this->belongsToMany(Category::class, 'user_sector', 'user_id', 'category_id')
-            ->withTimestamps();
+        if (! $this->relationLoaded('trades')) {
+            $this->loadMissing('trades.category');
+        }
+
+        return $this->trades
+            ->map(static fn (Trade $trade) => $trade->category)
+            ->filter()
+            ->unique('id')
+            ->values();
     }
 
     public function trades(): BelongsToMany
@@ -200,6 +213,11 @@ class User extends Authenticatable implements MustVerifyEmail
     public function trainings(): HasMany
     {
         return $this->hasMany(UserTraining::class);
+    }
+
+    public function languageCourses(): HasMany
+    {
+        return $this->hasMany(CandidateLanguageCourse::class);
     }
 
     public function internships(): HasMany

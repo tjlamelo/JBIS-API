@@ -79,7 +79,7 @@ final class AdvanceApplicationStepAction
             ? $step->step_type
             : ProcessStepType::tryFrom((string) $step->step_type);
 
-        if ($type === ProcessStepType::Payment || $type?->value === 'PAYMENT') {
+        if ($type === ProcessStepType::Payment || $type?->value === 'PAYMENT' || (float) $step->amount_due > 0) {
             $paid = $step->payment_status === ApplicationStepPaymentStatus::Paid
                 || $step->payment_status === ApplicationStepPaymentStatus::Waived
                 || $step->payment_status === ApplicationStepPaymentStatus::Overpaid;

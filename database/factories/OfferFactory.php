@@ -36,7 +36,7 @@ class OfferFactory extends Factory
 
         $titleFr = $trade->getTranslation('name', 'fr', false);
         $titleEn = $trade->getTranslation('name', 'en', false);
-        $uniqueSuffix = Str::random(5);
+        $uniqueSuffix = Str::lower(Str::random(5));
 
         return [
             'trade_id' => $trade->id,
@@ -51,7 +51,6 @@ class OfferFactory extends Factory
             'address' => $this->faker->streetAddress(),
             'work_mode' => $this->faker->randomElement(['on-site', 'hybrid', 'remote']),
             'country_id' => Country::query()->inRandomOrder()->value('id'),
-            'category_id' => $trade->category_id,
             'contract_type_id' => ContractType::query()->inRandomOrder()->value('id'),
             'city_id' => null,
             'salary_min' => $salaryMin,

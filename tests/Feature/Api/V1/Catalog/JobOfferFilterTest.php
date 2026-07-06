@@ -93,4 +93,28 @@ class JobOfferFilterTest extends TestCase
         $response->assertStatus(200)
             ->assertJsonCount(1, 'data.offers');
     }
+
+    #[Test]
+    public function it_resolves_offer_by_slug_with_mixed_case_suffix(): void
+    {
+        $slug = 'developpeur-full-stack-YQiX4';
+
+        Offer::factory()->create([
+            'slug' => ['fr' => $slug, 'en' => $slug],
+            'status' => OfferStatus::Published,
+            'published_at' => now()->subDay(),
+            'expiration_date' => now()->addMonth(),
+        ]);
+
+        $this->getJson("/api/v1/public/offers/{$slug}")
+            ->assertOk()
+            ->assertJsonPath('data.offer.slug.fr', $slug);
+    }
+
+    #[Test]
+    public function it_returns_not_found_for_unknown_public_offer_slug(): void
+    {
+        $this->getJson('/api/v1/public/offers/inconnue-abc12')
+            ->assertNotFound();
+    }
 }

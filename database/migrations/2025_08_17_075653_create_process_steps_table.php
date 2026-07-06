@@ -96,10 +96,24 @@ return new class extends Migration
             $table->index(['process_flow_id', 'process_flow_section_id']);
             $table->index(['step_type', 'responsible_party']);
         });
+
+        Schema::create('process_step_document_type', function (Blueprint $table): void {
+            $table->id();
+            $table->foreignId('process_step_id')
+                ->constrained('process_steps')
+                ->cascadeOnDelete();
+            $table->foreignId('document_type_id')
+                ->constrained('document_types')
+                ->cascadeOnDelete();
+            $table->timestamps();
+
+            $table->unique(['process_step_id', 'document_type_id'], 'process_step_document_type_unique');
+        });
     }
 
     public function down(): void
     {
+        Schema::dropIfExists('process_step_document_type');
         Schema::dropIfExists('process_steps');
     }
 };

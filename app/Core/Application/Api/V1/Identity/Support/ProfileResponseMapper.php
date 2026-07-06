@@ -6,6 +6,9 @@ namespace App\Core\Application\Api\V1\Identity\Support;
 
 use App\Core\Domain\Identity\Models\UserProfile;
 use App\Core\Domain\Identity\Support\ProfilePicturesSerializer;
+use App\Core\Application\Api\Support\EnumOptionPresenter;
+use App\Core\Domain\Identity\Enums\CareerIntent;
+use App\Core\Domain\Identity\Enums\ProfileType;
 
 final class ProfileResponseMapper
 {
@@ -31,7 +34,9 @@ final class ProfileResponseMapper
             'nationality_country_id' => $profile->nationality_country_id,
             'residence_city' => $profile->residence_city,
             'career_intent' => $profile->career_intent,
+            'career_intent_label' => EnumOptionPresenter::present($profile->career_intent, CareerIntent::class),
             'profile_type' => $profile->profile_type,
+            'profile_type_label' => EnumOptionPresenter::present($profile->profile_type, ProfileType::class),
             'highest_education_level_id' => $profile->highest_education_level_id,
             'highest_education_level' => $profile->highestEducationLevel ? [
                 'id' => $profile->highestEducationLevel->id,

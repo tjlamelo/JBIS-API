@@ -17,12 +17,15 @@ final class ApplicationProgressQuery
         $application->loadMissing([
             'currentStep',
             'processFlow:id,version,flow_group_id,name',
-            'offer:id,title',
+            'offer:id,trade_id',
+            'offer.trade:id,name',
             'program:id,name',
             'steps' => fn ($q) => $q->orderBy('step_order'),
             'steps.applicationDocuments.userDocument.documentType',
             'steps.installments',
             'steps.interview',
+            'steps.payments' => fn ($q) => $q->orderByDesc('id'),
+            'steps.processStep:id,accepted_banks',
             ...UserPersonName::withProfile('events.actor'),
         ]);
 
@@ -57,7 +60,8 @@ final class ApplicationProgressQuery
             ->where('user_id', $userId)
             ->with([
                 'currentStep:id,application_id,step_order,title,status,step_type',
-                'offer:id,title',
+                'offer:id,trade_id',
+            'offer.trade:id,name',
                 'program:id,name',
             ])
             ->orderByDesc('updated_at')

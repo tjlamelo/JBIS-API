@@ -6,20 +6,29 @@ namespace App\Core\Domain\Recruiter\Actions;
 
 use App\Core\Domain\Identity\Models\User;
 use App\Core\Domain\Recruiter\Enums\RecruiterAssignmentStatus;
+use App\Core\Domain\Recruiter\Enums\RecruiterSharedProfileSection;
 use App\Core\Domain\Recruiter\Models\RecruiterOrganization;
 use App\Core\Domain\Recruiter\Models\RecruiterProfileAssignment;
 use Illuminate\Support\Facades\DB;
 
 final class AssignProfileToRecruiterAction
 {
-    public function execute(RecruiterOrganization $organization, User $candidate, User $assignedBy, ?string $note = null): RecruiterProfileAssignment
-    {
+    /**
+     * @param  list<string>|null  $visibleSections
+     */
+    public function execute(
+        RecruiterOrganization $organization,
+        User $candidate,
+        User $assignedBy,
+        ?string $note = null,
+        ?array $visibleSections = null,
+    ): RecruiterProfileAssignment {
         $profile = $candidate->profile;
         if ($profile === null || ! $profile->is_approved) {
             throw new \InvalidArgumentException(__('Seuls les profils candidats approuvés peuvent être assignés.'));
         }
 
-        return DB::transaction(function () use ($organization, $candidate, $assignedBy, $note): RecruiterProfileAssignment {
+        return DB::transaction(function () use ($organization, $candidate, $assignedBy, $note, $visibleSections): RecruiterProfileAssignment {
             RecruiterProfileAssignment::query()
                 ->where('recruiter_organization_id', $organization->id)
                 ->where('candidate_user_id', $candidate->id)
@@ -35,6 +44,7 @@ final class AssignProfileToRecruiterAction
                 'assigned_by_user_id' => $assignedBy->id,
                 'status' => RecruiterAssignmentStatus::Active,
                 'note' => $note,
+                'visible_sections' => RecruiterSharedProfileSection::normalize($visibleSections),
                 'assigned_at' => now(),
             ]);
         });

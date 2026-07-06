@@ -137,11 +137,14 @@ final class DashboardViewResolver
                     return $field[$locale] ?? $field['fr'] ?? $field['en'] ?? null;
                 };
 
+                $status = $app->status instanceof \BackedEnum ? $app->status->value : $app->status;
+
                 return [
                     'id' => $app->id,
                     'application_number' => $app->application_number,
-                    'status' => $app->status instanceof \BackedEnum ? $app->status->value : $app->status,
-                    'offer_label' => $app->offer ? $pick($app->offer->title) : null,
+                    'status' => $status,
+                    'status_label' => ApplicationStatus::tryFrom((string) $status)?->label($locale) ?? (string) $status,
+                    'offer_label' => $app->offer ? $pick($app->offer->resolvedTitleTranslations()) : null,
                     'program_label' => $app->program ? $pick($app->program->name) : null,
                     'total_due' => (float) $app->total_due,
                     'total_paid' => (float) $app->total_paid,

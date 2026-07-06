@@ -8,8 +8,7 @@ use App\Core\Domain\Communication\Models\DiscoverySource;
 use App\Core\Domain\Identity\Concerns\AuditedModel;
 use App\Core\Domain\Recruiter\Enums\ProfileOrigin;
 use App\Core\Domain\Recruiter\Models\RecruiterOrganization;
-use App\Core\Domain\Recruiter\Models\RecruiterProfileSubmission;
-use App\Core\Domain\Shared\Geography\Models\Country;
+use App\Core\Domain\Location\Models\Country;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class UserProfile extends AuditedModel
@@ -42,7 +41,6 @@ class UserProfile extends AuditedModel
         'approved_by',
         'agency_id',
         'recruiter_organization_id',
-        'recruiter_submission_id',
     ];
 
     protected $casts = [
@@ -100,11 +98,6 @@ class UserProfile extends AuditedModel
     public function recruiterOrganization(): BelongsTo
     {
         return $this->belongsTo(RecruiterOrganization::class);
-    }
-
-    public function recruiterSubmission(): BelongsTo
-    {
-        return $this->belongsTo(RecruiterProfileSubmission::class, 'recruiter_submission_id');
     }
 
     public function age(): ?int

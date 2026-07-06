@@ -90,22 +90,16 @@ final class UserDocumentTypeRules
 
             $resolvedUserId = $userId ?? (isset($data['user_id']) ? (int) $data['user_id'] : 0);
 
+            // À la création, les types uniques sont remplacés automatiquement (StoreUserDocumentAction).
             if (
-                $typeChanged
+                $isUpdate
+                && $typeChanged
                 && $resolvedUserId > 0
                 && $type->isUniquePerUser()
-                && ! self::shouldBypassUniqueness()
             ) {
                 self::assertUniqueTypeForUser($validator, $resolvedUserId, $type, $ignoreDocumentId);
             }
         });
-    }
-
-    private static function shouldBypassUniqueness(): bool
-    {
-        $user = request()->user();
-
-        return $user !== null && $user->can('userdocument.create');
     }
 
     private static function assertUniqueTypeForUser(

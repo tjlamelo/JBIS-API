@@ -11,10 +11,6 @@ use Illuminate\Support\Facades\DB;
 
 final class CreateAdminUserAction
 {
-    public function __construct(
-        private readonly SyncUserSectorsAction $syncUserSectors,
-    ) {}
-
     public function execute(AdminUserWriteDto $dto): User
     {
         return DB::transaction(function () use ($dto): User {
@@ -29,9 +25,7 @@ final class CreateAdminUserAction
                 $user->syncRoles($roles);
             }
 
-            $this->syncUserSectors->execute($user, $dto->sector_ids);
-
-            return $user->load(['roles:id,name', 'profile.approver:id,name', 'sectors:id,name,slug']);
+            return $user->load(['roles:id,name', 'profile.approver:id,name', 'trades:id,name,slug,category_id', 'trades.category:id,name,slug']);
         });
     }
 }

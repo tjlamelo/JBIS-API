@@ -28,7 +28,7 @@ class OfferFacetController
             300,
             function () use ($request) {
             return [
-                'categories' => $this->facetCounts($request, 'category_id'),
+                'categories' => $this->categoryFacetCounts($request),
                 'countries' => $this->facetCounts($request, 'country_id'),
                 'contract_types' => $this->contractTypeFacetCounts($request),
                 'work_modes' => $this->workModeFacetCounts($request),
@@ -37,6 +37,34 @@ class OfferFacetController
         );
 
         return BaseResponse::ok($facets)->toJsonResponse();
+    }
+
+    /**
+     * @return array<string, int>
+     */
+    private function categoryFacetCounts(Request $request): array
+    {
+        $facetRequest = $this->requestWithoutFilter($request, 'category_id');
+        $facetRequest = $this->requestWithoutFilter($facetRequest, 'category');
+        $idsQuery = (new OfferIndexQuery($facetRequest))
+            ->published()
+            ->notExpired()
+            ->select('offers.id');
+
+        $rows = Offer::query()
+            ->whereIn('offers.id', $idsQuery)
+            ->join('trades', 'offers.trade_id', '=', 'trades.id')
+            ->whereNotNull('trades.category_id')
+            ->select('trades.category_id', DB::raw('COUNT(*) as count'))
+            ->groupBy('trades.category_id')
+            ->get();
+
+        $result = [];
+        foreach ($rows as $row) {
+            $result[(string) $row->category_id] = (int) $row->count;
+        }
+
+        return $result;
     }
 
     /**

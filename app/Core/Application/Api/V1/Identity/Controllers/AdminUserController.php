@@ -93,7 +93,7 @@ final class AdminUserController extends Controller
 
         $this->authorize('view', $user);
 
-        $user->load(['roles:id,name', 'profile.approver:id,name', 'sectors:id,name,slug']);
+        $user->load(['roles:id,name', 'profile.approver:id,name', 'trades:id,name,slug,category_id', 'trades.category:id,name,slug']);
 
         return BaseResponse::ok([
 
@@ -146,7 +146,7 @@ final class AdminUserController extends Controller
 
         $user->save();
 
-        $user->load(['roles:id,name', 'profile.approver:id,name', 'sectors:id,name,slug']);
+        $user->load(['roles:id,name', 'profile.approver:id,name', 'trades:id,name,slug,category_id', 'trades.category:id,name,slug']);
 
         return BaseResponse::ok([
 
@@ -211,7 +211,7 @@ final class AdminUserController extends Controller
 
         }
 
-        $user->load(['roles:id,name', 'profile.approver:id,name', 'sectors:id,name,slug']);
+        $user->load(['roles:id,name', 'profile.approver:id,name', 'trades:id,name,slug,category_id', 'trades.category:id,name,slug']);
 
         return BaseResponse::ok([
 
@@ -246,7 +246,7 @@ final class AdminUserController extends Controller
             ])->toJsonResponse();
         }
 
-        $user->load(['roles:id,name', 'profile.approver:id,name', 'sectors:id,name,slug']);
+        $user->load(['roles:id,name', 'profile.approver:id,name', 'trades:id,name,slug,category_id', 'trades.category:id,name,slug']);
 
         return BaseResponse::ok([
             'message' => __('Profil mis a jour.'),

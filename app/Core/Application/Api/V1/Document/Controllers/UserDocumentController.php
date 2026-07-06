@@ -19,6 +19,7 @@ use App\Core\Domain\Identity\Actions\Document\UpdateUserDocumentAction;
 use App\Core\Domain\Identity\Actions\Document\ValidateUserDocumentAction;
 use App\Core\Domain\Identity\DTOs\Document\UserDocumentDto;
 use App\Core\Domain\Identity\Exceptions\Document\DocumentStorageException;
+use App\Core\Domain\Identity\Exceptions\Document\UserDocumentLockedException;
 use App\Core\Domain\Identity\Models\DocumentType;
 use App\Core\Domain\Identity\Models\UserDocument;
 use App\Core\Domain\Identity\States\Document\UserDocumentStatus;
@@ -77,6 +78,10 @@ final class UserDocumentController extends Controller
             $query->where('status', (string) $request->input('status'));
         }
 
+        if (! $request->user()?->can('validateAny', UserDocument::class)) {
+            $query->where('is_sensitive', false);
+        }
+
         $documents = $query->latest()->with(['documentType', 'user.profile'])->paginate((int) $request->integer('per_page', 20));
 
         return BaseResponse::ok([
@@ -96,7 +101,7 @@ final class UserDocumentController extends Controller
         $targetUserId = $request->targetUserId();
 
         $dto = UserDocumentDto::fromArray($request->validated(), $targetUserId, (int) $authUser?->id);
-        $document = $this->storeUserDocument->execute($dto, $request->file('file'));
+        $document = $this->storeUserDocument->execute($dto, $request->file('file'), $authUser);
 
         return BaseResponse::created([
             'message' => __('Document enregistré avec succès.'),
@@ -115,11 +120,16 @@ final class UserDocumentController extends Controller
 
     public function update(UpdateUserDocumentRequest $request, UserDocument $userDocument): JsonResponse
     {
-        $document = $this->updateUserDocument->execute(
-            $userDocument,
-            $request->validated(),
-            $request->file('file'),
-        );
+        try {
+            $document = $this->updateUserDocument->execute(
+                $userDocument,
+                $request->validated(),
+                $request->file('file'),
+                $request->user(),
+            );
+        } catch (UserDocumentLockedException $e) {
+            return BaseResponse::unprocessableEntity(message: $e->getMessage())->toJsonResponse();
+        }
 
         return BaseResponse::ok([
             'message' => __('Document mis à jour.'),
@@ -131,7 +141,11 @@ final class UserDocumentController extends Controller
     {
         $this->authorize('delete', $userDocument);
 
-        $this->deleteUserDocument->execute($userDocument);
+        try {
+            $this->deleteUserDocument->execute($userDocument, $request->user());
+        } catch (UserDocumentLockedException $e) {
+            return BaseResponse::unprocessableEntity(message: $e->getMessage())->toJsonResponse();
+        }
 
         return BaseResponse::ok([
             'message' => __('Document supprimé.'),

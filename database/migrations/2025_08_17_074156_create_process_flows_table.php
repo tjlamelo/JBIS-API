@@ -17,6 +17,15 @@ return new class extends Migration
             // Ne jamais utiliser is_current : inférer via status + MAX(version).
             $table->uuid('flow_group_id')->index();
             $table->unsignedSmallInteger('version')->default(1);
+
+            // Clé métier stable pour import / versioning (flow_key du fichier)
+            $table->string('import_key', 128)->nullable()->index();
+
+            // Admin ayant importé ce parcours (null si créé via UI)
+            $table->foreignId('imported_by')
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
  
             // draft     : en cours d'édition, non visible aux candidats
             // published : version active, une seule par flow_group_id

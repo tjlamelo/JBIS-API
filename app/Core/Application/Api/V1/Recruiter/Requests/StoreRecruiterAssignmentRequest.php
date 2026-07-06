@@ -22,6 +22,8 @@ final class StoreRecruiterAssignmentRequest extends FormRequest
             'recruiter_organization_id' => ['required', 'integer', 'exists:recruiter_organizations,id'],
             'candidate_user_id' => ['required', 'integer', 'exists:users,id'],
             'note' => ['nullable', 'string', 'max:2000'],
+            'visible_sections' => ['nullable', 'array', 'min:1'],
+            'visible_sections.*' => ['string', 'in:'.implode(',', \App\Core\Domain\Recruiter\Enums\RecruiterSharedProfileSection::values())],
         ];
     }
 }

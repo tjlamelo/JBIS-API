@@ -10,10 +10,6 @@ use Illuminate\Support\Facades\DB;
 
 final class UpdateAdminUserAction
 {
-    public function __construct(
-        private readonly SyncUserSectorsAction $syncUserSectors,
-    ) {}
-
     public function execute(User $user, AdminUserWriteDto $dto): User
     {
         return DB::transaction(function () use ($user, $dto): User {
@@ -28,9 +24,7 @@ final class UpdateAdminUserAction
                 $user->syncRoles($dto->roles);
             }
 
-            $this->syncUserSectors->execute($user, $dto->sector_ids);
-
-            return $user->load(['roles:id,name', 'profile.approver:id,name', 'sectors:id,name,slug']);
+            return $user->load(['roles:id,name', 'profile.approver:id,name', 'trades:id,name,slug,category_id', 'trades.category:id,name,slug']);
         });
     }
 }

@@ -82,7 +82,7 @@ class OfferResource extends JsonResource
             'offer_type_id' => $this->offer_type_id,
             'work_schedule_id' => $this->work_schedule_id,
             'education_level_id' => $this->education_level_id,
-            'category_id' => $this->category_id,
+            'category_id' => $this->trade?->category_id,
             'company_id' => $this->company_id,
             'program_id' => $this->program_id,
 
@@ -97,11 +97,11 @@ class OfferResource extends JsonResource
                 'logo' => $isAdminRequest || $this->is_company_public ? $this->company?->logo : null,
             ],
             'is_company_public' => (bool) $this->is_company_public,
-            'category' => $this->category ? [
-                'id' => $this->category->id,
-                'name' => $this->category->name,
-                'slug' => $this->category->slug,
-                'description' => $this->category->description,
+            'category' => $this->trade?->category ? [
+                'id' => $this->trade->category->id,
+                'name' => $this->trade->category->name,
+                'slug' => $this->trade->category->slug,
+                'description' => $this->trade->category->description,
             ] : null,
 
             // 🟢 AJOUT DES RELATIONS MANQUANTES

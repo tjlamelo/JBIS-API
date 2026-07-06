@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace App\Core\Application\Api\V1\Candidacy\Controllers;
 
 use App\Core\Application\Api\Responses\BaseResponse;
+use App\Core\Domain\Candidacy\Actions\CancelApplicationAction;
+use App\Core\Domain\Candidacy\Actions\RejectApplicationAction;
 use App\Core\Domain\Candidacy\Models\Application;
 use App\Core\Domain\Candidacy\Queries\ApplicationProgressQuery;
+use App\Core\Domain\Candidacy\States\ApplicationStatus;
 use App\Core\Domain\Identity\Support\UserPersonName;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
@@ -16,6 +19,8 @@ final class AdminApplicationController extends Controller
 {
     public function __construct(
         private readonly ApplicationProgressQuery $applicationProgressQuery,
+        private readonly RejectApplicationAction $rejectApplicationAction,
+        private readonly CancelApplicationAction $cancelApplicationAction,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -29,7 +34,8 @@ final class AdminApplicationController extends Controller
             ->with([
                 ...UserPersonName::withProfile('user'),
                 'currentStep:id,application_id,step_order,title,status',
-                'offer:id,title',
+                'offer:id,trade_id',
+                'offer.trade:id,name',
                 'program:id,name',
             ])
             ->orderByDesc('updated_at');
@@ -65,13 +71,16 @@ final class AdminApplicationController extends Controller
         };
 
         return BaseResponse::ok([
-            'applications' => $paginator->getCollection()->map(static function (Application $app) use ($pick): array {
+            'applications' => $paginator->getCollection()->map(static function (Application $app) use ($pick, $locale): array {
+                $status = $app->status instanceof \BackedEnum ? $app->status->value : $app->status;
+
                 return [
                     'id' => $app->id,
                     'application_number' => $app->application_number,
-                    'status' => $app->status instanceof \BackedEnum ? $app->status->value : $app->status,
+                    'status' => $status,
+                    'status_label' => ApplicationStatus::tryFrom((string) $status)?->label($locale) ?? (string) $status,
                     'user' => $app->user ? UserPersonName::toContactArray($app->user) : null,
-                    'offer_label' => $app->offer ? $pick($app->offer->title) : null,
+                    'offer_label' => $app->offer ? $pick($app->offer->resolvedTitleTranslations()) : null,
                     'program_label' => $app->program ? $pick($app->program->name) : null,
                     'current_step' => $app->currentStep ? [
                         'id' => $app->currentStep->id,
@@ -103,6 +112,52 @@ final class AdminApplicationController extends Controller
         $progress = $this->applicationProgressQuery->forApplication($application, $locale);
 
         return BaseResponse::ok([
+            'application' => $progress->toArray(),
+        ])->toJsonResponse();
+    }
+
+    public function reject(Request $request, Application $application): JsonResponse
+    {
+        $this->authorize('reject', $application);
+
+        try {
+            $application = $this->rejectApplicationAction->execute(
+                $application,
+                $request->user(),
+                $request->input('reason') ? (string) $request->input('reason') : null,
+            );
+        } catch (\InvalidArgumentException $e) {
+            return BaseResponse::unprocessableEntity(message: $e->getMessage())->toJsonResponse();
+        }
+
+        $locale = str_starts_with(strtolower((string) $request->header('X-Locale', 'fr')), 'en') ? 'en' : 'fr';
+        $progress = $this->applicationProgressQuery->forApplication($application, $locale);
+
+        return BaseResponse::ok([
+            'message' => __('Candidature refusée.'),
+            'application' => $progress->toArray(),
+        ])->toJsonResponse();
+    }
+
+    public function cancel(Request $request, Application $application): JsonResponse
+    {
+        $this->authorize('cancel', $application);
+
+        try {
+            $application = $this->cancelApplicationAction->execute(
+                $application,
+                $request->user(),
+                $request->input('reason') ? (string) $request->input('reason') : null,
+            );
+        } catch (\InvalidArgumentException $e) {
+            return BaseResponse::unprocessableEntity(message: $e->getMessage())->toJsonResponse();
+        }
+
+        $locale = str_starts_with(strtolower((string) $request->header('X-Locale', 'fr')), 'en') ? 'en' : 'fr';
+        $progress = $this->applicationProgressQuery->forApplication($application, $locale);
+
+        return BaseResponse::ok([
+            'message' => __('Candidature annulée.'),
             'application' => $progress->toArray(),
         ])->toJsonResponse();
     }

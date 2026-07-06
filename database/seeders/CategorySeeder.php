@@ -451,6 +451,31 @@ class CategorySeeder extends Seeder
                 'description_fr' => 'Projets coopératifs, associations, commerce équitable.',
                 'description_en' => 'Cooperative projects, associations, fair trade.',
             ],
+            // === AJOUTS : COMMERCE, INFORMEL, MODE, RÉPARATION ===
+            [
+                'fr' => 'Commerce & Vente (détail & gros)',
+                'en' => 'Retail & Commerce',
+                'description_fr' => 'Commerce de détail et de gros, points de vente, marchés, e-commerce.',
+                'description_en' => 'Retail and wholesale, points of sale, markets, e-commerce.',
+            ],
+            [
+                'fr' => 'Économie informelle & Ventes de rue',
+                'en' => 'Informal Economy & Street Trading',
+                'description_fr' => 'Activités économiques informelles : marchands ambulants, services de proximité non institutionnalisés.',
+                'description_en' => 'Informal economic activities: street vendors, informal service providers.',
+            ],
+            [
+                'fr' => 'Textile, Mode & Couture',
+                'en' => 'Textile & Fashion',
+                'description_fr' => 'Conception, fabrication et retouches de vêtements, métiers de la mode.',
+                'description_en' => 'Clothing design, manufacturing and alterations, fashion trades.',
+            ],
+            [
+                'fr' => 'Réparation & Entretien (services de proximité)',
+                'en' => 'Repair & Maintenance Services',
+                'description_fr' => 'Réparation d\'appareils, entretien technique, ateliers de réparation locaux.',
+                'description_en' => 'Appliance repair, maintenance services, local repair workshops.',
+            ],
         ];
 
         // Suppression des doublons (basée sur le slug anglais)

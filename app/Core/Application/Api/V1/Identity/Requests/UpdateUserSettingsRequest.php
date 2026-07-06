@@ -28,6 +28,7 @@ class UpdateUserSettingsRequest extends FormRequest
             'notifications.push' => ['sometimes', 'array'],
             'notifications.sms' => ['sometimes', 'boolean'],
             'privacy' => ['sometimes', 'array'],
+            'privacy.onboarding_completed_at' => ['sometimes', 'nullable', 'date'],
             'marketing' => ['sometimes', 'array'],
             'marketing.newsletter' => ['sometimes', 'boolean'],
             'marketing.newsletter_scope' => ['sometimes', Rule::in(['national', 'international', 'both'])],

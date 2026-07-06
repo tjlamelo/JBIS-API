@@ -3,6 +3,8 @@
 namespace App\Core\Domain\Catalog\Models;
 
 use App\Core\Domain\Candidacy\Models\RequiredDocument;
+use App\Core\Domain\Candidacy\Models\OfferLanguageCourseRequirement;
+use App\Core\Domain\Candidacy\Models\CandidateLanguageCourse;
 use App\Core\Domain\Catalog\QueryBuilders\OfferBuilder;
 use App\Core\Domain\Catalog\States\OfferStatus;
 use App\Core\Domain\Location\Models\City;
@@ -16,6 +18,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 use Spatie\Translatable\HasTranslations;
@@ -41,7 +44,7 @@ class Offer extends Model
         'description', 'slug', 'trade_id',
         'salary_min', 'salary_max', 'currency', 'is_salary_public',
         'available_positions', 'address', 'work_mode',
-        'category_id', 'contract_type_id', 'city_id', 'country_id',
+        'contract_type_id', 'city_id', 'country_id',
         'company_id', 'program_id', 'user_id',
         'offer_type_id', 'work_schedule_id', 'education_level_id',
         'meta', 'published_at', 'expiration_date', 'status', 'is_company_public',
@@ -124,11 +127,6 @@ class Offer extends Model
         return $this->belongsTo(Program::class);
     }
 
-    public function category(): BelongsTo
-    {
-        return $this->belongsTo(Category::class, 'category_id');
-    }
-
     public function trade(): BelongsTo
     {
         return $this->belongsTo(Trade::class);
@@ -167,6 +165,16 @@ class Offer extends Model
         return $this->belongsToMany(RequiredDocument::class, 'offer_required_document')
             ->withPivot('is_mandatory', 'sort_order')
             ->withTimestamps();
+    }
+
+    public function languageCourseRequirements(): HasMany
+    {
+        return $this->hasMany(OfferLanguageCourseRequirement::class);
+    }
+
+    public function candidateLanguageCourses(): HasMany
+    {
+        return $this->hasMany(CandidateLanguageCourse::class);
     }
 
     protected static function boot()
@@ -218,16 +226,6 @@ class Offer extends Model
                 'seo' => ['robots' => 'index, follow'],
             ], $offer->meta ?? []);
 
-            if ($offer->trade_id && ($offer->isDirty('trade_id') || ! $offer->category_id)) {
-                $trade = $offer->relationLoaded('trade')
-                    ? $offer->trade
-                    : Trade::query()->find($offer->trade_id);
-
-                if ($trade) {
-                    $offer->category_id = $trade->category_id;
-                }
-            }
-
             if (empty($offer->getTranslations('slug')) && $offer->trade_id) {
                 $trade = $offer->relationLoaded('trade')
                     ? $offer->trade
@@ -235,7 +233,7 @@ class Offer extends Model
 
                 if ($trade) {
                     $slugs = [];
-                    $uniqueSuffix = Str::random(5);
+                    $uniqueSuffix = Str::lower(Str::random(5));
                     foreach ($trade->getTranslations('name') as $locale => $name) {
                         if ($name !== '') {
                             $slugs[$locale] = Str::slug($name).'-'.$uniqueSuffix;

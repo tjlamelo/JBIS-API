@@ -15,7 +15,6 @@ return new class extends Migration
             $table->id();
 
             // --- RELATIONS ---
-            $table->foreignId('category_id')->nullable()->constrained('categories')->nullOnDelete();
             $table->foreignId('contract_type_id')->nullable()->constrained('contract_types')->nullOnDelete();
             $table->foreignId('city_id')->nullable()->constrained('cities')->nullOnDelete();
             $table->foreignId('country_id')->nullable()->constrained('countries')->nullOnDelete();
@@ -27,8 +26,7 @@ return new class extends Migration
             $table->foreignId('offer_type_id')->nullable();
             $table->foreignId('work_schedule_id')->nullable();
             $table->foreignId('education_level_id')->nullable();
-            // FK vers trades ajoutée dans la migration create_trades_table (ordre des migrations).
-            $table->unsignedBigInteger('trade_id')->nullable()->index();
+            $table->foreignId('trade_id')->nullable()->constrained('trades')->nullOnDelete();
 
             // --- JSON (Spatie Translatable) ---
             $table->json('description')->nullable();
@@ -71,7 +69,7 @@ return new class extends Migration
             $table->index(['company_id', 'status'], 'offers_company_status');
             $table->index(['city_id', 'status'], 'offers_city_status');
             $table->index(['offer_type_id', 'status'], 'offers_type_status');
-            $table->index(['category_id', 'status'], 'offers_category_status');
+            $table->index(['trade_id', 'status'], 'offers_trade_status');
             $table->index(['is_featured', 'is_urgent', 'status'], 'offers_boost_index');
             $table->index(['salary_min', 'salary_max'], 'offers_salary_range');
 

@@ -11,6 +11,7 @@ use App\Core\Domain\Shared\Ai\DTOs\GenerationOptions;
 use App\Core\Domain\Shared\Ai\Enums\ChatRole;
 use App\Core\Domain\Shared\Ai\Schemas\GeminiResponse\ProfileBundleGeminiSchema;
 use App\Core\Domain\Shared\Ai\Support\LanguageModelJsonDecoder;
+use App\Core\Domain\Shared\Ai\Support\ProfileBundleDraftNormalizer;
 
 /**
  * Extrait un brouillon structuré (profil, formations, expériences, etc.) à partir de texte issu de documents utilisateur.
@@ -28,17 +29,7 @@ final class CvProfileFromDocumentsTextService
      */
     public function extractDraft(string $aggregatedDocumentsText): array
     {
-        $system = <<<'PROMPT'
-Tu es un moteur d'extraction pour un ATS (JBIS). On te fournit le texte brut issu d'un ou plusieurs documents candidat (CV, lettres, scans OCR concaténés).
-
-Tâche :
-- Fusionne les informations cohérentes ; en cas de conflit, privilégie les dates les plus récentes ou indique l'ambiguïté dans `notes`.
-- Remplis le JSON strictement selon le schéma fourni par l'API (types imposés).
-- Utilise des chaînes vides ou null là où l'information est absente (ne invente pas de faits).
-- Dates au format ISO YYYY-MM-DD lorsque tu peux les inférer avec confiance, sinon chaîne vide.
-- `languages.language_name` : nom naturel ou code ISO ; `proficiency_level` : libellé libre (A1…, notion, courant…).
-- `formations` : formations continues / certificats courts si distincts des entrées `certifications` ou `educations`.
-PROMPT;
+        $system = CvExtractionSystemPrompt::text();
 
         $request = new GenerateContentRequest(
             messages: [
@@ -55,6 +46,8 @@ PROMPT;
 
         $result = $this->languageModel->generateContent($request);
 
-        return LanguageModelJsonDecoder::decodeObject($result->text);
+        return ProfileBundleDraftNormalizer::normalize(
+            LanguageModelJsonDecoder::decodeObject($result->text),
+        );
     }
 }

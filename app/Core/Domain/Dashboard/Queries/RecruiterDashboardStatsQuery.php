@@ -8,21 +8,12 @@ use App\Core\Domain\Identity\Models\User;
 use App\Core\Domain\Identity\Support\UserPersonName;
 use App\Core\Domain\Recruiter\Enums\RecruiterAssignmentStatus;
 use App\Core\Domain\Recruiter\Enums\RecruiterOfferSubmissionStatus;
-use App\Core\Domain\Recruiter\Enums\RecruiterSubmissionStatus;
 use App\Core\Domain\Recruiter\Models\RecruiterOfferSubmission;
 use App\Core\Domain\Recruiter\Models\RecruiterProfileAssignment;
-use App\Core\Domain\Recruiter\Models\RecruiterProfileSubmission;
 use App\Core\Domain\Recruiter\Support\RecruiterAccess;
 
 final class RecruiterDashboardStatsQuery
 {
-    private const ACTIVE_SUBMISSION_STATUSES = [
-        RecruiterSubmissionStatus::Draft,
-        RecruiterSubmissionStatus::Submitted,
-        RecruiterSubmissionStatus::InReview,
-        RecruiterSubmissionStatus::NeedsChanges,
-    ];
-
     private const PENDING_OFFER_STATUSES = [
         RecruiterOfferSubmissionStatus::Submitted,
         RecruiterOfferSubmissionStatus::InReview,
@@ -44,29 +35,25 @@ final class RecruiterDashboardStatsQuery
             return [
                 'organization' => null,
                 'stats' => [
-                    'submissions_active' => 0,
-                    'submissions_total' => 0,
                     'assignments_active' => 0,
                     'offers_pending' => 0,
+                    'offers_total' => 0,
                 ],
-                'recent_submissions' => [],
+                'recent_assignments' => [],
             ];
         }
 
         $orgId = (int) $organization->id;
-        $activeStatusValues = array_map(
-            static fn (RecruiterSubmissionStatus $s) => $s->value,
-            self::ACTIVE_SUBMISSION_STATUSES,
-        );
         $pendingOfferValues = array_map(
             static fn (RecruiterOfferSubmissionStatus $s) => $s->value,
             self::PENDING_OFFER_STATUSES,
         );
 
-        $recent = RecruiterProfileSubmission::query()
+        $recent = RecruiterProfileAssignment::query()
             ->where('recruiter_organization_id', $orgId)
+            ->where('status', RecruiterAssignmentStatus::Active->value)
             ->with([...UserPersonName::withProfile('candidate')])
-            ->latest('updated_at')
+            ->latest('assigned_at')
             ->limit(5)
             ->get();
 
@@ -80,13 +67,6 @@ final class RecruiterDashboardStatsQuery
                 'portal_host' => $organization->portal_host,
             ],
             'stats' => [
-                'submissions_active' => RecruiterProfileSubmission::query()
-                    ->where('recruiter_organization_id', $orgId)
-                    ->whereIn('status', $activeStatusValues)
-                    ->count(),
-                'submissions_total' => RecruiterProfileSubmission::query()
-                    ->where('recruiter_organization_id', $orgId)
-                    ->count(),
                 'assignments_active' => RecruiterProfileAssignment::query()
                     ->where('recruiter_organization_id', $orgId)
                     ->where('status', RecruiterAssignmentStatus::Active->value)
@@ -95,9 +75,12 @@ final class RecruiterDashboardStatsQuery
                     ->where('recruiter_organization_id', $orgId)
                     ->whereIn('status', $pendingOfferValues)
                     ->count(),
+                'offers_total' => RecruiterOfferSubmission::query()
+                    ->where('recruiter_organization_id', $orgId)
+                    ->count(),
             ],
-            'recent_submissions' => $recent->map(function (RecruiterProfileSubmission $submission): array {
-                $candidate = $submission->candidate;
+            'recent_assignments' => $recent->map(function (RecruiterProfileAssignment $assignment): array {
+                $candidate = $assignment->candidate;
                 $name = null;
                 if ($candidate !== null) {
                     $name = trim(
@@ -109,14 +92,12 @@ final class RecruiterDashboardStatsQuery
                 }
 
                 return [
-                    'id' => $submission->id,
-                    'status' => $submission->status instanceof \BackedEnum
-                        ? $submission->status->value
-                        : (string) $submission->status,
+                    'id' => $assignment->id,
+                    'candidate_user_id' => $assignment->candidate_user_id,
                     'candidate_name' => $name,
                     'candidate_email' => $candidate?->email,
-                    'submitted_at' => $submission->submitted_at?->toIso8601String(),
-                    'updated_at' => $submission->updated_at?->toIso8601String(),
+                    'assigned_at' => $assignment->assigned_at?->toIso8601String(),
+                    'visible_sections' => $assignment->resolvedVisibleSections(),
                 ];
             })->values()->all(),
         ];

@@ -68,9 +68,15 @@ final class GeminiLanguageModelClient implements LanguageModelClientInterface
             }
 
             $geminiRole = $message->role === ChatRole::Assistant ? 'model' : 'user';
+            $parts = [['text' => $message->content]];
+
+            foreach ($message->allImageUrls() as $imageUrl) {
+                $parts[] = $this->buildImagePart($imageUrl);
+            }
+
             $contents[] = [
                 'role' => $geminiRole,
-                'parts' => [['text' => $message->content]],
+                'parts' => $parts,
             ];
         }
 
@@ -103,6 +109,31 @@ final class GeminiLanguageModelClient implements LanguageModelClientInterface
         }
 
         return $payload;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function buildImagePart(string $imageUrl): array
+    {
+        if (str_starts_with($imageUrl, 'data:')) {
+            if (! preg_match('#^data:([^;]+);base64,(.+)$#', $imageUrl, $matches)) {
+                throw new LanguageModelTransportException('Data URL image invalide pour Gemini.');
+            }
+
+            return [
+                'inline_data' => [
+                    'mime_type' => $matches[1],
+                    'data' => $matches[2],
+                ],
+            ];
+        }
+
+        return [
+            'file_data' => [
+                'file_uri' => $imageUrl,
+            ],
+        ];
     }
 
     /**

@@ -28,6 +28,12 @@ final class OfferApplicationReadinessService
         $offer->loadMissing(['requiredDocuments', 'program.requiredDocuments']);
 
         $blockingReasons = [];
+        $emailVerified = $user->hasVerifiedEmail();
+
+        if (! $emailVerified) {
+            $blockingReasons[] = __('Vérifiez votre adresse e-mail avant de candidater.');
+        }
+
         $offerStatus = $offer->status instanceof OfferStatus ? $offer->status->value : (string) $offer->status;
         $accepting = $this->offerAcceptsApplications($offer);
 
@@ -97,7 +103,8 @@ final class OfferApplicationReadinessService
             ? ApplicationStatus::Pending->value
             : ApplicationStatus::InProgress->value;
 
-        $canApply = $accepting
+        $canApply = $emailVerified
+            && $accepting
             && $existing === null
             && $missingMandatory === 0
             && $flow !== null;

@@ -15,6 +15,7 @@ final class CreateProcessFlowAction
     public function __construct(
         private readonly ProcessFlowAttributeMapper $attributeMapper,
         private readonly ProcessFlowSectionsSync $sectionsSync,
+        private readonly ProcessFlowFeeRecalculator $feeRecalculator,
     ) {}
 
     public function execute(ProcessFlowDto $dto): ProcessFlow

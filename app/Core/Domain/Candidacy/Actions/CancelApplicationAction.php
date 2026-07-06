@@ -1,0 +1,51 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Core\Domain\Candidacy\Actions;
+
+use App\Core\Domain\Candidacy\Models\Application;
+use App\Core\Domain\Candidacy\Services\ApplicationActivityLogger;
+use App\Core\Domain\Candidacy\States\ApplicationStatus;
+use App\Core\Domain\Candidacy\States\ApplicationStepStatus;
+use App\Core\Domain\Identity\Models\User;
+use Illuminate\Support\Facades\DB;
+
+final class CancelApplicationAction
+{
+    public function __construct(
+        private readonly ApplicationActivityLogger $activityLogger,
+    ) {}
+
+    public function execute(Application $application, User $actor, ?string $reason = null): Application
+    {
+        $status = $application->status instanceof ApplicationStatus
+            ? $application->status
+            : ApplicationStatus::tryFrom((string) $application->status);
+
+        if (! in_array($status, [ApplicationStatus::Pending, ApplicationStatus::InProgress], true)) {
+            throw new \InvalidArgumentException(__('Cette candidature ne peut plus être annulée.'));
+        }
+
+        return DB::transaction(function () use ($application, $actor, $reason): Application {
+            $application->update([
+                'status' => ApplicationStatus::Cancelled->value,
+                'current_application_step_id' => null,
+            ]);
+
+            $application->steps()->update([
+                'status' => ApplicationStepStatus::Locked->value,
+            ]);
+
+            $this->activityLogger->log(
+                (int) $application->id,
+                'application.cancelled',
+                null,
+                (int) $actor->id,
+                ['reason' => $reason],
+            );
+
+            return $application->fresh(['steps', 'currentStep', 'offer', 'program']);
+        });
+    }
+}

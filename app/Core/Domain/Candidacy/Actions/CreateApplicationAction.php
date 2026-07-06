@@ -15,7 +15,9 @@ use App\Core\Domain\Candidacy\States\ApplicationStepStatus;
 use App\Core\Domain\Catalog\Models\Offer;
 use App\Core\Domain\Finance\Models\PaymentInstallment;
 use App\Core\Domain\Finance\Models\PaymentSchedule;
+use App\Core\Domain\Workflow\Models\ProcessStep;
 use App\Core\Domain\Workflow\States\ProcessStepType;
+use App\Core\Domain\Identity\Actions\Profile\AssignCandidateMatriculeAction;
 use App\Core\Domain\Identity\Models\User;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -27,6 +29,7 @@ final class CreateApplicationAction
         private readonly ApplicationStepSnapshotBuilder $snapshotBuilder,
         private readonly OfferApplicationReadinessService $offerReadiness,
         private readonly AttachOfferRequiredDocumentsAction $attachOfferDocuments,
+        private readonly AssignCandidateMatriculeAction $assignMatricule,
     ) {}
 
     public function execute(
@@ -38,6 +41,12 @@ final class CreateApplicationAction
     ): Application {
         if ($offerId === null && $programId === null && $processFlowId === null) {
             throw ApplicationEnrollmentException::missingTarget();
+        }
+
+        if (! $user->hasVerifiedEmail()) {
+            throw ApplicationEnrollmentException::notEligible([
+                __('Vérifiez votre adresse e-mail avant de candidater.'),
+            ]);
         }
 
         $flow = $this->processFlowResolver->resolveWithSteps($offerId, $programId, $countryId, $processFlowId);
@@ -67,6 +76,8 @@ final class CreateApplicationAction
         $now = Carbon::now();
 
         return DB::transaction(function () use ($user, $offerId, $programId, $flow, $now, $initialStatus): Application {
+            $this->assignMatricule->execute($user);
+
             $application = Application::query()->create([
                 'application_number' => $this->temporaryNumber(),
                 'user_id' => $user->id,
@@ -119,19 +130,25 @@ final class CreateApplicationAction
             ]);
 
             foreach ($steps as $step) {
-                $type = $step->step_type instanceof ProcessStepType
-                    ? $step->step_type
-                    : ProcessStepType::tryFrom((string) $step->step_type);
-
-                if ($type === ProcessStepType::Payment && (float) $step->amount_due > 0) {
-                    PaymentInstallment::query()->create([
-                        'application_id' => $application->id,
-                        'application_step_id' => $step->id,
-                        'amount' => $step->amount_due,
-                        'currency' => 'XAF',
-                        'status' => 'PENDING',
-                    ]);
+                if ((float) $step->amount_due <= 0) {
+                    continue;
                 }
+
+                $dueDate = null;
+                if ($step->process_step_id) {
+                    $template = ProcessStep::query()->find($step->process_step_id);
+                    $days = (int) ($template?->sla_alert_days ?? $template?->estimated_duration_days ?? 14);
+                    $dueDate = $now->copy()->addDays(max(1, $days));
+                }
+
+                PaymentInstallment::query()->create([
+                    'application_id' => $application->id,
+                    'application_step_id' => $step->id,
+                    'amount' => $step->amount_due,
+                    'currency' => 'XAF',
+                    'due_date' => $dueDate,
+                    'status' => 'PENDING',
+                ]);
             }
 
             if ($offerId !== null) {
@@ -142,8 +159,8 @@ final class CreateApplicationAction
                 'steps' => fn ($q) => $q->orderBy('step_order'),
                 'currentStep',
                 'processFlow:id,version,flow_group_id,name',
-                'offer:id,title',
-                'program:id,name',
+                'offer:id',
+                'program:id',
                 'documents.userDocument.documentType',
             ]);
         });

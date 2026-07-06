@@ -29,17 +29,22 @@ final class ProfileBundleGeminiSchema
                 'user_profile' => [
                     'type' => 'OBJECT',
                     'properties' => [
-                        'first_name' => ['type' => 'STRING'],
-                        'last_name' => ['type' => 'STRING'],
+                        'first_name' => ['type' => 'STRING', 'description' => 'Prénom(s) uniquement — jamais les noms de famille (ex. Hilaire, Francois Mavis)'],
+                        'last_name' => ['type' => 'STRING', 'description' => 'Nom(s) de famille uniquement, en majuscules (ex. TAMAKUE GUIFO, ATANGANA OWONA)'],
+                        'full_name' => ['type' => 'STRING', 'description' => 'Identité complète telle qu\'affichée sur le CV, sans duplication dans first/last'],
                         'date_of_birth' => ['type' => 'STRING', 'description' => 'ISO 8601 date (YYYY-MM-DD) ou vide'],
                         'place_of_birth' => ['type' => 'STRING'],
                         'nationality_country_name' => ['type' => 'STRING'],
                         'residence_city_name' => ['type' => 'STRING'],
+                        'residence_country_name' => ['type' => 'STRING'],
                         'address' => ['type' => 'STRING'],
                         'phone_number2' => ['type' => 'STRING'],
                         'phone_number3' => ['type' => 'STRING'],
                         'gender' => ['type' => 'STRING'],
-                        'bio' => ['type' => 'STRING'],
+                        'bio' => [
+                            'type' => 'STRING',
+                            'description' => 'Paragraphe de présentation / profil professionnel du candidat (texte intégral si présent sur le CV).',
+                        ],
                         'marital_status' => ['type' => 'STRING'],
                         'number_of_children' => ['type' => 'INTEGER'],
                         'email_institutional' => ['type' => 'STRING'],
@@ -78,6 +83,27 @@ final class ProfileBundleGeminiSchema
                             'achievements' => ['type' => 'STRING'],
                             'country_name' => ['type' => 'STRING'],
                             'city_name' => ['type' => 'STRING'],
+                            'experience_type' => [
+                                'type' => 'STRING',
+                                'description' => 'employment|internship|volunteer|academic_project|training|other',
+                            ],
+                            'is_professional' => ['type' => 'BOOLEAN'],
+                        ],
+                    ],
+                ],
+                'internships' => [
+                    'type' => 'ARRAY',
+                    'items' => [
+                        'type' => 'OBJECT',
+                        'properties' => [
+                            'title' => ['type' => 'STRING'],
+                            'organization' => ['type' => 'STRING'],
+                            'location' => ['type' => 'STRING'],
+                            'start_date' => ['type' => 'STRING'],
+                            'end_date' => ['type' => 'STRING'],
+                            'is_current' => ['type' => 'BOOLEAN'],
+                            'description' => ['type' => 'STRING'],
+                            'type' => ['type' => 'STRING'],
                         ],
                     ],
                 ],
@@ -101,7 +127,17 @@ final class ProfileBundleGeminiSchema
                         'type' => 'OBJECT',
                         'properties' => [
                             'language_name' => ['type' => 'STRING', 'description' => 'Nom ou code ISO de la langue'],
+                            'language_code' => ['type' => 'STRING', 'description' => 'Code ISO 639-1 si connu (fr, en…)'],
                             'proficiency_level' => ['type' => 'STRING', 'description' => 'Niveau libre (ex: B2, courant, notion)'],
+                        ],
+                    ],
+                ],
+                'skills' => [
+                    'type' => 'ARRAY',
+                    'items' => [
+                        'type' => 'OBJECT',
+                        'properties' => [
+                            'name' => ['type' => 'STRING'],
                         ],
                     ],
                 ],
@@ -115,6 +151,16 @@ final class ProfileBundleGeminiSchema
                             'organization' => ['type' => 'STRING'],
                             'completed_at' => ['type' => 'STRING'],
                             'summary' => ['type' => 'STRING'],
+                        ],
+                    ],
+                ],
+                'interests' => [
+                    'type' => 'ARRAY',
+                    'description' => 'Centres d\'intérêt, hobbies, loisirs (section dédiée du CV).',
+                    'items' => [
+                        'type' => 'OBJECT',
+                        'properties' => [
+                            'name' => ['type' => 'STRING'],
                         ],
                     ],
                 ],

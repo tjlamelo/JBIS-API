@@ -6,10 +6,13 @@ namespace App\Core\Application\Api\V1\Candidacy\Controllers;
 
 use App\Core\Application\Api\Responses\BaseResponse;
 use App\Core\Application\Api\V1\Candidacy\Requests\StoreApplicationRequest;
+use App\Core\Domain\Candidacy\Actions\AcceptApplicationProtocolAction;
+use App\Core\Domain\Candidacy\Actions\CancelApplicationAction;
 use App\Core\Domain\Candidacy\Actions\CreateApplicationAction;
 use App\Core\Domain\Candidacy\Exceptions\ApplicationEnrollmentException;
 use App\Core\Domain\Candidacy\Models\Application;
 use App\Core\Domain\Candidacy\Queries\ApplicationProgressQuery;
+use App\Core\Domain\Candidacy\States\ApplicationStatus;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -19,6 +22,8 @@ final class ApplicationController extends Controller
     public function __construct(
         private readonly CreateApplicationAction $createApplicationAction,
         private readonly ApplicationProgressQuery $applicationProgressQuery,
+        private readonly CancelApplicationAction $cancelApplicationAction,
+        private readonly AcceptApplicationProtocolAction $acceptProtocolAction,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -40,14 +45,17 @@ final class ApplicationController extends Controller
         };
 
         return BaseResponse::ok([
-            'applications' => $applications->map(function (Application $app) use ($pick): array {
+            'applications' => $applications->map(function (Application $app) use ($pick, $locale): array {
+                $status = $app->status instanceof \BackedEnum ? $app->status->value : $app->status;
+
                 return [
                 'id' => $app->id,
                 'application_number' => $app->application_number,
-                'status' => $app->status instanceof \BackedEnum ? $app->status->value : $app->status,
+                'status' => $status,
+                'status_label' => ApplicationStatus::tryFrom((string) $status)?->label($locale) ?? (string) $status,
                 'offer_id' => $app->offer_id,
                 'program_id' => $app->program_id,
-                'offer_label' => $app->offer ? $pick($app->offer->title) : null,
+                'offer_label' => $app->offer ? $pick($app->offer->resolvedTitleTranslations()) : null,
                 'program_label' => $app->program ? $pick($app->program->name) : null,
                 'process_flow_version' => $app->process_flow_version,
                 'total_due' => (float) $app->total_due,
@@ -97,6 +105,40 @@ final class ApplicationController extends Controller
         $progress = $this->applicationProgressQuery->forApplication($application, $locale);
 
         return BaseResponse::ok([
+            'application' => $progress->toArray(),
+        ])->toJsonResponse();
+    }
+
+    public function cancel(Request $request, Application $application): JsonResponse
+    {
+        $this->authorize('cancel', $application);
+
+        $application = $this->cancelApplicationAction->execute(
+            $application,
+            $request->user(),
+            $request->input('reason') ? (string) $request->input('reason') : null,
+        );
+
+        $locale = str_starts_with(strtolower((string) $request->header('X-Locale', 'fr')), 'en') ? 'en' : 'fr';
+        $progress = $this->applicationProgressQuery->forApplication($application, $locale);
+
+        return BaseResponse::ok([
+            'message' => __('Candidature annulée.'),
+            'application' => $progress->toArray(),
+        ])->toJsonResponse();
+    }
+
+    public function acceptProtocol(Request $request, Application $application): JsonResponse
+    {
+        $this->authorize('acceptProtocol', $application);
+
+        $application = $this->acceptProtocolAction->execute($application, $request->user(), $request);
+
+        $locale = str_starts_with(strtolower((string) $request->header('X-Locale', 'fr')), 'en') ? 'en' : 'fr';
+        $progress = $this->applicationProgressQuery->forApplication($application, $locale);
+
+        return BaseResponse::ok([
+            'message' => __('Protocole accepté.'),
             'application' => $progress->toArray(),
         ])->toJsonResponse();
     }

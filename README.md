@@ -77,6 +77,304 @@ database/
 
 ---
 
+## Modélisation UML du domaine
+
+Les modèles Eloquent vivent dans `app/Core/Domain/*/Models/`.  
+Le tableau ci-dessous liste, pour chaque *bounded context*, les relations entre les classes (verbe, multiplicité, table pivot le cas échéant). Un diagramme Mermaid global suit en fin de section.
+
+### Bounded contexts
+
+| Contexte | Dossier | Classes clés |
+|----------|---------|--------------|
+| Identity | `Domain/Identity/Models/` | User, UserProfile, UserDocument, Education, Experience, Certification, UserSkill, UserTraining, UserPreferredCountry, UserVisaHistory… |
+| Catalog | `Domain/Catalog/Models/` | Offer, Program, Company, Category, Trade, Skill, SkillCategory, EducationLevel, ContractType, OfferType, WorkSchedule, Benefit, Training, Agency… |
+| Candidacy | `Domain/Candidacy/Models/` | Application, ApplicationStep, ApplicationDocument, Interview, Appointment, RequiredDocument, OfferLanguageCourseRequirement, CandidateLanguageCourse… |
+| Workflow | `Domain/Workflow/Models/` | ProcessFlow, ProcessFlowSection, ProcessStep |
+| Finance | `Domain/Finance/Models/` | Payment, PaymentSchedule, PaymentInstallment |
+| Recruiter | `Domain/Recruiter/Models/` | RecruiterOrganization, RecruiterOfferSubmission, RecruiterProfileAssignment, RecruiterOnboardingApplication |
+| Location | `Domain/Location/Models/` | Country, Region, City, GeographicZone, Language, LanguageLevel |
+| Communication | `Domain/Communication/Models/` | DiscoverySource, MailCampaign, MailDispatch, SmsCampaign, SmsDispatch, NewsletterSubscription, ContactRequest |
+
+### Relations détaillées par contexte
+
+Légende : `◆--` = appartenance (N-1), `1--*` = posséder plusieurs, `*--*` = many-to-many, `1--1` = posséder un. Les verbes sont à l'infinitif, conformément à la notation UML. Les classes marquées **ENUM** sont des tables de référence / énumérations du domaine.
+
+### Candidacy
+
+
+| Type | Classe | Relation | Cible | Multiplicité | Notes |
+|------|--------|----------|-------|--------------|-------|
+| - | `Application` | `user` — appartenir à | `User` | ◆-- |  |
+| - | `Application` | `offer` — appartenir à | `Offer` | ◆-- |  |
+| - | `Application` | `program` — appartenir à | `Program` | ◆-- |  |
+| - | `Application` | `processFlow` — appartenir à | `ProcessFlow` | ◆-- |  |
+| - | `Application` | `protocolDocument` — appartenir à | `UserDocument` | ◆-- | pivot `protocol_document_id` |
+| - | `Application` | `currentStep` — appartenir à | `ApplicationStep` | ◆-- | pivot `current_application_step_id` |
+| - | `Application` | `steps` — posséder plusieurs | `ApplicationStep` | 1--* |  |
+| - | `Application` | `documents` — posséder plusieurs | `ApplicationDocument` | 1--* |  |
+| - | `Application` | `events` — posséder plusieurs | `ApplicationStepEvent` | 1--* |  |
+| - | `Application` | `interviews` — posséder plusieurs | `Interview` | 1--* |  |
+| - | `Application` | `languageCourses` — posséder plusieurs | `CandidateLanguageCourse` | 1--* |  |
+| - | `Application` | `payments` — posséder plusieurs | `Payment` | 1--* |  |
+| - | `Application` | `paymentSchedule` — posséder un | `PaymentSchedule` | 1--1 |  |
+| - | `ApplicationDocument` | `application` — appartenir à | `Application` | ◆-- |  |
+| - | `ApplicationDocument` | `userDocument` — appartenir à | `UserDocument` | ◆-- |  |
+| - | `ApplicationDocument` | `applicationStep` — appartenir à | `ApplicationStep` | ◆-- |  |
+| - | `ApplicationDocument` | `reviewer` — appartenir à | `User` | ◆-- | pivot `reviewed_by` |
+| - | `ApplicationStep` | `application` — appartenir à | `Application` | ◆-- |  |
+| - | `ApplicationStep` | `processStep` — appartenir à | `ProcessStep` | ◆-- |  |
+| - | `ApplicationStep` | `payments` — posséder plusieurs | `Payment` | 1--* |  |
+| - | `ApplicationStep` | `installments` — posséder plusieurs | `PaymentInstallment` | 1--* |  |
+| - | `ApplicationStep` | `applicationDocuments` — posséder plusieurs | `ApplicationDocument` | 1--* |  |
+| - | `ApplicationStep` | `interview` — posséder un | `Interview` | 1--1 |  |
+| - | `ApplicationStep` | `documentsValidatedBy` — appartenir à | `User` | ◆-- | pivot `documents_validated_by` |
+| - | `ApplicationStep` | `interviewValidatedBy` — appartenir à | `User` | ◆-- | pivot `interview_validated_by` |
+| - | `ApplicationStep` | `signedContract` — appartenir à | `UserDocument` | ◆-- | pivot `signed_contract_id` |
+| - | `ApplicationStepEvent` | `application` — appartenir à | `Application` | ◆-- |  |
+| - | `ApplicationStepEvent` | `applicationStep` — appartenir à | `ApplicationStep` | ◆-- |  |
+| - | `ApplicationStepEvent` | `actor` — appartenir à | `User` | ◆-- | pivot `actor_user_id` |
+| - | `Appointment` | `user` — appartenir à | `User` | ◆-- |  |
+| - | `Appointment` | `agency` — appartenir à | `Agency` | ◆-- |  |
+| - | `Appointment` | `discoverySource` — appartenir à | `DiscoverySource` | ◆-- |  |
+| - | `CandidateLanguageCourse` | `user` — appartenir à | `User` | ◆-- |  |
+| - | `CandidateLanguageCourse` | `offer` — appartenir à | `Offer` | ◆-- |  |
+| - | `CandidateLanguageCourse` | `application` — appartenir à | `Application` | ◆-- |  |
+| - | `CandidateLanguageCourse` | `language` — appartenir à | `Language` | ◆-- |  |
+| - | `CandidateLanguageCourse` | `training` — appartenir à | `Training` | ◆-- |  |
+| - | `CandidateLanguageCourse` | `userTraining` — appartenir à | `UserTraining` | ◆-- |  |
+| - | `CandidateLanguageCourse` | `recordedBy` — appartenir à | `User` | ◆-- | pivot `recorded_by` |
+| - | `Interview` | `application` — appartenir à | `Application` | ◆-- |  |
+| - | `Interview` | `applicationStep` — appartenir à | `ApplicationStep` | ◆-- |  |
+| - | `Interview` | `company` — appartenir à | `Company` | ◆-- |  |
+| - | `Interview` | `reportDocument` — appartenir à | `UserDocument` | ◆-- | pivot `report_document_id` |
+| - | `OfferLanguageCourseRequirement` | `offer` — appartenir à | `Offer` | ◆-- |  |
+| - | `OfferLanguageCourseRequirement` | `language` — appartenir à | `Language` | ◆-- |  |
+| - | `OfferLanguageCourseRequirement` | `training` — appartenir à | `Training` | ◆-- |  |
+| - | `RequiredDocument` | `program` — appartenir à | `Program` | ◆-- |  |
+| - | `RequiredDocument` | `offer` — appartenir à | `Offer` | ◆-- |  |
+
+### Catalog
+
+
+| Type | Classe | Relation | Cible | Multiplicité | Notes |
+|------|--------|----------|-------|--------------|-------|
+| - | `Agency` | `manager` — appartenir à | `User` | ◆-- | pivot `manager_id` |
+| - | `Agency` | `country` — appartenir à | `Country` | ◆-- |  |
+| - | `Agency` | `city` — appartenir à | `City` | ◆-- |  |
+| - | `Agency` | `profiles` — posséder plusieurs | `UserProfile` | 1--* | pivot `agency_id` |
+| **ENUM** | `Benefit` | `offers` — être lié à plusieurs | `Offer` | *--* | pivot `benefit_offer` |
+| **ENUM** | `Category` | `users` — être lié à plusieurs | `User` | *--* | pivot `user_sector` |
+| **ENUM** | `Category` | `skills` — posséder plusieurs | `Skill` | 1--* | pivot `category_id` |
+| **ENUM** | `Category` | `trades` — posséder plusieurs | `Trade` | 1--* | pivot `category_id` |
+| - | `CertificationOffer` | `processFlow` — appartenir à | `ProcessFlow` | ◆-- |  |
+| - | `Company` | `category` — appartenir à | `Category` | ◆-- | pivot `category_id` |
+| - | `Company` | `country` — appartenir à | `Country` | ◆-- |  |
+| - | `Company` | `city` — appartenir à | `City` | ◆-- |  |
+| - | `Company` | `offers` — posséder plusieurs | `Offer` | 1--* | pivot `company_id` |
+| **ENUM** | `ContractType` | `offers` — posséder plusieurs | `Offer` | 1--* | pivot `contract_type_id` |
+| **ENUM** | `EducationLevel` | `offers` — posséder plusieurs | `Offer` | 1--* | pivot `education_level_id` |
+| - | `Offer` | `languages` — être lié à plusieurs | `Language` | *--* | pivot `language_offer` |
+| - | `Offer` | `city` — appartenir à | `City` | ◆-- |  |
+| - | `Offer` | `country` — appartenir à | `Country` | ◆-- |  |
+| - | `Offer` | `contractType` — appartenir à | `ContractType` | ◆-- |  |
+| - | `Offer` | `offerType` — appartenir à | `OfferType` | ◆-- |  |
+| - | `Offer` | `workSchedule` — appartenir à | `WorkSchedule` | ◆-- |  |
+| - | `Offer` | `educationLevel` — appartenir à | `EducationLevel` | ◆-- |  |
+| - | `Offer` | `company` — appartenir à | `Company` | ◆-- |  |
+| - | `Offer` | `program` — appartenir à | `Program` | ◆-- |  |
+| - | `Offer` | `category` — appartenir à | `Category` | ◆-- | pivot `category_id` |
+| - | `Offer` | `trade` — appartenir à | `Trade` | ◆-- |  |
+| - | `Offer` | `benefits` — être lié à plusieurs | `Benefit` | *--* |  |
+| - | `Offer` | `skills` — être lié à plusieurs | `Skill` | *--* | pivot `offer_skill` |
+| - | `Offer` | `requiredDocuments` — être lié à plusieurs | `RequiredDocument` | *--* | pivot `offer_required_document` |
+| - | `Offer` | `languageCourseRequirements` — posséder plusieurs | `OfferLanguageCourseRequirement` | 1--* |  |
+| - | `Offer` | `candidateLanguageCourses` — posséder plusieurs | `CandidateLanguageCourse` | 1--* |  |
+| **ENUM** | `OfferType` | `offers` — posséder plusieurs | `Offer` | 1--* | pivot `offer_type_id` |
+| - | `Program` | `languages` — être lié à plusieurs | `Language` | *--* | pivot `language_program` |
+| - | `Program` | `offers` — posséder plusieurs | `Offer` | 1--* | pivot `program_id` |
+| - | `Program` | `geographicZone` — appartenir à | `GeographicZone` | ◆-- | pivot `geographic_zone_id` |
+| - | `Program` | `requiredDocuments` — être lié à plusieurs | `RequiredDocument` | *--* | pivot `program_required_document` |
+| **ENUM** | `Skill` | `skillCategory` — appartenir à | `SkillCategory` | ◆-- | pivot `skill_category_id` |
+| **ENUM** | `Skill` | `category` — appartenir à | `Category` | ◆-- | pivot `category_id` |
+| **ENUM** | `Skill` | `offers` — être lié à plusieurs | `Offer` | *--* | pivot `offer_skill` |
+| **ENUM** | `SkillCategory` | `skills` — posséder plusieurs | `Skill` | 1--* | pivot `skill_category_id` |
+| **ENUM** | `Trade` | `category` — appartenir à | `Category` | ◆-- | pivot `category_id` |
+| **ENUM** | `Trade` | `offers` — posséder plusieurs | `Offer` | 1--* |  |
+| **ENUM** | `Training` | `userTrainings` — posséder plusieurs | `UserTraining` | 1--* | pivot `training_id` |
+| **ENUM** | `WorkSchedule` | `offers` — posséder plusieurs | `Offer` | 1--* | pivot `work_schedule_id` |
+
+### Communication
+
+
+| Type | Classe | Relation | Cible | Multiplicité | Notes |
+|------|--------|----------|-------|--------------|-------|
+| - | `ContactRequest` | `discoverySource` — appartenir à | `DiscoverySource` | ◆-- |  |
+| - | `MailCampaign` | `creator` — appartenir à | `User` | ◆-- | pivot `created_by` |
+| - | `MailCampaign` | `dispatches` — posséder plusieurs | `MailDispatch` | 1--* |  |
+| - | `MailDispatch` | `campaign` — appartenir à | `MailCampaign` | ◆-- | pivot `mail_campaign_id` |
+| - | `MailDispatch` | `user` — appartenir à | `User` | ◆-- |  |
+| - | `NewsletterSubscription` | `user` — appartenir à | `User` | ◆-- |  |
+| - | `SmsCampaign` | `creator` — appartenir à | `User` | ◆-- | pivot `created_by` |
+| - | `SmsCampaign` | `dispatches` — posséder plusieurs | `SmsDispatch` | 1--* |  |
+| - | `SmsDispatch` | `campaign` — appartenir à | `SmsCampaign` | ◆-- | pivot `sms_campaign_id` |
+| - | `SmsDispatch` | `user` — appartenir à | `User` | ◆-- |  |
+
+### Finance
+
+
+| Type | Classe | Relation | Cible | Multiplicité | Notes |
+|------|--------|----------|-------|--------------|-------|
+| - | `Payment` | `application` — appartenir à | `Application` | ◆-- |  |
+| - | `Payment` | `applicationStep` — appartenir à | `ApplicationStep` | ◆-- |  |
+| - | `Payment` | `user` — appartenir à | `User` | ◆-- |  |
+| - | `PaymentInstallment` | `application` — appartenir à | `Application` | ◆-- |  |
+| - | `PaymentInstallment` | `applicationStep` — appartenir à | `ApplicationStep` | ◆-- |  |
+| - | `PaymentSchedule` | `application` — appartenir à | `Application` | ◆-- |  |
+
+### Identity
+
+
+| Type | Classe | Relation | Cible | Multiplicité | Notes |
+|------|--------|----------|-------|--------------|-------|
+| - | `Archive` | `user` — appartenir à | `User` | ◆-- |  |
+| - | `Certification` | `document` — appartenir à | `UserDocument` | ◆-- | pivot `document_id` |
+| - | `Certification` | `user` — appartenir à | `User` | ◆-- |  |
+| - | `Certification` | `approver` — appartenir à | `User` | ◆-- | pivot `approved_by` |
+| **ENUM** | `DocumentType` | `userDocuments` — posséder plusieurs | `UserDocument` | 1--* | pivot `document_type_id` |
+| - | `Education` | `document` — appartenir à | `UserDocument` | ◆-- | pivot `document_id` |
+| - | `Education` | `user` — appartenir à | `User` | ◆-- |  |
+| - | `Education` | `level` — appartenir à | `EducationLevel` | ◆-- | pivot `education_level_id` |
+| - | `Education` | `country` — appartenir à | `Country` | ◆-- |  |
+| - | `Experience` | `document` — appartenir à | `UserDocument` | ◆-- | pivot `document_id` |
+| - | `Experience` | `user` — appartenir à | `User` | ◆-- |  |
+| - | `Experience` | `contractType` — appartenir à | `ContractType` | ◆-- |  |
+| - | `Experience` | `country` — appartenir à | `Country` | ◆-- |  |
+| - | `InterestAndHobby` | `user` — appartenir à | `User` | ◆-- |  |
+| - | `Language` | `user` — appartenir à | `User` | ◆-- |  |
+| - | `Language` | `language` — appartenir à | `CatalogLanguage` | ◆-- | pivot `language_id` |
+| - | `Language` | `languageLevel` — appartenir à | `LanguageLevel` | ◆-- | pivot `language_level_id` |
+| - | `LegalDocument` | `publisher` — appartenir à | `User` | ◆-- | pivot `published_by` |
+| - | `User` | `profile` — posséder un | `UserProfile` | 1--1 |  |
+| - | `User` | `sectors` — être lié à plusieurs | `Category` | *--* | pivot `user_sector` |
+| - | `User` | `trades` — être lié à plusieurs | `Trade` | *--* | pivot `user_trade` |
+| - | `User` | `documents` — posséder plusieurs | `UserDocument` | 1--* |  |
+| - | `User` | `experiences` — posséder plusieurs | `Experience` | 1--* |  |
+| - | `User` | `languages` — posséder plusieurs | `Language` | 1--* |  |
+| - | `User` | `userSkills` — posséder plusieurs | `UserSkill` | 1--* |  |
+| - | `User` | `educations` — posséder plusieurs | `Education` | 1--* |  |
+| - | `User` | `certifications` — posséder plusieurs | `Certification` | 1--* |  |
+| - | `User` | `Offers` — posséder plusieurs | `Offer` | 1--* | pivot `user_id` |
+| - | `User` | `applications` — posséder plusieurs | `Application` | 1--* |  |
+| - | `User` | `devices` — posséder plusieurs | `UserDevice` | 1--* |  |
+| - | `User` | `settings` — posséder un | `UserSetting` | 1--1 |  |
+| - | `User` | `consents` — posséder plusieurs | `UserConsent` | 1--* |  |
+| - | `User` | `preferredCountries` — posséder plusieurs | `UserPreferredCountry` | 1--* |  |
+| - | `User` | `visaHistories` — posséder plusieurs | `UserVisaHistory` | 1--* |  |
+| - | `User` | `trainings` — posséder plusieurs | `UserTraining` | 1--* |  |
+| - | `User` | `languageCourses` — posséder plusieurs | `CandidateLanguageCourse` | 1--* |  |
+| - | `User` | `internships` — posséder plusieurs | `UserInternship` | 1--* |  |
+| - | `User` | `interests` — posséder plusieurs | `InterestAndHobby` | 1--* |  |
+| - | `User` | `staffNotes` — posséder plusieurs | `UserNote` | 1--* | pivot `user_id` |
+| - | `User` | `authoredStaffNotes` — posséder plusieurs | `UserNote` | 1--* | pivot `author_id` |
+| - | `User` | `recruiterOrganizations` — être lié à plusieurs | `RecruiterOrganization` | *--* | pivot `recruiter_organization_user` |
+| - | `UserConsent` | `user` — appartenir à | `User` | ◆-- |  |
+| - | `UserDevice` | `user` — appartenir à | `User` | ◆-- |  |
+| - | `UserDocument` | `documentType` — appartenir à | `DocumentType` | ◆-- | pivot `document_type_id` |
+| - | `UserDocument` | `user` — appartenir à | `User` | ◆-- |  |
+| - | `UserDocument` | `uploader` — appartenir à | `User` | ◆-- | pivot `uploaded_by` |
+| - | `UserDocument` | `validator` — appartenir à | `User` | ◆-- | pivot `validated_by` |
+| - | `UserDocument` | `issuingCountry` — appartenir à | `Country` | ◆-- | pivot `issuing_country_id` |
+| - | `UserDocument` | `linkedVisaHistories` — posséder plusieurs | `UserVisaHistory` | 1--* | pivot `document_id` |
+| - | `UserDocument` | `extractions` — posséder plusieurs | `UserDocumentExtraction` | 1--* | pivot `user_document_id` |
+| - | `UserDocumentExtraction` | `userDocument` — appartenir à | `UserDocument` | ◆-- | pivot `user_document_id` |
+| - | `UserDocumentExtraction` | `user` — appartenir à | `User` | ◆-- |  |
+| - | `UserDocumentExtraction` | `reviewer` — appartenir à | `User` | ◆-- | pivot `reviewed_by` |
+| - | `UserInternship` | `user` — appartenir à | `User` | ◆-- |  |
+| - | `UserInternship` | `certificateDocument` — appartenir à | `UserDocument` | ◆-- | pivot `certificate_document_id` |
+| - | `UserNote` | `user` — appartenir à | `User` | ◆-- |  |
+| - | `UserNote` | `author` — appartenir à | `User` | ◆-- | pivot `author_id` |
+| - | `UserPermissionOverride` | `user` — appartenir à | `User` | ◆-- |  |
+| - | `UserPreferredCountry` | `user` — appartenir à | `User` | ◆-- |  |
+| - | `UserPreferredCountry` | `country` — appartenir à | `Country` | ◆-- |  |
+| - | `UserProfile` | `user` — appartenir à | `User` | ◆-- |  |
+| - | `UserProfile` | `discoverySource` — appartenir à | `DiscoverySource` | ◆-- |  |
+| - | `UserProfile` | `nationality` — appartenir à | `Country` | ◆-- | pivot `nationality_country_id` |
+| - | `UserProfile` | `agency` — appartenir à | `Agency` | ◆-- | pivot `agency_id` |
+| - | `UserProfile` | `highestEducationLevel` — appartenir à | `EducationLevel` | ◆-- | pivot `highest_education_level_id` |
+| - | `UserProfile` | `approver` — appartenir à | `User` | ◆-- | pivot `approved_by` |
+| - | `UserProfile` | `recruiterOrganization` — appartenir à | `RecruiterOrganization` | ◆-- |  |
+| - | `UserSecurityEvent` | `user` — appartenir à | `User` | ◆-- |  |
+| - | `UserSecurityEvent` | `device` — appartenir à | `UserDevice` | ◆-- | pivot `user_device_id` |
+| - | `UserSetting` | `user` — appartenir à | `User` | ◆-- |  |
+| - | `UserSkill` | `user` — appartenir à | `User` | ◆-- |  |
+| - | `UserSkill` | `skill` — appartenir à | `Skill` | ◆-- |  |
+| - | `UserTraining` | `user` — appartenir à | `User` | ◆-- |  |
+| - | `UserTraining` | `training` — appartenir à | `Training` | ◆-- |  |
+| - | `UserVisaHistory` | `user` — appartenir à | `User` | ◆-- |  |
+| - | `UserVisaHistory` | `country` — appartenir à | `Country` | ◆-- |  |
+| - | `UserVisaHistory` | `document` — appartenir à | `UserDocument` | ◆-- | pivot `document_id` |
+
+### Location
+
+
+| Type | Classe | Relation | Cible | Multiplicité | Notes |
+|------|--------|----------|-------|--------------|-------|
+| **ENUM** | `City` | `region` — appartenir à | `Region` | ◆-- |  |
+| **ENUM** | `City` | `offers` — posséder plusieurs | `Offer` | 1--* |  |
+| **ENUM** | `Country` | `userPreferredCountries` — posséder plusieurs | `UserPreferredCountry` | 1--* |  |
+| **ENUM** | `Country` | `userVisaHistories` — posséder plusieurs | `UserVisaHistory` | 1--* |  |
+| **ENUM** | `GeographicZone` | `programs` — posséder plusieurs | `Program` | 1--* | pivot `geographic_zone_id` |
+| **ENUM** | `Language` | `programs` — être lié à plusieurs | `Program` | *--* | pivot `language_program` |
+| **ENUM** | `Language` | `offers` — être lié à plusieurs | `Offer` | *--* | pivot `language_offer` |
+| **ENUM** | `Region` | `country` — appartenir à | `Country` | ◆-- |  |
+| **ENUM** | `Region` | `cities` — posséder plusieurs | `City` | 1--* |  |
+
+### Recruiter
+
+
+| Type | Classe | Relation | Cible | Multiplicité | Notes |
+|------|--------|----------|-------|--------------|-------|
+| - | `RecruiterOfferSubmission` | `organization` — appartenir à | `RecruiterOrganization` | ◆-- | pivot `recruiter_organization_id` |
+| - | `RecruiterOfferSubmission` | `submittedBy` — appartenir à | `User` | ◆-- | pivot `submitted_by_user_id` |
+| - | `RecruiterOfferSubmission` | `offer` — appartenir à | `Offer` | ◆-- |  |
+| - | `RecruiterOfferSubmission` | `reviewer` — appartenir à | `User` | ◆-- | pivot `reviewed_by` |
+| - | `RecruiterOnboardingApplication` | `applicant` — appartenir à | `User` | ◆-- | pivot `applicant_user_id` |
+| - | `RecruiterOnboardingApplication` | `organization` — appartenir à | `RecruiterOrganization` | ◆-- | pivot `recruiter_organization_id` |
+| - | `RecruiterOnboardingApplication` | `reviewer` — appartenir à | `User` | ◆-- | pivot `reviewed_by` |
+| - | `RecruiterOnboardingApplication` | `documents` — posséder plusieurs | `RecruiterOnboardingDocument` | 1--* |  |
+| - | `RecruiterOnboardingDocument` | `application` — appartenir à | `RecruiterOnboardingApplication` | ◆-- | pivot `recruiter_onboarding_application_id` |
+| - | `RecruiterOrganization` | `company` — appartenir à | `Company` | ◆-- |  |
+| - | `RecruiterOrganization` | `members` — être lié à plusieurs | `User` | *--* | pivot `recruiter_organization_user` |
+| - | `RecruiterOrganization` | `assignments` — posséder plusieurs | `RecruiterProfileAssignment` | 1--* |  |
+| - | `RecruiterOrganization` | `offerSubmissions` — posséder plusieurs | `RecruiterOfferSubmission` | 1--* |  |
+| - | `RecruiterOrganization` | `onboardingApplication` — posséder un | `RecruiterOnboardingApplication` | 1--1 | pivot `recruiter_organization_id` |
+| - | `RecruiterProfileAssignment` | `organization` — appartenir à | `RecruiterOrganization` | ◆-- | pivot `recruiter_organization_id` |
+| - | `RecruiterProfileAssignment` | `candidate` — appartenir à | `User` | ◆-- | pivot `candidate_user_id` |
+| - | `RecruiterProfileAssignment` | `assignedBy` — appartenir à | `User` | ◆-- | pivot `assigned_by_user_id` |
+
+### Workflow
+
+
+| Type | Classe | Relation | Cible | Multiplicité | Notes |
+|------|--------|----------|-------|--------------|-------|
+| - | `ProcessFlow` | `sections` — posséder plusieurs | `ProcessFlowSection` | 1--* |  |
+| - | `ProcessFlow` | `steps` — posséder plusieurs | `ProcessStep` | 1--* |  |
+| - | `ProcessFlow` | `program` — appartenir à | `Program` | ◆-- |  |
+| - | `ProcessFlow` | `offer` — appartenir à | `Offer` | ◆-- |  |
+| - | `ProcessFlow` | `country` — appartenir à | `Country` | ◆-- |  |
+| - | `ProcessFlowSection` | `processFlow` — appartenir à | `ProcessFlow` | ◆-- |  |
+| - | `ProcessFlowSection` | `steps` — posséder plusieurs | `ProcessStep` | 1--* |  |
+| - | `ProcessStep` | `processFlow` — appartenir à | `ProcessFlow` | ◆-- |  |
+| - | `ProcessStep` | `section` — appartenir à | `ProcessFlowSection` | ◆-- | pivot `process_flow_section_id` |
+
+### Autres énumérations sans relation directe
+
+Ces classes sont des tables de référence / énumérations du domaine mais n'apparaissent pas dans les relations ci-dessus car elles sont uniquement référencées par clé étrangère sans relation inverse déclarée.
+
+| Package | Classe | Table |
+|---------|--------|-------|
+| Location | `LanguageLevel` | `language_levels` |
+ 
 ## API v1 — aperçu
 
 Préfixe : **`/api/v1`**. Routes publiques (auth, catalogue public) puis groupe **`auth:sanctum`**.

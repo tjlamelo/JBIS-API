@@ -106,6 +106,11 @@ class Application extends AuditedModel
         return $this->hasMany(Interview::class);
     }
 
+    public function languageCourses(): HasMany
+    {
+        return $this->hasMany(CandidateLanguageCourse::class);
+    }
+
     public function payments(): HasMany
     {
         return $this->hasMany(Payment::class);

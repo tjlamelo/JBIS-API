@@ -127,6 +127,16 @@ class TradeSeeder extends Seeder
                 ['fr' => 'Sculpteur sur bois', 'en' => 'Wood carver'],
                 ['fr' => 'Marqueteur', 'en' => 'Marquetry worker'],
             ],
+            'construction-civil-engineering' => [
+                ['fr' => 'Ingénieur civil', 'en' => 'Civil engineer'],
+                ['fr' => 'Ingénieur structure', 'en' => 'Structural engineer'],
+                ['fr' => 'Économiste de la construction', 'en' => 'Construction cost estimator'],
+                ['fr' => 'Métreur', 'en' => 'Quantity surveyor'],
+                ['fr' => 'Dessinateur-projeteur BTP', 'en' => 'Construction draftsman'],
+                ['fr' => 'Ingénieur géotechnicien', 'en' => 'Geotechnical engineer'],
+                ['fr' => 'Chef de projet BTP', 'en' => 'Construction project manager'],
+                ['fr' => 'Ingénieur travaux publics', 'en' => 'Public works engineer'],
+            ],
 
             // ==================== LOGISTIQUE & TRANSPORT ====================
             'warehouse-logistics' => [
@@ -260,7 +270,7 @@ class TradeSeeder extends Seeder
                 ['fr' => 'Barman / Barmaid', 'en' => 'Bartender'],
                 ['fr' => 'Sommelier(ère)', 'en' => 'Sommelier'],
                 ['fr' => 'Chef de rang', 'en' => 'Head waiter'],
-                ['fr' => 'Barmaid / Barman', 'en' => 'Bartender'],
+                ['fr' => 'Aide-barman', 'en' => 'Barback'],
                 ['fr' => 'Caféier', 'en' => 'Barista'],
             ],
             'hotel-accommodation' => [
@@ -552,6 +562,28 @@ class TradeSeeder extends Seeder
             ],
 
             // ==================== AUTRES SECTEURS ====================
+            'engineering' => [
+                ['fr' => 'Ingénieur mécanique', 'en' => 'Mechanical engineer'],
+                ['fr' => 'Ingénieur électrique', 'en' => 'Electrical engineer'],
+                ['fr' => 'Ingénieur R&D', 'en' => 'R&D engineer'],
+                ['fr' => 'Ingénieur qualité', 'en' => 'Quality engineer'],
+                ['fr' => 'Ingénieur process', 'en' => 'Process engineer'],
+                ['fr' => 'Ingénieur méthodes', 'en' => 'Methods engineer'],
+                ['fr' => 'Ingénieur systèmes', 'en' => 'Systems engineer'],
+                ['fr' => 'Ingénieur d\'affaires', 'en' => 'Business engineer'],
+                ['fr' => 'Ingénieur d\'études', 'en' => 'Design engineer'],
+            ],
+            'sales-distribution' => [
+                ['fr' => 'Représentant commercial', 'en' => 'Sales representative'],
+                ['fr' => 'Responsable des ventes', 'en' => 'Sales manager'],
+                ['fr' => 'Attaché commercial', 'en' => 'Sales executive'],
+                ['fr' => 'Directeur commercial', 'en' => 'Sales director'],
+                ['fr' => 'Technico-commercial', 'en' => 'Technical sales representative'],
+                ['fr' => 'Business developer', 'en' => 'Business developer'],
+                ['fr' => 'Agent commercial', 'en' => 'Commercial agent'],
+                ['fr' => 'Responsable grands comptes', 'en' => 'Key account manager'],
+                ['fr' => 'Chargé de développement commercial', 'en' => 'Business development officer'],
+            ],
             'automotive' => [
                 ['fr' => 'Mécanicien automobile', 'en' => 'Auto mechanic'],
                 ['fr' => 'Vendeur automobile', 'en' => 'Car salesperson'],
@@ -610,6 +642,44 @@ class TradeSeeder extends Seeder
                 ['fr' => 'Conseiller microfinance', 'en' => 'Microfinance advisor'],
                 ['fr' => 'Chargé d\'inclusion financière', 'en' => 'Financial inclusion officer'],
                 ['fr' => 'Gestionnaire de portefeuille microfinance', 'en' => 'Microfinance portfolio manager'],
+            ],
+            // ==================== COMMERCE, INFORMEL & ARTISANAT ====================
+            'retail-commerce' => [
+                ['fr' => 'Vendeur / Commerçant', 'en' => 'Shopkeeper / Salesperson'],
+                ['fr' => 'Caissier(ère)', 'en' => 'Cashier'],
+                ['fr' => 'Gérant de magasin', 'en' => 'Store manager'],
+                ['fr' => 'Vendeur itinérant', 'en' => 'Itinerant vendor'],
+                ['fr' => 'Marchand ambulant', 'en' => 'Street vendor'],
+                ['fr' => 'Marchand de marché', 'en' => 'Market stall vendor'],
+                ['fr' => 'Merchandiser', 'en' => 'Merchandiser'],
+                ['fr' => 'Responsable rayon', 'en' => 'Category manager (retail)'],
+                ['fr' => 'Responsable e-commerce', 'en' => 'E-commerce manager'],
+            ],
+            'informal-economy-street-trading' => [
+                ['fr' => 'Réparateur de rue', 'en' => 'Street repairer'],
+                ['fr' => 'Collecteur de déchets recyclables', 'en' => 'Waste picker / Recyclables collector'],
+                ['fr' => 'Coursier informel', 'en' => 'Informal courier'],
+                ['fr' => 'Chiffonnier', 'en' => 'Rag-and-bone collector'],
+                ['fr' => 'Vendeur ambulant de nourriture', 'en' => 'Street food vendor'],
+                ['fr' => 'Broyeur / récupérateur', 'en' => 'Scrap collector'],
+                ['fr' => 'Aide occasionnel', 'en' => 'Casual laborer'],
+            ],
+            'textile-fashion' => [
+                ['fr' => 'Couturier(ère)', 'en' => 'Tailor / Seamstress'],
+                ['fr' => 'Modéliste', 'en' => 'Pattern maker'],
+                ['fr' => 'Styliste / Designer de mode', 'en' => 'Fashion designer'],
+                ['fr' => 'Retoucheur(se)', 'en' => 'Alterations tailor'],
+                ['fr' => 'Brodeur', 'en' => 'Embroiderer'],
+                ['fr' => 'Opérateur(rice) textile', 'en' => 'Textile machine operator'],
+            ],
+            'repair-maintenance-services' => [
+                ['fr' => 'Réparateur électroménager', 'en' => 'Appliance repairer'],
+                ['fr' => 'Réparateur de téléphones mobiles', 'en' => 'Mobile phone repairer'],
+                ['fr' => 'Mécanicien vélo', 'en' => 'Bicycle mechanic'],
+                ['fr' => 'Cordonnier', 'en' => 'Cobbler / Shoemaker'],
+                ['fr' => 'Plombier indépendant', 'en' => 'Independent plumber'],
+                ['fr' => 'Réparateur informatique', 'en' => 'Computer repair technician'],
+                ['fr' => 'Technicien en électroménager', 'en' => 'Home appliance technician'],
             ],
             'education-training' => [
                 ['fr' => 'Formateur(trice)', 'en' => 'Trainer'],

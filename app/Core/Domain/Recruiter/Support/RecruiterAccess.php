@@ -5,17 +5,15 @@ declare(strict_types=1);
 namespace App\Core\Domain\Recruiter\Support;
 
 use App\Core\Domain\Identity\Models\User;
-use App\Core\Domain\Identity\Support\ApplicationRole;
 use App\Core\Domain\Recruiter\Enums\RecruiterAssignmentStatus;
 use App\Core\Domain\Recruiter\Models\RecruiterOrganization;
 use App\Core\Domain\Recruiter\Models\RecruiterProfileAssignment;
-use App\Core\Domain\Recruiter\Models\RecruiterProfileSubmission;
 
 final class RecruiterAccess
 {
     public function primaryOrganization(User $user): ?RecruiterOrganization
     {
-        if (! $user->hasRole(ApplicationRole::RECRUITER)) {
+        if (! $user->hasRole(\App\Core\Domain\Identity\Support\ApplicationRole::RECRUITER)) {
             return null;
         }
 
@@ -32,25 +30,22 @@ final class RecruiterAccess
 
     public function canViewCandidate(User $recruiter, int $candidateUserId): bool
     {
+        return $this->activeAssignment($recruiter, $candidateUserId) !== null;
+    }
+
+    public function activeAssignment(User $recruiter, int $candidateUserId): ?RecruiterProfileAssignment
+    {
         $organization = $this->primaryOrganization($recruiter);
         if ($organization === null) {
-            return false;
-        }
-
-        $hasSubmission = RecruiterProfileSubmission::query()
-            ->where('recruiter_organization_id', $organization->id)
-            ->where('candidate_user_id', $candidateUserId)
-            ->exists();
-
-        if ($hasSubmission) {
-            return true;
+            return null;
         }
 
         return RecruiterProfileAssignment::query()
             ->where('recruiter_organization_id', $organization->id)
             ->where('candidate_user_id', $candidateUserId)
             ->where('status', RecruiterAssignmentStatus::Active)
-            ->exists();
+            ->latest('assigned_at')
+            ->first();
     }
 
     public function resolveOrganizationFromApiHost(string $host): ?RecruiterOrganization

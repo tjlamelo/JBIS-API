@@ -31,8 +31,10 @@ final class RecordApplicationStepPaymentAction
         string $status = 'COMPLETED',
         ?string $reference = null,
         ?int $recordedByUserId = null,
+        string $paymentMethod = 'BANK_TRANSFER',
+        ?string $description = null,
     ): Payment {
-        return DB::transaction(function () use ($step, $amount, $paymentType, $status, $reference, $recordedByUserId): Payment {
+        return DB::transaction(function () use ($step, $amount, $paymentType, $status, $reference, $recordedByUserId, $paymentMethod, $description): Payment {
             $step = ApplicationStep::query()->whereKey($step->id)->lockForUpdate()->firstOrFail();
             $application = Application::query()->whereKey($step->application_id)->lockForUpdate()->firstOrFail();
 
@@ -45,32 +47,56 @@ final class RecordApplicationStepPaymentAction
                 'amount' => $signedAmount,
                 'currency' => 'XAF',
                 'payment_type' => $paymentType,
-                'payment_method' => 'BANK_TRANSFER',
+                'payment_method' => $paymentMethod,
                 'payment_date' => Carbon::now(),
                 'status' => $status,
                 'reference' => $reference,
+                'description' => $description,
             ]);
 
             if ($status === 'COMPLETED') {
-                $this->syncStepPaymentTotals($step);
-                $this->syncApplicationTotals($application);
-                $this->syncInstallment($step);
+                $this->syncAfterPaymentChange($step);
             }
 
-            $this->activityLogger->log(
-                $application->id,
-                ApplicationActivityLogger::ACTION_PAYMENT_RECORDED,
-                $step->id,
-                $recordedByUserId,
-                [
-                    'amount' => $signedAmount,
-                    'payment_type' => $paymentType,
-                    'payment_id' => $payment->id,
-                ],
-            );
+            if ($status === 'COMPLETED') {
+                $this->activityLogger->log(
+                    $application->id,
+                    ApplicationActivityLogger::ACTION_PAYMENT_RECORDED,
+                    $step->id,
+                    $recordedByUserId,
+                    [
+                        'amount' => $signedAmount,
+                        'payment_type' => $paymentType,
+                        'payment_id' => $payment->id,
+                    ],
+                );
+            } elseif ($status === 'PENDING') {
+                $this->activityLogger->log(
+                    $application->id,
+                    'payment.declared',
+                    $step->id,
+                    $recordedByUserId,
+                    [
+                        'amount' => $signedAmount,
+                        'payment_id' => $payment->id,
+                        'reference' => $reference,
+                    ],
+                );
+            }
 
             return $payment;
         });
+    }
+
+    public function syncAfterPaymentChange(ApplicationStep $step): void
+    {
+        $step = $step->fresh() ?? $step;
+        $this->syncStepPaymentTotals($step);
+        $application = Application::query()->find($step->application_id);
+        if ($application !== null) {
+            $this->syncApplicationTotals($application);
+        }
+        $this->syncInstallment($step->fresh() ?? $step);
     }
 
     private function syncStepPaymentTotals(ApplicationStep $step): void
@@ -124,7 +150,11 @@ final class RecordApplicationStepPaymentAction
 
         $installment->update([
             'paid_at' => $paid >= $due && $due > 0 ? Carbon::now() : null,
-            'status' => $paid >= $due && $due > 0 ? 'PAID' : ($paid > 0 ? 'PENDING' : 'PENDING'),
+            'status' => match (true) {
+                $due <= 0 => 'CANCELLED',
+                $paid >= $due => 'PAID',
+                default => 'PENDING',
+            },
         ]);
     }
 }

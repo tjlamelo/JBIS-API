@@ -6,6 +6,7 @@ use App\Core\Application\Api\V1\Analytics\Controllers\Ga4PagesController;
 use App\Core\Application\Api\V1\Auth\Controllers\AuthTokenController;
 use App\Core\Application\Api\V1\Candidacy\Controllers\AdminApplicationController;
 use App\Core\Application\Api\V1\Candidacy\Controllers\AdminApplicationStepController;
+use App\Core\Application\Api\V1\Candidacy\Controllers\ApplicationStepController;
 use App\Core\Application\Api\V1\Candidacy\Controllers\AdminAppointmentController;
 use App\Core\Application\Api\V1\Candidacy\Controllers\ApplicationController;
 use App\Core\Application\Api\V1\Candidacy\Controllers\ApplicationDocumentController;
@@ -19,6 +20,7 @@ use App\Core\Application\Api\V1\Catalog\Controllers\CountryController;
 use App\Core\Application\Api\V1\Catalog\Controllers\EducationLevelController;
 use App\Core\Application\Api\V1\Catalog\Controllers\LanguageController;
 use App\Core\Application\Api\V1\Catalog\Controllers\LanguageLevelController;
+use App\Core\Application\Api\V1\Catalog\Controllers\Offer\AdminOfferExtractionController;
 use App\Core\Application\Api\V1\Catalog\Controllers\Offer\AdminOfferController;
 use App\Core\Application\Api\V1\Catalog\Controllers\Offer\ForceDeleteOfferController;
 use App\Core\Application\Api\V1\Catalog\Controllers\CategoryController;
@@ -34,6 +36,7 @@ use App\Core\Application\Api\V1\Catalog\Controllers\Program\ProgramFilterControl
 use App\Core\Application\Api\V1\Catalog\Controllers\Program\PublicProgramController;
 use App\Core\Application\Api\V1\Catalog\Controllers\GeographicZoneController;
 use App\Core\Application\Api\V1\Catalog\Controllers\RegionController;
+use App\Core\Application\Api\V1\Catalog\Controllers\RequiredDocumentController;
 use App\Core\Application\Api\V1\Catalog\Controllers\SkillCategoryController;
 use App\Core\Application\Api\V1\Catalog\Controllers\SkillController;
 use App\Core\Application\Api\V1\Catalog\Controllers\Training\AdminTrainingController;
@@ -42,7 +45,9 @@ use App\Core\Application\Api\V1\Catalog\Controllers\UserSkillController;
 use App\Core\Application\Api\V1\Catalog\Controllers\UserTrainingController;
 use App\Core\Application\Api\V1\Catalog\Controllers\WorkScheduleController;
 use App\Core\Application\Api\V1\Dashboard\Controllers\DashboardController;
+use App\Core\Application\Api\V1\Shared\Controllers\MetaEnumController;
 use App\Core\Application\Api\V1\Document\Controllers\UserDocumentController;
+use App\Core\Application\Api\V1\Document\Controllers\UserDocumentExtractionController;
 use App\Core\Application\Api\V1\Export\Controllers\ExportController;
 use App\Core\Application\Api\V1\Export\Controllers\ExportSchemaController;
 use App\Core\Application\Api\V1\Identity\Controllers\AdminLegalDocumentController;
@@ -76,12 +81,10 @@ use App\Core\Application\Api\V1\Recruiter\Controllers\AdminRecruiterAssignmentCo
 use App\Core\Application\Api\V1\Recruiter\Controllers\AdminRecruiterOfferController;
 use App\Core\Application\Api\V1\Recruiter\Controllers\AdminRecruiterOnboardingController;
 use App\Core\Application\Api\V1\Recruiter\Controllers\AdminRecruiterOrganizationController;
-use App\Core\Application\Api\V1\Recruiter\Controllers\AdminRecruiterSubmissionController;
 use App\Core\Application\Api\V1\Recruiter\Controllers\RecruiterAssignmentController;
 use App\Core\Application\Api\V1\Recruiter\Controllers\RecruiterOfferController;
 use App\Core\Application\Api\V1\Recruiter\Controllers\RecruiterOnboardingController;
 use App\Core\Application\Api\V1\Recruiter\Controllers\RecruiterOrganizationController;
-use App\Core\Application\Api\V1\Recruiter\Controllers\RecruiterSubmissionController;
 use App\Core\Application\Api\V1\Public\Controllers\AgencyPublicController;
 use App\Core\Application\Api\V1\Public\Controllers\AppointmentPublicController;
 use App\Core\Application\Api\V1\Public\Controllers\DiscoverySourceController;
@@ -89,6 +92,7 @@ use App\Core\Application\Api\V1\Public\Controllers\NewsletterPublicController;
 use App\Core\Application\Api\V1\Public\Controllers\RecruiterOnboardingPublicController;
 use App\Core\Application\Api\V1\Sms\Controllers\SmsCampaignController;
 use App\Core\Application\Api\V1\Workflow\Controllers\ProcessFlow\AdminProcessFlowController;
+use App\Core\Application\Api\V1\Workflow\Controllers\ProcessFlow\ProcessFlowImportController;
 use App\Core\Application\Api\V1\Workflow\Controllers\ProcessFlow\ProcessFlowPdfController;
 use App\Core\Application\Api\V1\Workflow\Controllers\ProcessFlow\ProcessFlowSectionKeyController;
 use App\Core\Application\Api\V1\Workflow\Controllers\ProcessStep\AdminProcessStepController;
@@ -130,7 +134,7 @@ Route::prefix('v1')->group(function (): void {
         Route::get('/offers', [PublicOfferController::class, 'index']);
         // On ajoute une contrainte regex pour le slug afin qu'il ne capture pas "filters"
         Route::get('/offers/{slug}', [PublicOfferController::class, 'show'])
-            ->where('slug', '[a-z0-9\-]+');
+            ->where('slug', '[a-zA-Z0-9\-]+');
 
         // 3. Les programmes
         Route::prefix('programs')->group(function (): void {
@@ -165,6 +169,7 @@ Route::prefix('v1')->group(function (): void {
         Route::get('/me', [AuthTokenController::class, 'me']);
         Route::post('/me/discovery-source', [MyDiscoverySourceController::class, 'store']);
         Route::get('/dashboard', DashboardController::class);
+        Route::get('/meta/enums', [MetaEnumController::class, 'index']);
         Route::get('/me/settings', [MySettingsController::class, 'show']);
         Route::patch('/me/settings', [MySettingsController::class, 'update']);
         Route::get('/me/consents/status', [MyConsentController::class, 'status']);
@@ -197,12 +202,6 @@ Route::prefix('v1')->group(function (): void {
             Route::get('/{recruiterOrganization}', [AdminRecruiterOrganizationController::class, 'show']);
             Route::patch('/{recruiterOrganization}', [AdminRecruiterOrganizationController::class, 'update']);
             Route::post('/{recruiterOrganization}/provision', [AdminRecruiterOrganizationController::class, 'provision']);
-        });
-
-        Route::prefix('identity/admin/recruiter-submissions')->group(function (): void {
-            Route::get('/', [AdminRecruiterSubmissionController::class, 'index']);
-            Route::get('/{recruiterSubmission}', [AdminRecruiterSubmissionController::class, 'show']);
-            Route::patch('/{recruiterSubmission}/review', [AdminRecruiterSubmissionController::class, 'review']);
         });
 
         Route::prefix('identity/admin/recruiter-assignments')->group(function (): void {
@@ -258,6 +257,7 @@ Route::prefix('v1')->group(function (): void {
             Route::prefix('admin/offers')->group(function (): void {
                 Route::get('/', [AdminOfferController::class, 'index']);
                 Route::post('/', [AdminOfferController::class, 'store']);
+                Route::post('/extract-from-text', AdminOfferExtractionController::class);
                 Route::post('/upload-photo', [AdminOfferController::class, 'uploadPhoto']);
                 Route::get('/{offer}', [AdminOfferController::class, 'show'])->withTrashed();
                 Route::put('/{offer}', [AdminOfferController::class, 'update']);
@@ -286,6 +286,8 @@ Route::prefix('v1')->group(function (): void {
             Route::prefix('admin/process-flows')->group(function (): void {
                 Route::get('/', [AdminProcessFlowController::class, 'index']);
                 Route::post('/', [AdminProcessFlowController::class, 'store']);
+                Route::post('/import', [ProcessFlowImportController::class, 'import']);
+                Route::get('/import/template', [ProcessFlowImportController::class, 'template']);
                 Route::get('/{processFlow}', [AdminProcessFlowController::class, 'show']);
                 Route::get('/{processFlow}/pdf', ProcessFlowPdfController::class);
                 Route::put('/{processFlow}', [AdminProcessFlowController::class, 'update']);
@@ -357,12 +359,6 @@ Route::prefix('v1')->group(function (): void {
             Route::get('/offers/{submission}', [RecruiterOfferController::class, 'show']);
             Route::patch('/offers/{submission}', [RecruiterOfferController::class, 'update']);
             Route::post('/offers/{submission}/submit', [RecruiterOfferController::class, 'submit']);
-            Route::get('/submissions', [RecruiterSubmissionController::class, 'index']);
-            Route::post('/submissions', [RecruiterSubmissionController::class, 'store']);
-            Route::get('/submissions/{submission}', [RecruiterSubmissionController::class, 'show']);
-            Route::patch('/submissions/{submission}/steps/{step}', [RecruiterSubmissionController::class, 'updateStep'])
-                ->whereIn('step', ['personal', 'contact', 'professional', 'documents']);
-            Route::post('/submissions/{submission}/submit', [RecruiterSubmissionController::class, 'submit']);
             Route::get('/assignments', [RecruiterAssignmentController::class, 'index']);
             Route::get('/assignments/{candidateUser}', [RecruiterAssignmentController::class, 'show']);
         });
@@ -407,11 +403,18 @@ Route::prefix('v1')->group(function (): void {
             Route::get('/admin/applications', [AdminApplicationController::class, 'index']);
             Route::get('/admin/applications/{application}', [AdminApplicationController::class, 'show']);
             Route::get('/applications/{application}', [ApplicationController::class, 'show']);
+            Route::post('/applications/{application}/cancel', [ApplicationController::class, 'cancel']);
+            Route::post('/applications/{application}/accept-protocol', [ApplicationController::class, 'acceptProtocol']);
+            Route::post('/admin/applications/{application}/reject', [AdminApplicationController::class, 'reject']);
+            Route::post('/admin/applications/{application}/cancel', [AdminApplicationController::class, 'cancel']);
             Route::post('/applications/{application}/steps/{step}/documents', [ApplicationDocumentController::class, 'attach']);
             Route::patch('/applications/{application}/documents/{applicationDocument}', [ApplicationDocumentController::class, 'review']);
             Route::patch('/applications/{application}/steps/{step}/validation', [AdminApplicationStepController::class, 'validateStep']);
             Route::put('/applications/{application}/steps/{step}/interview', [AdminApplicationStepController::class, 'upsertInterview']);
+            Route::post('/applications/{application}/steps/{step}/payments/declare', [ApplicationStepController::class, 'declarePayment']);
             Route::post('/applications/{application}/steps/{step}/payments', [AdminApplicationStepController::class, 'recordPayment']);
+            Route::post('/applications/{application}/steps/{step}/payments/waive', [AdminApplicationStepController::class, 'waivePayment']);
+            Route::post('/applications/{application}/payments/{payment}/confirm', [AdminApplicationStepController::class, 'confirmPayment']);
             Route::post('/applications/{application}/steps/{step}/advance', [AdminApplicationStepController::class, 'advance']);
         });
 
@@ -425,6 +428,9 @@ Route::prefix('v1')->group(function (): void {
             Route::match(['put', 'patch'], '/{userDocument}', [UserDocumentController::class, 'update']);
             Route::delete('/{userDocument}', [UserDocumentController::class, 'destroy']);
             Route::post('/{userDocument}/validate', [UserDocumentController::class, 'validateDocument']);
+            Route::get('/{userDocument}/extraction', [UserDocumentExtractionController::class, 'show']);
+            Route::post('/{userDocument}/extraction/approve', [UserDocumentExtractionController::class, 'approve']);
+            Route::post('/{userDocument}/extraction/reject', [UserDocumentExtractionController::class, 'reject']);
         });
 
         Route::prefix('identity')->group(function (): void {

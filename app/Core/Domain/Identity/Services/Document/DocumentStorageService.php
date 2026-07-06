@@ -65,4 +65,37 @@ final class DocumentStorageService
 
         return Storage::disk(UserDocument::STORAGE_DISK)->url($filePath);
     }
+
+    public function exists(?string $filePath): bool
+    {
+        if ($filePath === null || $filePath === '') {
+            return false;
+        }
+
+        return Storage::disk(UserDocument::STORAGE_DISK)->exists($filePath);
+    }
+
+    /**
+     * Data URL base64 pour l'API vision (Groq ne peut pas charger localhost).
+     */
+    public function visionDataUrl(string $filePath, ?string $mimeType = null): string
+    {
+        $disk = Storage::disk(UserDocument::STORAGE_DISK);
+
+        if (! $disk->exists($filePath)) {
+            throw new DocumentStorageException(sprintf('Fichier introuvable pour la vision : %s', $filePath));
+        }
+
+        $mime = $mimeType ?? (string) ($disk->mimeType($filePath) ?? 'application/octet-stream');
+        if (! str_starts_with(strtolower($mime), 'image/')) {
+            throw new DocumentStorageException(sprintf('MIME non supporté pour la vision : %s', $mime));
+        }
+
+        $binary = $disk->get($filePath);
+        if ($binary === null || $binary === '') {
+            throw new DocumentStorageException(sprintf('Fichier vide pour la vision : %s', $filePath));
+        }
+
+        return sprintf('data:%s;base64,%s', $mime, base64_encode($binary));
+    }
 }

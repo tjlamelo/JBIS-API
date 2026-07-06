@@ -18,6 +18,7 @@ class TradeController extends Controller
 
         $trades = Trade::query()
             ->where('is_active', true)
+            ->with('category:id,name,slug')
             ->when($categoryId, fn ($query) => $query->where('category_id', $categoryId))
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($inner) use ($search) {

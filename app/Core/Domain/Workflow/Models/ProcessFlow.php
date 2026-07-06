@@ -35,6 +35,8 @@ class ProcessFlow extends Model
 
     protected $fillable = [
         'flow_group_id',
+        'import_key',
+        'imported_by',
         'version',
         'status',
         'name',
@@ -54,6 +56,7 @@ class ProcessFlow extends Model
         'program_id' => 'integer',
         'offer_id' => 'integer',
         'country_id' => 'integer',
+        'imported_by' => 'integer',
         'estimated_duration_days' => 'integer',
         'total_procedure_fees' => 'decimal:2',
         'file_opening_fee' => 'decimal:2',
@@ -118,7 +121,7 @@ class ProcessFlow extends Model
     public function cloneAsNewVersion(): static
     {
         return DB::transaction(function (): static {
-            $this->loadMissing(['sections.steps', 'steps']);
+            $this->loadMissing(['sections.steps.documentTypes', 'steps.documentTypes']);
 
             $newVersion = $this->version + 1;
 
@@ -150,7 +153,19 @@ class ProcessFlow extends Model
                 $newStep = $step->replicate(['id', 'created_at', 'updated_at']);
                 $newStep->process_flow_id = $newFlow->id;
                 $newStep->process_flow_section_id = $sectionIdMap[$step->process_flow_section_id] ?? null;
+                $newStep->document_type_ids = null;
                 $newStep->save();
+
+                if ($step->relationLoaded('documentTypes')) {
+                    $documentTypeIds = $step->documentTypes->pluck('id')->all();
+                } else {
+                    $step->load('documentTypes');
+                    $documentTypeIds = $step->documentTypes->pluck('id')->all();
+                }
+
+                if ($documentTypeIds !== []) {
+                    $newStep->documentTypes()->sync($documentTypeIds);
+                }
             }
 
             return $newFlow->load(['sections.steps', 'steps']);

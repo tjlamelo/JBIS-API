@@ -25,8 +25,9 @@ class CountryController extends Controller
         }
 
         $perPage = (int) $request->query('per_page', 100);
+        $page = max(1, (int) $request->query('page', 1));
         $payload = $this->cache->remember(
-            $this->cache->referenceKey('countries', app()->getLocale(), "p{$perPage}"),
+            $this->cache->referenceKey('countries', app()->getLocale(), "p{$perPage}", "page{$page}"),
             86400,
             fn () => $this->fetchCountries($request),
         );

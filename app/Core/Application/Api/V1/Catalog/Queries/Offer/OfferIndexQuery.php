@@ -19,7 +19,7 @@ class OfferIndexQuery extends QueryBuilder
     public function __construct(Request $request)
     {
         // 1. Optimisation N+1 : On charge toutes les relations nécessaires au rendu
-        $query = Offer::query()->with(['company', 'program', 'category', 'country', 'trade']);
+        $query = Offer::query()->with(['company', 'program', 'country', 'trade.category']);
 
         parent::__construct($query, $request);
 
@@ -32,11 +32,11 @@ class OfferIndexQuery extends QueryBuilder
             // 🔥 Catégorie : On accepte 'category_id' (depuis le front) OU 'category'
             AllowedFilter::callback('category_id', function (Builder $query, $value) {
                 $values = is_array($value) ? $value : explode(',', (string) $value);
-                $query->whereIn('category_id', $values);
+                $query->whereHas('trade', fn (Builder $q) => $q->whereIn('category_id', $values));
             }),
             AllowedFilter::callback('category', function (Builder $query, $value) {
                 $values = is_array($value) ? $value : explode(',', (string) $value);
-                $query->whereIn('category_id', $values);
+                $query->whereHas('trade', fn (Builder $q) => $q->whereIn('category_id', $values));
             }),
 
             // 🔥 Pays : On utilise country_id pour correspondre à ta nouvelle migration

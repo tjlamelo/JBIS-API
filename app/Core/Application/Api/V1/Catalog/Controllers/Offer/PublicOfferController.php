@@ -52,8 +52,7 @@ class PublicOfferController extends Controller
                         'program.requiredDocuments',
                         'company',
                         'country',
-                        'category',
-                        'trade',
+                        'trade.category',
                         'city.region',
                         'contractType',
                         'benefits',
@@ -61,9 +60,15 @@ class PublicOfferController extends Controller
                     ])
                     ->published()
                     ->notExpired()
-                    ->where(function ($query) use ($slug) {
+                    ->where(function ($query) use ($slug): void {
                         $query->where('slug->fr', $slug)
                             ->orWhere('slug->en', $slug);
+
+                        $normalized = strtolower($slug);
+                        if ($normalized !== $slug) {
+                            $query->orWhere('slug->fr', $normalized)
+                                ->orWhere('slug->en', $normalized);
+                        }
                     })
                     ->first();
 

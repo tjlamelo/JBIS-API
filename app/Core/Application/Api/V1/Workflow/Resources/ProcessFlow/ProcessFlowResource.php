@@ -23,6 +23,7 @@ class ProcessFlowResource extends JsonResource
         return [
             'id' => $this->id,
             'flow_group_id' => $this->flow_group_id,
+            'import_key' => $this->import_key,
             'version' => $this->version,
             'status' => $statusValue,
             'name' => $this->getTranslations('name'),
@@ -44,6 +45,7 @@ class ProcessFlowResource extends JsonResource
             ]),
             'country' => $this->whenLoaded('country', fn () => [
                 'id' => $this->country?->id,
+                'code' => $this->country?->code,
                 'name' => $this->country?->getTranslations('name'),
             ]),
             'sections' => ProcessFlowSectionResource::collection($this->whenLoaded('sections')),

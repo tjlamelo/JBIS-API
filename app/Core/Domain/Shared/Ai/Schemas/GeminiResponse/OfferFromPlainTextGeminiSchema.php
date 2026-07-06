@@ -12,40 +12,67 @@ final class OfferFromPlainTextGeminiSchema
     /**
      * @return array<string, mixed>
      */
-    public static function responseSchema(): array
+    public static function responseSchema(string $scope = 'full'): array
     {
-        $ls = self::localizedString();
+        if ($scope === 'editorial') {
+            return OfferEditorialFromPlainTextGeminiSchema::responseSchema();
+        }
 
         return [
             'type' => 'OBJECT',
+            'required' => ['description', 'responsibilities', 'requirements'],
             'properties' => [
-                'notes' => ['type' => 'STRING', 'description' => 'Ambiguïtés ou informations manquantes.'],
-                'title' => $ls,
-                'description' => $ls,
-                'responsibilities' => $ls,
-                'requirements' => $ls,
-                'specific_documents' => $ls,
-                'expectations' => $ls,
-                'specifications' => $ls,
+                'notes' => [
+                    'type' => 'STRING',
+                    'maxLength' => 200,
+                    'description' => 'Laisser vide sauf ambiguïté critique.',
+                ],
+                'description' => self::localizedString(1000, 'Présentation courte du poste'),
+                'responsibilities' => self::localizedString(1800, 'Missions et horaires — obligatoire'),
+                'requirements' => self::localizedString(1800, 'Profil candidat — obligatoire'),
+                'specific_documents' => self::localizedString(1200, 'Pièces à fournir'),
                 'work_mode' => [
                     'type' => 'STRING',
-                    'description' => 'Une valeur parmi : on-site, hybrid, remote',
+                    'maxLength' => 20,
+                    'description' => 'on-site, hybrid ou remote',
                 ],
                 'salary_min' => ['type' => 'NUMBER'],
                 'salary_max' => ['type' => 'NUMBER'],
-                'currency' => ['type' => 'STRING'],
-                'is_salary_public' => ['type' => 'BOOLEAN'],
+                'currency' => ['type' => 'STRING', 'maxLength' => 10],
+                'is_salary_public' => [
+                    'type' => 'BOOLEAN',
+                    'description' => 'false par défaut (salaire non affiché publiquement)',
+                ],
                 'available_positions' => ['type' => 'INTEGER'],
-                'address' => ['type' => 'STRING'],
+                'address' => ['type' => 'STRING', 'maxLength' => 255],
+                'country_hint' => ['type' => 'STRING', 'maxLength' => 60],
+                'contract_type_hint' => ['type' => 'STRING', 'maxLength' => 60],
                 'inferred_skills' => [
                     'type' => 'ARRAY',
-                    'items' => ['type' => 'STRING'],
+                    'maxItems' => 8,
+                    'items' => ['type' => 'STRING', 'maxLength' => 60],
                 ],
                 'inferred_benefits' => [
                     'type' => 'ARRAY',
-                    'items' => ['type' => 'STRING'],
+                    'maxItems' => 8,
+                    'items' => ['type' => 'STRING', 'maxLength' => 60],
                 ],
-                'education_level_hint' => ['type' => 'STRING', 'description' => 'Libellé du niveau requis pour rapprocher education_levels'],
+                'inferred_required_documents' => [
+                    'type' => 'ARRAY',
+                    'maxItems' => 10,
+                    'items' => ['type' => 'STRING', 'maxLength' => 80],
+                ],
+                'language_requirements' => [
+                    'type' => 'ARRAY',
+                    'maxItems' => 5,
+                    'items' => [
+                        'type' => 'OBJECT',
+                        'properties' => [
+                            'language_hint' => ['type' => 'STRING', 'maxLength' => 30],
+                            'level_hint' => ['type' => 'STRING', 'maxLength' => 30],
+                        ],
+                    ],
+                ],
             ],
         ];
     }
@@ -53,13 +80,14 @@ final class OfferFromPlainTextGeminiSchema
     /**
      * @return array<string, mixed>
      */
-    private static function localizedString(): array
+    private static function localizedString(int $maxLength, string $description): array
     {
         return [
             'type' => 'OBJECT',
+            'description' => $description,
             'properties' => [
-                'fr' => ['type' => 'STRING'],
-                'en' => ['type' => 'STRING'],
+                'fr' => ['type' => 'STRING', 'maxLength' => $maxLength],
+                'en' => ['type' => 'STRING', 'maxLength' => $maxLength],
             ],
         ];
     }

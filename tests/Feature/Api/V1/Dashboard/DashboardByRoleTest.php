@@ -126,12 +126,11 @@ class DashboardByRoleTest extends TestCase
                         'variant',
                         'organization' => ['id', 'name', 'status'],
                         'stats' => [
-                            'submissions_active',
-                            'submissions_total',
                             'assignments_active',
                             'offers_pending',
+                            'offers_total',
                         ],
-                        'recent_submissions',
+                        'recent_assignments',
                     ],
                 ],
             ]);

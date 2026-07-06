@@ -6,6 +6,7 @@ namespace App\Core\Domain\Workflow\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Spatie\Translatable\HasTranslations;
 
 class ProcessStep extends Model
@@ -58,5 +59,31 @@ class ProcessStep extends Model
     public function section(): BelongsTo
     {
         return $this->belongsTo(ProcessFlowSection::class, 'process_flow_section_id');
+    }
+
+    public function documentTypes(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            \App\Core\Domain\Identity\Models\DocumentType::class,
+            'process_step_document_type',
+            'process_step_id',
+            'document_type_id',
+        )->withTimestamps();
+    }
+
+    /**
+     * @return list<int>
+     */
+    public function resolvedDocumentTypeIds(): array
+    {
+        if ($this->relationLoaded('documentTypes') && $this->documentTypes->isNotEmpty()) {
+            return $this->documentTypes->pluck('id')->map(static fn (mixed $id): int => (int) $id)->values()->all();
+        }
+
+        if ($this->documentTypes()->exists()) {
+            return $this->documentTypes()->pluck('document_types.id')->map(static fn (mixed $id): int => (int) $id)->values()->all();
+        }
+
+        return is_array($this->document_type_ids) ? array_values(array_map('intval', $this->document_type_ids)) : [];
     }
 }

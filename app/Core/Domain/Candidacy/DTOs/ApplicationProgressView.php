@@ -7,6 +7,7 @@ namespace App\Core\Domain\Candidacy\DTOs;
 use App\Core\Domain\Candidacy\Models\Application;
 use App\Core\Domain\Candidacy\Models\ApplicationStep;
 use App\Core\Domain\Candidacy\Models\ApplicationStepEvent;
+use App\Core\Domain\Candidacy\States\ApplicationStatus;
 use App\Core\Domain\Candidacy\States\ApplicationStepStatus;
 use App\Core\Domain\Identity\Support\UserPersonName;
 use Illuminate\Support\Collection;
@@ -21,6 +22,7 @@ final readonly class ApplicationProgressView
         public int $applicationId,
         public string $applicationNumber,
         public string $status,
+        public string $statusLabel,
         public int $processFlowId,
         public int $processFlowVersion,
         public string $flowGroupId,
@@ -100,6 +102,21 @@ final readonly class ApplicationProgressView
                 ])->values()->all()
                 : [];
 
+            $payments = $step->relationLoaded('payments')
+                ? $step->payments->map(static fn ($payment): array => [
+                    'id' => $payment->id,
+                    'amount' => (float) $payment->amount,
+                    'currency' => $payment->currency,
+                    'payment_type' => $payment->payment_type,
+                    'payment_method' => $payment->payment_method,
+                    'status' => $payment->status,
+                    'reference' => $payment->reference,
+                    'description' => $payment->description,
+                    'payment_date' => $payment->payment_date?->toIso8601String(),
+                    'created_at' => $payment->created_at?->toIso8601String(),
+                ])->values()->all()
+                : [];
+
             $interview = $step->relationLoaded('interview') && $step->interview
                 ? [
                     'id' => $step->interview->id,
@@ -131,6 +148,13 @@ final readonly class ApplicationProgressView
                     ? $step->step_type->value
                     : (string) $step->step_type,
                 'title' => $pick($step->title),
+                'description' => $pick($step->description),
+                'payment_type' => $step->payment_type instanceof \BackedEnum
+                    ? $step->payment_type->value
+                    : ($step->payment_type !== null ? (string) $step->payment_type : null),
+                'accepted_banks' => $step->relationLoaded('processStep')
+                    ? ($step->processStep?->accepted_banks ?? null)
+                    : null,
                 'status' => $status,
                 'amount_due' => (float) $step->amount_due,
                 'amount_paid' => (float) $step->amount_paid,
@@ -146,6 +170,7 @@ final readonly class ApplicationProgressView
                 'is_current' => $current !== null && $current->id === $step->id,
                 'documents' => $documents,
                 'installments' => $installments,
+                'payments' => $payments,
                 'interview' => $interview,
             ];
         })->values()->all();
@@ -169,10 +194,15 @@ final readonly class ApplicationProgressView
             status: $application->status instanceof \BackedEnum
                 ? $application->status->value
                 : (string) $application->status,
+            statusLabel: ApplicationStatus::tryFrom(
+                $application->status instanceof \BackedEnum
+                    ? $application->status->value
+                    : (string) $application->status,
+            )?->label($locale) ?? (string) $application->status,
             processFlowId: (int) $application->process_flow_id,
             processFlowVersion: (int) $application->process_flow_version,
             flowGroupId: (string) $application->flow_group_id,
-            offerLabel: $offer ? $pick($offer->title) : null,
+            offerLabel: $offer ? $pick($offer->resolvedTitleTranslations()) : null,
             programLabel: $program ? $pick($program->name) : null,
             currentStepId: $current?->id,
             currentStepOrder: $current?->step_order,
@@ -197,6 +227,7 @@ final readonly class ApplicationProgressView
             'application_id' => $this->applicationId,
             'application_number' => $this->applicationNumber,
             'status' => $this->status,
+            'status_label' => $this->statusLabel,
             'process_flow_id' => $this->processFlowId,
             'process_flow_version' => $this->processFlowVersion,
             'flow_group_id' => $this->flowGroupId,

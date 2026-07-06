@@ -27,7 +27,7 @@ final class OfferExportSource extends AbstractEloquentExportSource
 
     public function defaultWith(): array
     {
-        return ['company', 'program', 'category', 'contractType', 'offerType', 'city', 'country', 'trade'];
+        return ['company', 'program', 'trade.category', 'contractType', 'offerType', 'city', 'country', 'trade'];
     }
 
     protected function applySearch(Builder $query, string $term): void
@@ -78,7 +78,7 @@ final class OfferExportSource extends AbstractEloquentExportSource
 
             $this->field('company.name', 'Entreprise', group: 'entreprise', requiresWith: ['company']),
             $this->field('program.name', 'Programme', type: ExportFieldType::Translatable, group: 'programme', requiresWith: ['program']),
-            $this->field('category.name', 'Catégorie', type: ExportFieldType::Translatable, group: 'classification', requiresWith: ['category']),
+            $this->field('trade.category.name', 'Catégorie', type: ExportFieldType::Translatable, group: 'classification', requiresWith: ['trade.category']),
             $this->field('contractType.name', 'Type de contrat', type: ExportFieldType::Translatable, group: 'classification', requiresWith: ['contractType']),
             $this->field('offerType.name', "Type d'offre", type: ExportFieldType::Translatable, group: 'classification', requiresWith: ['offerType']),
             $this->field('city.name', 'Ville', type: ExportFieldType::Translatable, group: 'localisation', requiresWith: ['city']),

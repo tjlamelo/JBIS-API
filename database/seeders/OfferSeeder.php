@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Core\Domain\Catalog\Models\Offer;
-use App\Core\Domain\Catalog\Models\Category;
 use App\Core\Domain\Catalog\Models\Company;
 use App\Core\Domain\Catalog\Models\Program;
 use App\Core\Domain\Catalog\Models\ContractType;
@@ -12,9 +11,12 @@ use App\Core\Domain\Catalog\Models\WorkSchedule;
 use App\Core\Domain\Catalog\Models\EducationLevel;
 use App\Core\Domain\Catalog\Models\Benefit;
 use App\Core\Domain\Catalog\Models\Trade;
-use App\Core\Domain\Location\Models\City;
-use App\Core\Domain\Identity\Models\User;
+use App\Core\Domain\Catalog\Models\Training;
+use App\Core\Domain\Candidacy\Models\OfferLanguageCourseRequirement;
 use App\Core\Domain\Candidacy\Models\RequiredDocument;
+use App\Core\Domain\Location\Models\City;
+use App\Core\Domain\Location\Models\Language;
+use App\Core\Domain\Identity\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
@@ -25,10 +27,6 @@ class OfferSeeder extends Seeder
         $admin = User::where('email', 'admin@jbis.cm')->first();
         
         // Référentiels principaux
-        $itCat = Category::where('name->fr', 'LIKE', '%Informatique%')->first();
-        $transpCat = Category::where('name->fr', 'LIKE', '%Logistique%')->first();
-        
-        // slug est une string dans la migration contract_types
         $contractCDI = ContractType::where('slug', 'full-time')->first();
         $contractCDD = ContractType::where('slug', 'fixed-term')->first()
             ?? ContractType::where('slug', 'cdd')->first();
@@ -51,12 +49,18 @@ class OfferSeeder extends Seeder
         $taxiTrade = Trade::query()->where('slug', 'taxi-driver')->first();
         $fullstackTrade = Trade::query()->where('slug', 'full-stack-developer')->first();
 
+        $english = Language::query()->where('code', 'en')->first();
+        $french = Language::query()->where('code', 'fr')->first();
+        $englishA2 = Training::query()->where('title', 'Anglais général — niveau A2')->first();
+        $englishB1 = Training::query()->where('title', 'Anglais professionnel — B1')->first();
+        $frenchFle = Training::query()->where('title', 'Français renforcement — FLE')->first();
+
         $offers = [
             [
+                'trade_slug' => 'taxi-driver',
                 'trade_id' => $taxiTrade?->id,
                 'city_id' => $cityDubai?->id,
                 'country_id' => $cityDubai?->region->country_id,
-                'category_id' => $transpCat?->id,
                 'contract_type_id' => $contractCDD?->id,
                 'offer_type_id' => $offerTypeJob?->id,
                 'work_schedule_id' => $workScheduleRotating?->id,
@@ -69,12 +73,24 @@ class OfferSeeder extends Seeder
                 'responsibilities' => ['fr' => 'Transporter les clients.', 'en' => 'Transporting clients.'],
                 'work_mode' => 'on-site',
                 'status' => 'PUBLISHED',
+                'languages' => $english ? [
+                    $english->id => ['required_level' => 'A2'],
+                ] : [],
+                'language_courses' => ($english && $englishA2) ? [
+                    [
+                        'language_id' => $english->id,
+                        'training_id' => $englishA2->id,
+                        'target_level' => 'A2',
+                        'is_mandatory' => true,
+                        'observations' => 'Cours préalable obligatoire avant départ — communication clients et examen local.',
+                    ],
+                ] : [],
             ],
             [
+                'trade_slug' => 'full-stack-developer',
                 'trade_id' => $fullstackTrade?->id,
                 'city_id' => $cityToronto?->id,
                 'country_id' => $cityToronto?->region->country_id,
-                'category_id' => $itCat?->id,
                 'contract_type_id' => $contractCDI?->id,
                 'offer_type_id' => $offerTypeJob?->id,
                 'work_schedule_id' => $workScheduleDay?->id,
@@ -83,10 +99,33 @@ class OfferSeeder extends Seeder
                 'program_id' => $progCanada?->id,
                 'salary_min' => 4500, 'salary_max' => 6500, 'currency' => 'CAD',
                 'address' => 'Downtown Toronto',
-                'requirements' => ['fr' => '3 ans d\'expérience Laravel.', 'en' => '3 years Laravel experience.'],
+                'requirements' => ['fr' => '3 ans d\'expérience Laravel, anglais B1 minimum.', 'en' => '3 years Laravel experience, B1 English minimum.'],
                 'responsibilities' => ['fr' => 'Développement features.', 'en' => 'Feature development.'],
                 'work_mode' => 'hybrid',
                 'status' => 'PUBLISHED',
+                'languages' => collect([
+                    [$english, 'B1'],
+                    [$french, 'A2'],
+                ])->filter(fn (array $row): bool => $row[0] !== null)
+                    ->mapWithKeys(fn (array $row): array => [
+                        $row[0]->id => ['required_level' => $row[1]],
+                    ])->all(),
+                'language_courses' => array_values(array_filter([
+                    ($english && $englishB1) ? [
+                        'language_id' => $english->id,
+                        'training_id' => $englishB1->id,
+                        'target_level' => 'B1',
+                        'is_mandatory' => true,
+                        'observations' => 'Anglais professionnel requis pour entretiens employeur et intégration équipe.',
+                    ] : null,
+                    ($french && $frenchFle) ? [
+                        'language_id' => $french->id,
+                        'training_id' => $frenchFle->id,
+                        'target_level' => 'B1',
+                        'is_mandatory' => false,
+                        'observations' => 'Renforcement recommandé pour dossier IRCC (bilinguisme valorisé).',
+                    ] : null,
+                ])),
             ],
         ];
 
@@ -108,7 +147,6 @@ class OfferSeeder extends Seeder
                 'trade_id'          => $trade->id,
                 'country_id'        => $o['country_id'],
                 'city_id'           => $o['city_id'],
-                'category_id' => $o['category_id'],
                 'contract_type_id'  => $o['contract_type_id'],
                 'offer_type_id'     => $o['offer_type_id'],
                 'work_schedule_id'  => $o['work_schedule_id'],
@@ -138,7 +176,8 @@ class OfferSeeder extends Seeder
             ];
 
             $offer = Offer::query()
-                ->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(slug, '$.fr')) = ?", [$slugFr])
+                ->where('trade_id', $trade->id)
+                ->where('program_id', $o['program_id'])
                 ->first();
 
             if ($offer) {
@@ -148,11 +187,30 @@ class OfferSeeder extends Seeder
                 $offer = Offer::query()->create($attributes);
             }
 
+            if (! empty($o['languages'])) {
+                $offer->languages()->sync($o['languages']);
+            }
+
+            foreach ($o['language_courses'] as $courseRequirement) {
+                OfferLanguageCourseRequirement::query()->updateOrCreate(
+                    [
+                        'offer_id' => $offer->id,
+                        'language_id' => $courseRequirement['language_id'],
+                    ],
+                    [
+                        'training_id' => $courseRequirement['training_id'],
+                        'target_level' => $courseRequirement['target_level'],
+                        'is_mandatory' => $courseRequirement['is_mandatory'],
+                        'observations' => $courseRequirement['observations'],
+                    ],
+                );
+            }
+
             // Liaison des bénéfices via la table pivot
             $offer->benefits()->syncWithoutDetaching($benefits->pluck('id')->all());
 
             // Liaison des documents requis via la pivot offer_required_document
-            if ($trade->slug === 'full-stack-developer') {
+            if ($o['trade_slug'] === 'full-stack-developer') {
                 $docs = RequiredDocument::whereIn('slug', [
                     'passeport-valide',
                     'diplome-le-plus-eleve',

@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\Core\Domain\Identity\Actions\Document;
 
 use App\Core\Domain\Identity\Models\DocumentType;
+use App\Core\Domain\Identity\Models\User;
 use App\Core\Domain\Identity\Models\UserDocument;
 use App\Core\Domain\Identity\Services\Document\DocumentStorageService;
 use App\Core\Domain\Identity\Services\Document\DocumentTypeResolver;
+use App\Core\Domain\Identity\Services\Document\UserDocumentGuardService;
 use App\Core\Domain\Identity\States\Document\UserDocumentStatus;
 use Illuminate\Http\UploadedFile;
 
@@ -16,13 +18,18 @@ final class UpdateUserDocumentAction
     public function __construct(
         private readonly DocumentStorageService $storage,
         private readonly DocumentTypeResolver $documentTypeResolver,
+        private readonly UserDocumentGuardService $documentGuard,
     ) {}
 
     /**
      * @param  array<string, mixed>  $data
      */
-    public function execute(UserDocument $document, array $data, ?UploadedFile $file = null): UserDocument
+    public function execute(UserDocument $document, array $data, ?UploadedFile $file = null, ?User $actor = null): UserDocument
     {
+        if ($actor !== null) {
+            $this->documentGuard->assertCandidateCanMutate($document, $actor);
+        }
+
         $allowed = [
             'document_number',
             'issuing_country_id',

@@ -33,7 +33,7 @@ final class AuthUserPayloadMapper
             'name' => $user->name,
             'email' => $user->email,
             'phone_number1' => $user->phone_number1,
-            'email_verified_at' => $user->email_verified_at,
+            'email_verified_at' => $user->email_verified_at?->toIso8601String(),
             'two_factor_confirmed_at' => $user->two_factor_confirmed_at,
             'roles' => $user->getRoleNames()->values()->all(),
             'permissions' => $this->resolvePermissions->execute($user),

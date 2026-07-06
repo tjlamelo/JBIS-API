@@ -37,8 +37,8 @@ final class AdminUserResource extends JsonResource
                 fn () => $mapper->toArray($this->profile),
             ),
             'sectors' => $this->when(
-                $this->relationLoaded('sectors'),
-                fn () => $this->sectors->map(static fn ($sector) => [
+                $this->relationLoaded('trades'),
+                fn () => $this->sectorsFromTrades()->map(static fn ($sector) => [
                     'id' => $sector->id,
                     'slug' => $sector->slug,
                     'name' => $sector->getTranslations('name'),

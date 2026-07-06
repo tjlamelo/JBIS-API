@@ -25,8 +25,9 @@ class RequiredDocument extends Model
     ];
 
     protected $casts = [
-        'program_id'   => 'integer',
-        'offer_id'     => 'integer',
+        'program_id' => 'integer',
+        'offer_id' => 'integer',
+        'name' => 'array',
         'is_mandatory' => 'boolean',
     ];
 

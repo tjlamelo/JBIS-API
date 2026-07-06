@@ -4,12 +4,22 @@ declare(strict_types=1);
 
 namespace App\Core\Domain\Identity\Enums;
 
-enum CareerIntent: string
+use App\Core\Domain\Shared\Support\Concerns\HasEnumLabels;
+use App\Core\Domain\Shared\Support\Contracts\LocalizableBackedEnum;
+
+enum CareerIntent: string implements LocalizableBackedEnum
 {
+    use HasEnumLabels;
+
     case WorkAbroad = 'work_abroad';
     case WorkLocal = 'work_local';
     case VisaSupport = 'visa_support';
     case Explore = 'explore';
+
+    public static function translationKey(): string
+    {
+        return 'career_intent';
+    }
 
     /**
      * @return list<string>

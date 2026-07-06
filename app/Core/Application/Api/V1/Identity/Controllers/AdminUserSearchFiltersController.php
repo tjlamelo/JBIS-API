@@ -31,7 +31,7 @@ final class AdminUserSearchFiltersController extends Controller
         );
 
         return BaseResponse::ok([
-            'filters' => $this->schema->filterDefinitions(),
+            'filters' => $this->schema->filterDefinitions($locale),
             'options' => $options,
             'sort' => $this->schema->sortOptions(),
         ])->toJsonResponse();

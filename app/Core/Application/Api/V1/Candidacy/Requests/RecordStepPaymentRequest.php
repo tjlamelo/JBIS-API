@@ -24,6 +24,8 @@ final class RecordStepPaymentRequest extends FormRequest
             'payment_type' => ['sometimes', Rule::in(['FULL', 'PARTIAL', 'REFUND'])],
             'status' => ['sometimes', Rule::in(['PENDING', 'COMPLETED', 'FAILED', 'REFUNDED'])],
             'reference' => ['nullable', 'string', 'max:128'],
+            'payment_method' => ['sometimes', Rule::in(['CARD', 'BANK_TRANSFER', 'CASH', 'OTHER'])],
+            'description' => ['nullable', 'string', 'max:500'],
         ];
     }
 }

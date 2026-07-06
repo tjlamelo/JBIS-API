@@ -35,22 +35,6 @@ return new class extends Migration
             $table->unique(['recruiter_organization_id', 'user_id'], 'rec_org_user_unique');
         });
 
-        Schema::create('recruiter_profile_submissions', function (Blueprint $table): void {
-            $table->id();
-            $table->foreignId('recruiter_organization_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('submitted_by_user_id')->constrained('users')->cascadeOnDelete();
-            $table->foreignId('candidate_user_id')->constrained('users')->cascadeOnDelete();
-            $table->string('status', 32)->default('draft')->index();
-            $table->timestamp('submitted_at')->nullable();
-            $table->foreignId('reviewed_by')->nullable()->constrained('users')->nullOnDelete();
-            $table->timestamp('reviewed_at')->nullable();
-            $table->text('staff_note')->nullable();
-            $table->text('rejection_reason')->nullable();
-            $table->timestamps();
-
-            $table->index(['recruiter_organization_id', 'status'], 'rec_submissions_org_status_idx');
-        });
-
         Schema::create('recruiter_profile_assignments', function (Blueprint $table): void {
             $table->id();
             $table->foreignId('recruiter_organization_id')->constrained()->cascadeOnDelete();
@@ -58,46 +42,18 @@ return new class extends Migration
             $table->foreignId('assigned_by_user_id')->constrained('users')->cascadeOnDelete();
             $table->string('status', 32)->default('active')->index();
             $table->text('note')->nullable();
+            $table->json('visible_sections')->nullable();
             $table->timestamp('assigned_at');
             $table->timestamp('revoked_at')->nullable();
             $table->timestamps();
 
             $table->index(['recruiter_organization_id', 'candidate_user_id'], 'recruiter_assignments_org_candidate_idx');
         });
-
-        if (Schema::hasTable('user_profiles')) {
-            Schema::table('user_profiles', function (Blueprint $table): void {
-                if (Schema::hasColumn('user_profiles', 'recruiter_organization_id')) {
-                    $table->foreign('recruiter_organization_id')
-                        ->references('id')
-                        ->on('recruiter_organizations')
-                        ->nullOnDelete();
-                }
-                if (Schema::hasColumn('user_profiles', 'recruiter_submission_id')) {
-                    $table->foreign('recruiter_submission_id')
-                        ->references('id')
-                        ->on('recruiter_profile_submissions')
-                        ->nullOnDelete();
-                }
-            });
-        }
     }
 
     public function down(): void
     {
-        if (Schema::hasTable('user_profiles')) {
-            Schema::table('user_profiles', function (Blueprint $table): void {
-                if (Schema::hasColumn('user_profiles', 'recruiter_submission_id')) {
-                    $table->dropForeign(['recruiter_submission_id']);
-                }
-                if (Schema::hasColumn('user_profiles', 'recruiter_organization_id')) {
-                    $table->dropForeign(['recruiter_organization_id']);
-                }
-            });
-        }
-
         Schema::dropIfExists('recruiter_profile_assignments');
-        Schema::dropIfExists('recruiter_profile_submissions');
         Schema::dropIfExists('recruiter_organization_user');
         Schema::dropIfExists('recruiter_organizations');
     }

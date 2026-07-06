@@ -8,7 +8,6 @@ readonly class AdminUserWriteDto
 {
     /**
      * @param  list<string>|null  $roles
-     * @param  list<int>|null  $sector_ids
      */
     public function __construct(
         public ?string $name = null,
@@ -17,7 +16,6 @@ readonly class AdminUserWriteDto
         public ?string $password = null,
         public ?bool $active = null,
         public ?array $roles = null,
-        public ?array $sector_ids = null,
     ) {}
 
     /**
@@ -35,9 +33,6 @@ readonly class AdminUserWriteDto
             active: array_key_exists('active', $data) ? (bool) $data['active'] : null,
             roles: isset($data['roles']) && is_array($data['roles'])
                 ? array_values(array_map('strval', $data['roles']))
-                : null,
-            sector_ids: isset($data['sector_ids']) && is_array($data['sector_ids'])
-                ? array_values(array_map('intval', $data['sector_ids']))
                 : null,
         );
     }

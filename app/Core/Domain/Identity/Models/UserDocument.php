@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Core\Domain\Identity\Models;
 
 use App\Core\Domain\Identity\Concerns\AuditedModel;
+use App\Core\Domain\Identity\Models\UserDocumentExtraction;
 use App\Core\Domain\Identity\States\Document\UserDocumentStatus;
 use App\Core\Domain\Location\Models\Country;
 use Database\Factories\UserDocumentFactory;
@@ -109,6 +110,16 @@ class UserDocument extends AuditedModel
     public function linkedVisaHistories(): HasMany
     {
         return $this->hasMany(UserVisaHistory::class, 'document_id');
+    }
+
+    public function extractions(): HasMany
+    {
+        return $this->hasMany(UserDocumentExtraction::class, 'user_document_id');
+    }
+
+    public function latestExtraction(): ?UserDocumentExtraction
+    {
+        return $this->extractions()->latest('id')->first();
     }
 
     public function isExpired(): bool

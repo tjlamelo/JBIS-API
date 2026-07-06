@@ -32,8 +32,6 @@ final class UpdateAdminUserRequest extends FormRequest
             'active' => ['sometimes', 'boolean'],
             'roles' => ['sometimes', 'array', 'min:1'],
             'roles.*' => ['string', Rule::exists('roles', 'name')],
-            'sector_ids' => ['sometimes', 'array'],
-            'sector_ids.*' => ['integer', 'exists:categories,id'],
         ];
     }
 }

@@ -21,6 +21,7 @@ final class RecruiterAssignmentResource extends JsonResource
             'id' => $this->id,
             'status' => $this->status?->value ?? $this->status,
             'note' => $this->note,
+            'visible_sections' => $this->resolvedVisibleSections(),
             'assigned_at' => $this->assigned_at?->toIso8601String(),
             'revoked_at' => $this->revoked_at?->toIso8601String(),
             'organization' => new RecruiterOrganizationResource($this->whenLoaded('organization')),

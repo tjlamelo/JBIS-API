@@ -46,11 +46,6 @@ class RecruiterOrganization extends Model
             ->withTimestamps();
     }
 
-    public function submissions(): HasMany
-    {
-        return $this->hasMany(RecruiterProfileSubmission::class);
-    }
-
     public function assignments(): HasMany
     {
         return $this->hasMany(RecruiterProfileAssignment::class);

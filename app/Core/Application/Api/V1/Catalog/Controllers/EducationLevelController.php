@@ -22,7 +22,7 @@ class EducationLevelController extends Controller
                     ->orWhere('slug', 'like', "%{$search}%");
             })
             ->select(['id', 'name', 'slug'])
-            ->orderByDesc('id')
+            ->orderByRaw("FIELD(slug, 'none', 'cep', 'bepc', 'cap', 'bac', 'bts', 'dut', 'deug', 'bachelor', 'licence_pro', 'master', 'master_pro', 'master_rech', 'mba', 'doctorate', 'postdoc', 'hdr')")
             ->paginate(20);
 
         return response()->json($items);

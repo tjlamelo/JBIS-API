@@ -22,7 +22,6 @@ return new class extends Migration {
 
             $table->string('profile_origin', 16)->default('self');
             $table->unsignedBigInteger('recruiter_organization_id')->nullable();
-            $table->unsignedBigInteger('recruiter_submission_id')->nullable();
 
             $table->string('first_name', 50)->nullable();
             $table->string('last_name', 50)->nullable();

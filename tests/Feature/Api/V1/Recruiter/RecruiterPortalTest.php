@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Api\V1\Recruiter;
 
 use App\Core\Domain\Identity\Models\User;
+use App\Core\Domain\Identity\Models\UserProfile;
 use App\Core\Domain\Identity\Support\ApplicationRole;
 use App\Core\Domain\Catalog\Models\Category;
 use App\Core\Domain\Catalog\Models\Trade;
@@ -57,65 +58,42 @@ class RecruiterPortalTest extends TestCase
     }
 
     #[Test]
-    public function recruiter_can_create_and_list_submissions(): void
+    public function staff_can_assign_approved_profile_to_recruiter_with_visible_sections(): void
     {
         [$recruiter, $organization] = $this->makeRecruiterWithOrganization();
-        Sanctum::actingAs($recruiter);
-
-        $create = $this->postJson('/api/v1/recruiter/submissions', [
-            'email' => 'candidat-recruteur-'.uniqid().'@example.com',
-            'name' => 'Jean Dupont',
-        ]);
-
-        $create->assertStatus(201)
-            ->assertJsonPath('data.submission.status', 'draft');
-
-        $submissionId = (int) $create->json('data.submission.id');
-
-        $list = $this->getJson('/api/v1/recruiter/submissions');
-        $list->assertOk();
-        $this->assertGreaterThanOrEqual(1, (int) $list->json('data.meta.total'));
-
-        $this->assertDatabaseHas('recruiter_profile_submissions', [
-            'id' => $submissionId,
-            'recruiter_organization_id' => $organization->id,
-        ]);
-    }
-
-    #[Test]
-    public function staff_can_review_submission_and_assign_approved_profile(): void
-    {
-        [$recruiter, $organization] = $this->makeRecruiterWithOrganization();
-        Sanctum::actingAs($recruiter);
-
-        $submissionId = (int) $this->postJson('/api/v1/recruiter/submissions', [
-            'email' => 'assign-test-'.uniqid().'@example.com',
-            'name' => 'Marie Martin',
-        ])->json('data.submission.id');
+        $candidate = $this->makeApprovedCandidate();
 
         $staff = User::factory()->create();
         $staff->assignRole(ApplicationRole::STAFF);
         Sanctum::actingAs($staff);
 
-        $this->patchJson("/api/v1/identity/admin/recruiter-submissions/{$submissionId}/review", [
-            'decision' => 'approve',
-        ])->assertOk()
-            ->assertJsonPath('data.submission.status', 'approved');
-
-        $candidateId = (int) $this->getJson("/api/v1/identity/admin/recruiter-submissions/{$submissionId}")
-            ->json('data.submission.candidate.id');
-
         $this->postJson('/api/v1/identity/admin/recruiter-assignments', [
             'recruiter_organization_id' => $organization->id,
-            'candidate_user_id' => $candidateId,
-            'note' => 'Profil validé',
-        ])->assertStatus(201);
+            'candidate_user_id' => $candidate->id,
+            'note' => 'Profil partagé',
+            'visible_sections' => ['profile', 'contact', 'experiences'],
+        ])->assertStatus(201)
+            ->assertJsonPath('data.assignment.visible_sections', ['profile', 'contact', 'experiences']);
 
         Sanctum::actingAs($recruiter);
 
-        $this->getJson("/api/v1/recruiter/assignments/{$candidateId}")
+        $this->getJson("/api/v1/recruiter/assignments/{$candidate->id}")
             ->assertOk()
-            ->assertJsonPath('data.candidate.id', $candidateId);
+            ->assertJsonPath('data.candidate.id', $candidate->id)
+            ->assertJsonPath('data.visible_sections', ['profile', 'contact', 'experiences'])
+            ->assertJsonMissingPath('data.candidate.educations');
+    }
+
+    #[Test]
+    public function recruiter_cannot_view_unassigned_candidate(): void
+    {
+        [$recruiter] = $this->makeRecruiterWithOrganization();
+        $candidate = $this->makeApprovedCandidate();
+
+        Sanctum::actingAs($recruiter);
+
+        $this->getJson("/api/v1/recruiter/assignments/{$candidate->id}")
+            ->assertForbidden();
     }
 
     #[Test]
@@ -299,5 +277,20 @@ class RecruiterPortalTest extends TestCase
         $organization->members()->attach($recruiter->id, ['is_owner' => true]);
 
         return [$recruiter, $organization];
+    }
+
+    private function makeApprovedCandidate(): User
+    {
+        $candidate = User::factory()->create();
+        $candidate->assignRole(ApplicationRole::CANDIDATE);
+
+        UserProfile::query()->create([
+            'user_id' => $candidate->id,
+            'first_name' => 'Marie',
+            'last_name' => 'Martin',
+            'is_approved' => true,
+        ]);
+
+        return $candidate->fresh(['profile']);
     }
 }

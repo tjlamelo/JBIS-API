@@ -40,7 +40,6 @@ class UpdateOfferRequest extends FormRequest
             'available_positions' => ['sometimes', 'nullable', 'integer', 'min:1'],
             'country_id' => ['sometimes', 'nullable', 'integer', 'exists:countries,id'],
             'city_id' => ['sometimes', 'nullable', 'integer', 'exists:cities,id'],
-            'category_id' => ['sometimes', 'nullable', 'integer', 'exists:categories,id'],
             'address' => ['sometimes', 'nullable', 'string', 'max:255'],
             'benefit_ids' => ['sometimes', 'array'],
             'benefit_ids.*' => ['integer', 'exists:benefits,id'],

@@ -76,7 +76,7 @@ class RoleSeeder extends Seeder
             'usertraining', 'userinternship', 'interestandhobby',
             'userpreferredcountry', 'uservisahistory', 'usernote',
             'application', 'offer', 'company', 'program', 'training', 'processflow', 'processstep',
-            'recruiterorganization', 'recruiteronboarding', 'recruiteroffer', 'recruitersubmission', 'recruiterassignment',
+            'recruiterorganization', 'recruiteronboarding', 'recruiteroffer', 'recruiterassignment',
         ];
 
         $names = [P::ADMIN_ACCESS, P::PERMISSION_MANAGE];
@@ -126,8 +126,6 @@ class RoleSeeder extends Seeder
             P::name('recruiteronboarding', P::UPDATE),
             P::name('recruiteroffer', P::VIEW),
             P::name('recruiteroffer', P::UPDATE),
-            P::name('recruitersubmission', P::VIEW),
-            P::name('recruitersubmission', P::UPDATE),
             P::name('recruiterassignment', P::VIEW),
             P::name('recruiterassignment', P::CREATE),
             P::name('recruiterassignment', P::UPDATE),
@@ -144,13 +142,9 @@ class RoleSeeder extends Seeder
             P::name('recruiteroffer', P::VIEW),
             P::name('recruiteroffer', P::CREATE),
             P::name('recruiteroffer', P::UPDATE),
-            P::name('recruitersubmission', P::VIEW),
-            P::name('recruitersubmission', P::CREATE),
-            P::name('recruitersubmission', P::UPDATE),
             P::name('recruiterassignment', P::VIEW),
             P::name('userprofile', P::VIEW),
             P::name('userdocument', P::VIEW),
-            P::name('userdocument', P::CREATE),
         ];
     }
 }

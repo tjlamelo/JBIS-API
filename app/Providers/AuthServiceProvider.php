@@ -9,7 +9,9 @@ use App\Core\Domain\Candidacy\Models\Appointment;
 use App\Core\Domain\Candidacy\Policies\ApplicationPolicy;
 use App\Core\Domain\Candidacy\Policies\AppointmentPolicy;
 use App\Core\Domain\Catalog\Models\Program;
+use App\Core\Domain\Catalog\Models\Training;
 use App\Core\Domain\Catalog\Policies\Program\ProgramPolicy;
+use App\Core\Domain\Catalog\Policies\Training\TrainingPolicy;
 use App\Core\Domain\Identity\Models\Archive;
 use App\Core\Domain\Identity\Models\Certification;
 use App\Core\Domain\Identity\Models\Education;
@@ -45,12 +47,10 @@ use App\Core\Domain\Recruiter\Models\RecruiterOfferSubmission;
 use App\Core\Domain\Recruiter\Models\RecruiterOnboardingApplication;
 use App\Core\Domain\Recruiter\Models\RecruiterOrganization;
 use App\Core\Domain\Recruiter\Models\RecruiterProfileAssignment;
-use App\Core\Domain\Recruiter\Models\RecruiterProfileSubmission;
 use App\Core\Domain\Recruiter\Policies\RecruiterOfferSubmissionPolicy;
 use App\Core\Domain\Recruiter\Policies\RecruiterOnboardingApplicationPolicy;
 use App\Core\Domain\Recruiter\Policies\RecruiterOrganizationPolicy;
 use App\Core\Domain\Recruiter\Policies\RecruiterProfileAssignmentPolicy;
-use App\Core\Domain\Recruiter\Policies\RecruiterProfileSubmissionPolicy;
 use App\Core\Domain\Workflow\Models\ProcessFlow;
 use App\Core\Domain\Workflow\Models\ProcessStep;
 use App\Core\Domain\Workflow\Policies\ProcessFlowPolicy;
@@ -88,7 +88,6 @@ final class AuthServiceProvider extends ServiceProvider
         RecruiterOrganization::class => RecruiterOrganizationPolicy::class,
         RecruiterOnboardingApplication::class => RecruiterOnboardingApplicationPolicy::class,
         RecruiterOfferSubmission::class => RecruiterOfferSubmissionPolicy::class,
-        RecruiterProfileSubmission::class => RecruiterProfileSubmissionPolicy::class,
         RecruiterProfileAssignment::class => RecruiterProfileAssignmentPolicy::class,
     ];
 

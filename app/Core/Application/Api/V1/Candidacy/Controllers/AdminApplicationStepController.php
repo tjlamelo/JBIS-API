@@ -10,12 +10,15 @@ use App\Core\Application\Api\V1\Candidacy\Requests\RecordStepPaymentRequest;
 use App\Core\Application\Api\V1\Candidacy\Requests\UpsertApplicationInterviewRequest;
 use App\Core\Application\Api\V1\Candidacy\Requests\ValidateApplicationStepRequest;
 use App\Core\Domain\Candidacy\Actions\AdvanceApplicationStepAction;
+use App\Core\Domain\Candidacy\Actions\ConfirmApplicationStepPaymentAction;
 use App\Core\Domain\Candidacy\Actions\RecordApplicationStepPaymentAction;
 use App\Core\Domain\Candidacy\Actions\UpsertApplicationInterviewAction;
+use App\Core\Domain\Candidacy\Actions\WaiveApplicationStepPaymentAction;
 use App\Core\Domain\Candidacy\Exceptions\ApplicationStepAdvanceException;
 use App\Core\Domain\Candidacy\Models\Application;
 use App\Core\Domain\Candidacy\Models\ApplicationStep;
 use App\Core\Domain\Candidacy\Queries\ApplicationProgressQuery;
+use App\Core\Domain\Finance\Models\Payment;
 use App\Core\Domain\Candidacy\Services\ApplicationActivityLogger;
 use App\Core\Domain\Candidacy\Services\InterviewStepSyncService;
 use App\Http\Controllers\Controller;
@@ -32,6 +35,8 @@ final class AdminApplicationStepController extends Controller
         private readonly ApplicationActivityLogger $activityLogger,
         private readonly InterviewStepSyncService $interviewStepSync,
         private readonly UpsertApplicationInterviewAction $upsertInterviewAction,
+        private readonly WaiveApplicationStepPaymentAction $waivePaymentAction,
+        private readonly ConfirmApplicationStepPaymentAction $confirmPaymentAction,
     ) {}
 
     public function upsertInterview(
@@ -121,7 +126,36 @@ final class AdminApplicationStepController extends Controller
             (string) $request->input('status', 'COMPLETED'),
             $request->input('reference'),
             (int) $request->user()->id,
+            (string) $request->input('payment_method', 'BANK_TRANSFER'),
+            $request->input('description'),
         );
+
+        return $this->progressResponse($request, $application->fresh());
+    }
+
+    public function waivePayment(Request $request, Application $application, ApplicationStep $step): JsonResponse
+    {
+        $this->authorize('update', $application);
+        $this->assertStepBelongsToApplication($application, $step);
+
+        $this->waivePaymentAction->execute(
+            $step,
+            (int) $request->user()->id,
+            $request->input('reason') ? (string) $request->input('reason') : null,
+        );
+
+        return $this->progressResponse($request, $application->fresh());
+    }
+
+    public function confirmPayment(Request $request, Application $application, Payment $payment): JsonResponse
+    {
+        $this->authorize('update', $application);
+
+        if ((int) $payment->application_id !== (int) $application->id) {
+            abort(404);
+        }
+
+        $this->confirmPaymentAction->execute($payment, (int) $request->user()->id);
 
         return $this->progressResponse($request, $application->fresh());
     }

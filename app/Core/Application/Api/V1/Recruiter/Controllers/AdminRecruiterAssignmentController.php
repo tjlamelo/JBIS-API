@@ -57,6 +57,7 @@ final class AdminRecruiterAssignmentController extends Controller
             $candidate,
             $request->user(),
             $request->validated('note'),
+            $request->validated('visible_sections'),
         );
 
         $assignment->load(['candidate.profile', 'organization', 'assignedBy:id,name']);

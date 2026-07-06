@@ -61,6 +61,35 @@ class OfferApplicationReadinessTest extends TestCase
     }
 
     #[Test]
+    public function readiness_blocks_application_when_email_is_not_verified(): void
+    {
+        [$offer, $candidate, $passportType] = $this->makeOfferWithRequiredPassport();
+
+        $candidate->forceFill(['email_verified_at' => null])->save();
+
+        UserDocument::query()->create([
+            'user_id' => $candidate->id,
+            'uploaded_by' => $candidate->id,
+            'document_type_id' => $passportType->id,
+            'file_path' => 'Document/users/'.$candidate->id.'/passport.pdf',
+            'original_filename' => 'passport.pdf',
+            'mime_type' => 'application/pdf',
+            'file_size' => 1024,
+            'status' => 'PENDING',
+        ]);
+
+        Sanctum::actingAs($candidate);
+
+        $this->getJson("/api/v1/candidacy/offers/{$offer->id}/readiness")
+            ->assertOk()
+            ->assertJsonPath('data.readiness.can_apply', false)
+            ->assertJsonFragment(['Vérifiez votre adresse e-mail avant de candidater.']);
+
+        $this->postJson('/api/v1/candidacy/applications', ['offer_id' => $offer->id])
+            ->assertStatus(422);
+    }
+
+    #[Test]
     public function candidate_can_apply_when_mandatory_documents_are_uploaded(): void
     {
         [$offer, $candidate, $passportType] = $this->makeOfferWithRequiredPassport();

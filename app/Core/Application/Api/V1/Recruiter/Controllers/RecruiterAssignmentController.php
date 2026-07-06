@@ -5,19 +5,22 @@ declare(strict_types=1);
 namespace App\Core\Application\Api\V1\Recruiter\Controllers;
 
 use App\Core\Application\Api\Responses\BaseResponse;
-use App\Core\Application\Api\V1\Identity\Resources\AdminUserResource;
 use App\Core\Application\Api\V1\Recruiter\Resources\RecruiterAssignmentResource;
 use App\Core\Domain\Identity\Models\User;
 use App\Core\Domain\Recruiter\Enums\RecruiterAssignmentStatus;
 use App\Core\Domain\Recruiter\Models\RecruiterProfileAssignment;
 use App\Core\Domain\Recruiter\Support\RecruiterAccess;
+use App\Core\Domain\Recruiter\Support\RecruiterSharedCandidatePresenter;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 final class RecruiterAssignmentController extends Controller
 {
-    public function __construct(private readonly RecruiterAccess $access) {}
+    public function __construct(
+        private readonly RecruiterAccess $access,
+        private readonly RecruiterSharedCandidatePresenter $presenter,
+    ) {}
 
     public function index(Request $request): JsonResponse
     {
@@ -46,12 +49,17 @@ final class RecruiterAssignmentController extends Controller
     {
         $recruiter = $request->user();
         abort_if($recruiter === null, 401);
-        abort_unless($this->access->canViewCandidate($recruiter, $candidateUser->id), 403);
 
-        $candidateUser->load(['profile', 'experiences', 'educations', 'documents']);
+        $assignment = $this->access->activeAssignment($recruiter, $candidateUser->id);
+        abort_if($assignment === null, 403);
+
+        $visibleSections = $assignment->resolvedVisibleSections();
+        $candidateUser->load($this->presenter->eagerLoadsFor($visibleSections));
 
         return BaseResponse::ok([
-            'candidate' => new AdminUserResource($candidateUser),
+            'candidate' => $this->presenter->present($candidateUser, $visibleSections),
+            'visible_sections' => $visibleSections,
+            'assignment' => new RecruiterAssignmentResource($assignment->load(['assignedBy:id,name'])),
         ])->toJsonResponse();
     }
 

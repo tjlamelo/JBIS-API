@@ -189,16 +189,10 @@ final class AdminUserSearchFilterApplicator
             $matchAll = ($params['sector_match'] ?? 'any') === 'all';
             if ($matchAll) {
                 foreach ($sectorIds as $sectorId) {
-                    $query->where(function (Builder $outer) use ($sectorId): void {
-                        $outer->whereHas('sectors', fn (Builder $q) => $q->where('categories.id', $sectorId))
-                            ->orWhereHas('trades', fn (Builder $q) => $q->where('trades.category_id', $sectorId));
-                    });
+                    $query->whereHas('trades', fn (Builder $q) => $q->where('trades.category_id', $sectorId));
                 }
             } else {
-                $query->where(function (Builder $outer) use ($sectorIds): void {
-                    $outer->whereHas('sectors', fn (Builder $q) => $q->whereIn('categories.id', $sectorIds))
-                        ->orWhereHas('trades', fn (Builder $q) => $q->whereIn('trades.category_id', $sectorIds));
-                });
+                $query->whereHas('trades', fn (Builder $q) => $q->whereIn('trades.category_id', $sectorIds));
             }
         }
 
@@ -488,7 +482,7 @@ final class AdminUserSearchFilterApplicator
 
         if (! empty($params['category_id'])) {
             $categoryId = (int) $params['category_id'];
-            $query->whereHas('applications.offer', fn (Builder $q) => $q->where('category_id', $categoryId));
+            $query->whereHas('applications.offer.trade', fn (Builder $q) => $q->where('category_id', $categoryId));
         }
     }
 

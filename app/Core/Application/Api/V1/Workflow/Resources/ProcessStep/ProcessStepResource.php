@@ -30,7 +30,7 @@ class ProcessStepResource extends JsonResource
             'default_amount' => $this->default_amount,
             'accepted_banks' => $this->accepted_banks,
             'requires_documents' => (bool) $this->requires_documents,
-            'document_type_ids' => $this->document_type_ids ?? [],
+            'document_type_ids' => $this->resolvedDocumentTypeIds(),
             'estimated_duration_days' => $this->estimated_duration_days,
             'sla_alert_days' => $this->sla_alert_days,
         ];

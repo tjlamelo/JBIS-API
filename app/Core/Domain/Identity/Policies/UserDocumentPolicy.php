@@ -19,8 +19,15 @@ final class UserDocumentPolicy
 
     public function view(User $user, UserDocument $document): bool
     {
-        return $this->permission($user, 'view')
-            || $document->belongsToUser((int) $user->id);
+        if ($this->permission($user, 'view')) {
+            return true;
+        }
+
+        if (! $document->belongsToUser((int) $user->id)) {
+            return false;
+        }
+
+        return ! (bool) $document->is_sensitive;
     }
 
     public function update(User $user, UserDocument $document): bool
@@ -35,9 +42,14 @@ final class UserDocumentPolicy
             || $document->belongsToUser((int) $user->id);
     }
 
-    public function validate(User $user, UserDocument $document): bool
+    public function validateAny(User $user): bool
     {
         return $this->permission($user, 'update');
+    }
+
+    public function validate(User $user, UserDocument $document): bool
+    {
+        return $this->validateAny($user);
     }
 
     public function download(User $user, UserDocument $document): bool

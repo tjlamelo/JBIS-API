@@ -29,8 +29,10 @@ final class AdminUserSearchFilterSchema
     /**
      * @return list<array<string, mixed>>
      */
-    public function filterDefinitions(): array
+    public function filterDefinitions(?string $locale = null): array
     {
+        $locale ??= app()->getLocale();
+
         return [
             // —— Recherche globale ——
             [
@@ -176,7 +178,7 @@ final class AdminUserSearchFilterSchema
                 'label' => 'Type de profil',
                 'description' => 'Étudiant, travailleur, en recherche, etc.',
                 'group' => 'identite',
-                'options' => self::profileTypeOptions(),
+                'options' => ProfileType::options($locale),
             ],
             [
                 'key' => 'career_intent',
@@ -184,7 +186,7 @@ final class AdminUserSearchFilterSchema
                 'label' => 'Objectif JBIS',
                 'description' => 'Projet déclaré lors de l\'onboarding',
                 'group' => 'identite',
-                'options' => self::careerIntentOptions(),
+                'options' => CareerIntent::options($locale),
             ],
             [
                 'key' => 'has_matricule',
@@ -785,30 +787,4 @@ final class AdminUserSearchFilterSchema
         ];
     }
 
-    /**
-     * @return list<array{value: string, label: string}>
-     */
-    private static function profileTypeOptions(): array
-    {
-        return [
-            ['value' => ProfileType::Student->value, 'label' => 'Étudiant(e)'],
-            ['value' => ProfileType::RecentGraduate->value, 'label' => 'Jeune diplômé(e)'],
-            ['value' => ProfileType::ActiveWorker->value, 'label' => 'Travailleur actif'],
-            ['value' => ProfileType::JobSeeker->value, 'label' => 'En recherche d\'emploi'],
-            ['value' => ProfileType::Exploring->value, 'label' => 'Découverte JBIS'],
-        ];
-    }
-
-    /**
-     * @return list<array{value: string, label: string}>
-     */
-    private static function careerIntentOptions(): array
-    {
-        return [
-            ['value' => CareerIntent::WorkAbroad->value, 'label' => 'Travailler à l\'étranger'],
-            ['value' => CareerIntent::WorkLocal->value, 'label' => 'Travailler au Cameroun'],
-            ['value' => CareerIntent::VisaSupport->value, 'label' => 'Accompagnement visa & mobilité'],
-            ['value' => CareerIntent::Explore->value, 'label' => 'Découverte JBIS'],
-        ];
-    }
 }

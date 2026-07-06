@@ -53,7 +53,6 @@ final class ApplicationPermission
         'recruiteronboarding',
         'recruiteroffer',
         'recruiterorganization',
-        'recruitersubmission',
         'rendezvous',
         'requireddocument',
         'training',
