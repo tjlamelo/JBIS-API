@@ -196,6 +196,12 @@ final class ApplyUserDocumentExtractionAction
                 continue;
             }
 
+            // start_date is NOT NULL; CVs often only show graduation year → fall back to end_date.
+            $startDate = $this->resolveRequiredStartDate($row);
+            if ($startDate === null) {
+                continue;
+            }
+
             Education::query()->create([
                 'user_id' => $user->id,
                 'document_id' => $document->id,
@@ -204,7 +210,7 @@ final class ApplyUserDocumentExtractionAction
                 'field_of_study' => (string) ($row['field_of_study'] ?? ''),
                 'country_id' => $this->countryResolver->resolveId((string) ($row['country_name'] ?? '')),
                 'residence_city' => (string) ($row['city_name'] ?? ''),
-                'start_date' => $this->parseDateOrNull($row['start_date'] ?? null),
+                'start_date' => $startDate,
                 'end_date' => $this->parseDateOrNull($row['end_date'] ?? null),
                 'is_current' => (bool) ($row['is_current'] ?? false),
                 'grade' => (string) ($row['grade'] ?? ''),
@@ -230,6 +236,11 @@ final class ApplyUserDocumentExtractionAction
                 continue;
             }
 
+            $startDate = $this->resolveRequiredStartDate($row);
+            if ($startDate === null) {
+                continue;
+            }
+
             Experience::query()->create([
                 'user_id' => $user->id,
                 'document_id' => $document->id,
@@ -237,7 +248,7 @@ final class ApplyUserDocumentExtractionAction
                 'company_name' => (string) ($row['company_name'] ?? ''),
                 'country_id' => $this->countryResolver->resolveId((string) ($row['country_name'] ?? '')),
                 'city_name' => (string) ($row['city_name'] ?? ''),
-                'start_date' => $this->parseDateOrNull($row['start_date'] ?? null),
+                'start_date' => $startDate,
                 'end_date' => $this->parseDateOrNull($row['end_date'] ?? null),
                 'is_current' => (bool) ($row['is_current'] ?? false),
                 'responsibilities' => (string) ($row['responsibilities'] ?? ''),
@@ -587,6 +598,15 @@ final class ApplyUserDocumentExtractionAction
                 $entry->delete();
             }
         }
+    }
+
+    /**
+     * @param  array<string, mixed>  $row
+     */
+    private function resolveRequiredStartDate(array $row): ?string
+    {
+        return $this->parseDateOrNull($row['start_date'] ?? null)
+            ?? $this->parseDateOrNull($row['end_date'] ?? null);
     }
 
     private function parseDateOrNull(mixed $value): ?string

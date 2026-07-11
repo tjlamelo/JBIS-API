@@ -167,4 +167,44 @@ final class ApplyUserDocumentExtractionActionTest extends TestCase
         self::assertSame(2, UserLanguage::query()->where('user_id', $user->id)->count());
         self::assertSame(1, UserSkill::query()->where('user_id', $user->id)->where('skill_id', $skill->id)->count());
     }
+
+    public function test_education_without_start_date_falls_back_to_end_date(): void
+    {
+        $user = User::factory()->create();
+        $reviewer = User::factory()->create();
+        $type = DocumentType::query()->where('code', 'CV')->first()
+            ?? DocumentType::factory()->create(['code' => 'CV', 'label' => ['fr' => 'CV', 'en' => 'CV']]);
+
+        $document = UserDocument::factory()->create([
+            'user_id' => $user->id,
+            'document_type_id' => $type->id,
+        ]);
+
+        $extraction = UserDocumentExtraction::query()->create([
+            'user_document_id' => $document->id,
+            'user_id' => $user->id,
+            'document_type_code' => 'CV',
+            'status' => DocumentExtractionStatus::PendingReview,
+            'draft_payload' => [
+                'educations' => [
+                    [
+                        'degree' => 'Baccalauréat ESG, Série TI',
+                        'institution_name' => 'Lycée Bilingue de Yaoundé',
+                        'end_date' => '2023-01-01',
+                    ],
+                    [
+                        'degree' => 'Sans aucune date',
+                        'institution_name' => 'Inconnu',
+                    ],
+                ],
+            ],
+        ]);
+
+        $this->app->make(ApplyUserDocumentExtractionAction::class)->execute($extraction, $reviewer);
+
+        $education = Education::query()->where('user_id', $user->id)->sole();
+        self::assertSame('Baccalauréat ESG, Série TI', $education->degree);
+        self::assertSame('2023-01-01', $education->start_date?->toDateString());
+        self::assertSame('2023-01-01', $education->end_date?->toDateString());
+    }
 }
