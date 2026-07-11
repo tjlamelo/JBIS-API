@@ -26,6 +26,7 @@ final class ApplicationProgressQuery
             'steps.interview',
             'steps.payments' => fn ($q) => $q->orderByDesc('id'),
             'steps.processStep:id,accepted_banks',
+            ...UserPersonName::withProfile('user'),
             ...UserPersonName::withProfile('events.actor'),
         ]);
 

@@ -9,6 +9,7 @@ use App\Core\Application\Api\V1\Identity\Resources\EducationResource;
 use App\Core\Application\Api\V1\Identity\Resources\ExperienceResource;
 use App\Core\Application\Api\V1\Identity\Support\ProfileResponseMapper;
 use App\Core\Domain\Identity\Models\User;
+use App\Core\Domain\Recruiter\Enums\RecruiterMaskedField;
 use App\Core\Domain\Recruiter\Enums\RecruiterSharedProfileSection;
 
 final class RecruiterSharedCandidatePresenter
@@ -19,12 +20,14 @@ final class RecruiterSharedCandidatePresenter
 
     /**
      * @param  list<string>  $visibleSections
+     * @param  list<string>  $maskedFields
      * @return array<string, mixed>
      */
-    public function present(User $candidate, array $visibleSections): array
+    public function present(User $candidate, array $visibleSections, array $maskedFields = []): array
     {
         $sections = RecruiterSharedProfileSection::normalize($visibleSections);
         $allowed = array_flip($sections);
+        $masked = array_flip(RecruiterMaskedField::normalize($maskedFields));
 
         $data = [
             'id' => $candidate->id,
@@ -32,14 +35,21 @@ final class RecruiterSharedCandidatePresenter
         ];
 
         if (isset($allowed[RecruiterSharedProfileSection::Contact->value])) {
-            $data['email'] = $candidate->email;
-            $data['phone_number1'] = $candidate->phone_number1;
+            if (! isset($masked[RecruiterMaskedField::ContactEmail->value])) {
+                $data['email'] = $candidate->email;
+            }
+            if (! isset($masked[RecruiterMaskedField::ContactPhone->value])) {
+                $data['phone_number1'] = $candidate->phone_number1;
+            }
         }
 
         if (isset($allowed[RecruiterSharedProfileSection::Profile->value])
             && $candidate->relationLoaded('profile')
             && $candidate->profile !== null) {
-            $data['profile'] = $this->profileMapper->toArray($candidate->profile);
+            $data['profile'] = $this->filterProfileFields(
+                $this->profileMapper->toArray($candidate->profile),
+                $masked,
+            );
         }
 
         if (isset($allowed[RecruiterSharedProfileSection::Professional->value])) {
@@ -130,6 +140,47 @@ final class RecruiterSharedCandidatePresenter
         }
 
         return $data;
+    }
+
+    /**
+     * @param  array<string, mixed>  $profile
+     * @param  array<string, int>  $masked
+     * @return array<string, mixed>
+     */
+    private function filterProfileFields(array $profile, array $masked): array
+    {
+        if (isset($masked[RecruiterMaskedField::ProfilePhones->value])) {
+            unset($profile['phone_number2'], $profile['phone_number3']);
+        }
+        if (isset($masked[RecruiterMaskedField::ProfileAddress->value])) {
+            unset($profile['address']);
+        }
+        if (isset($masked[RecruiterMaskedField::ProfileEmailInstitutional->value])) {
+            unset($profile['email_institutional']);
+        }
+        if (isset($masked[RecruiterMaskedField::ProfileMatricule->value])) {
+            unset($profile['matricule']);
+        }
+        if (isset($masked[RecruiterMaskedField::ProfilePictures->value])) {
+            unset($profile['pictures']);
+        }
+        if (isset($masked[RecruiterMaskedField::ProfileAgency->value])) {
+            unset($profile['agency_id']);
+        }
+        if (isset($masked[RecruiterMaskedField::ProfileDiscovery->value])) {
+            unset($profile['discovery_source_id'], $profile['discovery_source_other']);
+        }
+        if (isset($masked[RecruiterMaskedField::ProfilePlaceOfBirth->value])) {
+            unset($profile['place_of_birth']);
+        }
+        if (isset($masked[RecruiterMaskedField::ProfileMaritalInfo->value])) {
+            unset($profile['marital_status'], $profile['number_of_children']);
+        }
+        if (isset($masked[RecruiterMaskedField::ProfileDateOfBirth->value])) {
+            unset($profile['date_of_birth'], $profile['age']);
+        }
+
+        return $profile;
     }
 
     /**

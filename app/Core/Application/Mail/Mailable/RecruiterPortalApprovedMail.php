@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Core\Application\Mail\Mailable;
 
+use App\Core\Domain\Communication\Support\JbisMailbox;
 use App\Core\Domain\Identity\Models\User;
 use App\Core\Domain\Recruiter\Models\RecruiterOrganization;
 use Illuminate\Bus\Queueable;
@@ -24,9 +25,7 @@ class RecruiterPortalApprovedMail extends Mailable
 
     public function envelope(): Envelope
     {
-        return new Envelope(
-            subject: 'Votre portail recruteur JBIS est prêt',
-        );
+        return JbisMailbox::transactionalEnvelope('Votre portail recruteur JBIS est prêt');
     }
 
     public function content(): Content

@@ -38,6 +38,105 @@ php artisan test
 
 ---
 
+## Fonctionnalités et modules (état au 2026-07-06)
+
+Légende : **Implémenté** · **Partiel** (API ou UI seule) · **Non implémenté**
+
+Dépôt frontend associé : **jbis-next** (routes UI). Ce README décrit surtout la couche API.
+
+### Rôles applicatifs
+
+| Rôle | Périmètre |
+|------|-----------|
+| `candidate` | Dossier candidat, candidatures, documents |
+| `staff` / `admin` | Back-office JBIS (catalogue, dossiers, recruteurs, candidatures…) |
+| `recruiter` | Portail recruteur : offres, profils partagés, demandes de profils |
+| `partner` | Établissements de formation — gestion des stages (en cours) |
+
+> **Recruteur ≠ Partenaire** : le recruteur embauche / consulte des profils ; le partenaire soumet des étudiants en stage et suit leurs dossiers.
+
+### Modules implémentés (API)
+
+| Module | Besoin fonctionnel | API | UI (jbis-next) |
+|--------|-------------------|-----|----------------|
+| **Auth & identité** | Connexion, inscription, 2FA, profil candidat, validation staff | Implémenté | Implémenté |
+| **Documents** | Dépôt, validation, téléchargement, types | Implémenté | Implémenté |
+| **Catalogue** | Offres, programmes, référentiels, entreprises | Implémenté | Implémenté |
+| **Candidatures** | Parcours `Application` + étapes workflow, entretiens, paiements | Implémenté | Implémenté |
+| **Workflow** | Process flows configurables (étapes, documents, paiements…) | Implémenté | Implémenté |
+| **Formations JBIS** | CRUD catalogue `Training` (admin staff) | Implémenté | Implémenté (`/admin/training`) |
+| **Recruteurs — onboarding** | Candidature publique, validation staff, provisionnement portail | Implémenté | Implémenté |
+| **Recruteurs — offres** | Soumission offre par recruteur, validation / publication staff | Implémenté | Implémenté |
+| **Recruteurs — partage profils** | Staff assigne des candidats avec sections visibles / champs masqués | Implémenté | Implémenté |
+| **Recruteurs — demandes de profils** | Recruteur soumet critères → staff matche automatiquement → transmission | Implémenté | Implémenté |
+| **Recruteurs — retour profils** | Recruteur indique statut + note sur profils reçus | Implémenté | Implémenté |
+| **Communication** | Campagnes mail / SMS, newsletter, contact | Implémenté | Partiel |
+| **Export** | Excel / CSV / PDF (sources métier) | Implémenté | Partiel |
+| **Partenaire — stages** | Cohortes, inscription étudiants, checklist docs, placements | **Partiel** (MVP) | **Partiel** (`/partner/cohorts`, `/admin/partners/cohorts`) |
+
+### Détail — modules récents (juillet 2026)
+
+#### Formations JBIS (`Training`)
+
+- **Besoin** : référentiel des formations proposées par JBIS, géré par le staff.
+- **API** : `GET/POST/PUT/DELETE /api/v1/catalog/admin/trainings`
+- **Permissions** : `training.view`, `training.create`, `training.update`, `training.delete`
+- **Modèle** : `App\Core\Domain\Catalog\Models\Training`
+
+#### Demandes de profils recruteur (`RecruiterProfileRequest`)
+
+- **Besoin** : le recruteur décrit un besoin (critères, quantité) ; le staff voit les candidats matchés et peut transmettre.
+- **Flux** : `draft` → `submitted` → `matched` → `transmitted` (ou `rejected` / `needs_changes`)
+- **API recruteur** : `/api/v1/recruiter/profile-requests` (CRUD + `submit`)
+- **API admin** : `/api/v1/identity/admin/recruiter-profile-requests` (liste, match, transmit, review)
+- **Matching** : réutilise les filtres de recherche profils admin (`AdminUserIdsFromFiltersQuery`)
+- **Traçabilité** : `recruiter_profile_request_id` sur `RecruiterProfileAssignment`
+- **Permissions** : `recruiterprofilerequest.*`
+
+#### Retour recruteur sur profils assignés
+
+- **Besoin** : le recruteur qualifie les profils reçus (gardé, à revoir, refusé…) avec une note libre.
+- **API** : `PATCH /api/v1/recruiter/assignments/{id}/feedback`
+- **Champs** : `feedback_status`, `feedback_note`, `feedback_updated_at`, `feedback_updated_by_user_id`
+- **Migration** : `2026_07_06_153000_add_recruiter_feedback_to_assignments` + FK `rpa_feedback_updated_by_foreign`
+
+### Module partenaire — stages (juillet 2026)
+
+#### Implémenté (MVP)
+
+| Besoin | Statut | Détail |
+|--------|--------|--------|
+| Organisation partenaire | OK | `PartnerOrganization` + pivot `partner_organization_user` |
+| Cohortes / promotions | OK | CRUD brouillon, soumission, revue staff |
+| Enrôlement étudiants | OK | `PartnerCohortStudent` (nom, e-mail, lien compte optionnel) |
+| Checklist documentaire | OK | Template par cohorte + statut par étudiant (sync `user_documents`) |
+| Vue récap partenaire | OK | Dashboard KPIs + fiche étudiant checklist |
+| API admin | OK | `/identity/admin/partner-organizations`, `/partner-cohorts` |
+
+#### Non implémenté (backlog)
+
+| Besoin | Description |
+|--------|-------------|
+| Matching & placement | Recherche automatique de stages par JBIS |
+| Convention & feedback | Workflow convention, retours fin de stage |
+| Invitation compte étudiant | E-mail d'inscription automatique |
+| Lien `UserInternship` | Association stage candidat ↔ placement partenaire |
+
+**API partenaire** : `/api/v1/partner/me/organization`, `/dashboard`, `/cohorts`, `/cohorts/{id}/students`  
+**Permissions** : `partnerorganization.*`, `partnercohort.*`, `partnercohortstudent.*`  
+**Migration** : `2026_07_06_160000_create_partner_portal_tables.php`
+
+### Migrations récentes (recruteur)
+
+| Fichier | Objet |
+|---------|-------|
+| `2026_07_06_100000_create_recruiter_profile_requests_table` | Table demandes de profils |
+| `2026_07_06_100001_add_recruiter_profile_request_id_to_assignments` | Lien demande ↔ assignation |
+| `2026_07_06_153000_add_recruiter_feedback_to_assignments` | Colonnes feedback recruteur |
+| `2026_07_06_153001_add_recruiter_feedback_updated_by_foreign` | FK courte (limite MySQL 64 car.) |
+
+---
+
 ## Structure du projet
 
 Le code métier n’est pas dans un dossier `core/` à la racine : tout vit sous **`app/`**, organisé en DDD pragmatique.
@@ -91,7 +190,8 @@ Le tableau ci-dessous liste, pour chaque *bounded context*, les relations entre 
 | Candidacy | `Domain/Candidacy/Models/` | Application, ApplicationStep, ApplicationDocument, Interview, Appointment, RequiredDocument, OfferLanguageCourseRequirement, CandidateLanguageCourse… |
 | Workflow | `Domain/Workflow/Models/` | ProcessFlow, ProcessFlowSection, ProcessStep |
 | Finance | `Domain/Finance/Models/` | Payment, PaymentSchedule, PaymentInstallment |
-| Recruiter | `Domain/Recruiter/Models/` | RecruiterOrganization, RecruiterOfferSubmission, RecruiterProfileAssignment, RecruiterOnboardingApplication |
+| Recruiter | `Domain/Recruiter/Models/` | RecruiterOrganization, RecruiterOfferSubmission, RecruiterProfileAssignment, RecruiterProfileRequest, RecruiterOnboardingApplication |
+| Partner | `Domain/Partner/Models/` | PartnerOrganization, PartnerCohort, PartnerCohortStudent, PartnerCohortRequiredDocument, PartnerCohortStudentDocument |
 | Location | `Domain/Location/Models/` | Country, Region, City, GeographicZone, Language, LanguageLevel |
 | Communication | `Domain/Communication/Models/` | DiscoverySource, MailCampaign, MailDispatch, SmsCampaign, SmsDispatch, NewsletterSubscription, ContactRequest |
 
@@ -386,6 +486,11 @@ Préfixe : **`/api/v1`**. Routes publiques (auth, catalogue public) puis groupe 
 | Identity (admin) | `GET/POST /identity/admin/users`, `PATCH …/profile/approval` | Gestion utilisateurs & validation profil |
 | Documents | `GET/POST /documents`, `POST …/validate` | Pièces justificatives |
 | Catalog | `/catalog/admin/offers`, `/public/offers` | Offres & programmes |
+| Catalog (trainings) | `/catalog/admin/trainings` | Formations JBIS (staff) |
+| Recruiter | `/recruiter/profile-requests`, `/recruiter/assignments/…/feedback` | Portail recruteur |
+| Recruiter (admin) | `/identity/admin/recruiter-profile-requests` | Demandes de profils (staff) |
+| Partner | `/partner/cohorts`, `/partner/dashboard` | Portail établissement (stages) |
+| Partner (admin) | `/identity/admin/partner-cohorts` | Cohortes partenaires (staff) |
 | Mail / SMS | `/mail-campaigns`, `/sms-campaigns` | Campagnes |
 | Export | `POST /exports` | Excel / CSV / PDF |
 

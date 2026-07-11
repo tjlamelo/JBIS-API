@@ -5,6 +5,7 @@ namespace App\Core\Domain\Identity\Models;
 use App\Core\Domain\Candidacy\Models\Application;
 use App\Core\Domain\Candidacy\Models\CandidateLanguageCourse;
 use App\Core\Domain\Catalog\Models\Offer;
+use App\Core\Domain\Partner\Models\PartnerOrganization;
 use App\Core\Domain\Recruiter\Models\RecruiterOrganization;
 use App\Core\Domain\Catalog\Models\Trade;
 use Illuminate\Support\Collection;
@@ -249,6 +250,13 @@ class User extends Authenticatable implements MustVerifyEmail
     public function recruiterOrganizations(): BelongsToMany
     {
         return $this->belongsToMany(RecruiterOrganization::class, 'recruiter_organization_user')
+            ->withPivot('is_owner')
+            ->withTimestamps();
+    }
+
+    public function partnerOrganizations(): BelongsToMany
+    {
+        return $this->belongsToMany(PartnerOrganization::class, 'partner_organization_user')
             ->withPivot('is_owner')
             ->withTimestamps();
     }

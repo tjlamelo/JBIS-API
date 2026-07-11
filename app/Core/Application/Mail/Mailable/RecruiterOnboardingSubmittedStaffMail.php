@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Core\Application\Mail\Mailable;
 
+use App\Core\Domain\Communication\Support\JbisMailbox;
 use App\Core\Domain\Recruiter\Models\RecruiterOnboardingApplication;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
@@ -22,8 +23,8 @@ class RecruiterOnboardingSubmittedStaffMail extends Mailable
 
     public function envelope(): Envelope
     {
-        return new Envelope(
-            subject: 'Nouvelle demande portail recruteur — '.$this->application->company_name,
+        return JbisMailbox::transactionalEnvelope(
+            'Nouvelle demande portail recruteur — '.$this->application->company_name,
         );
     }
 

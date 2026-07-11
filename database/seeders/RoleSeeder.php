@@ -10,11 +10,16 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
 
 class RoleSeeder extends Seeder
 {
     public function run(): void
     {
+        // Allow running RoleSeeder alone without missing permission errors.
+        $this->call(PermissionSeeder::class);
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+
         $all = Permission::query()
             ->where('guard_name', P::GUARD)
             ->get();
@@ -32,12 +37,7 @@ class RoleSeeder extends Seeder
 
                 ApplicationRole::STAFF => $this->staffPermissions(),
 
-                ApplicationRole::PARTNER => $all->whereIn('name', [
-                    P::name('application', P::VIEW),
-                    P::name('application', P::CREATE),
-                    P::name('offer', P::VIEW),
-                    P::name('company', P::VIEW),
-                ])->pluck('name')->all(),
+                ApplicationRole::PARTNER => $this->partnerPermissions(),
 
                 ApplicationRole::CANDIDATE => $all->whereIn('name', [
                     P::name('application', P::VIEW),
@@ -75,8 +75,9 @@ class RoleSeeder extends Seeder
             'experience', 'education', 'certification', 'userlanguage', 'userskill',
             'usertraining', 'userinternship', 'interestandhobby',
             'userpreferredcountry', 'uservisahistory', 'usernote',
-            'application', 'offer', 'company', 'program', 'training', 'processflow', 'processstep',
-            'recruiterorganization', 'recruiteronboarding', 'recruiteroffer', 'recruiterassignment',
+            'application', 'offer', 'company', 'program', 'training', 'certificationoffer', 'processflow', 'processstep',
+            'recruiterorganization', 'recruiteronboarding', 'recruiteroffer', 'recruiterassignment', 'recruiterprofilerequest',
+            'partnerorganization', 'partnercohort', 'partnercohortstudent',
         ];
 
         $names = [P::ADMIN_ACCESS, P::PERMISSION_MANAGE];
@@ -113,6 +114,9 @@ class RoleSeeder extends Seeder
             P::name('userskill', P::UPDATE),
             P::name('usertraining', P::VIEW),
             P::name('training', P::VIEW),
+            P::name('certificationoffer', P::VIEW),
+            P::name('certificationoffer', P::CREATE),
+            P::name('certificationoffer', P::UPDATE),
             P::name('userinternship', P::VIEW),
             P::name('userinternship', P::CREATE),
             P::name('userinternship', P::UPDATE),
@@ -129,6 +133,30 @@ class RoleSeeder extends Seeder
             P::name('recruiterassignment', P::VIEW),
             P::name('recruiterassignment', P::CREATE),
             P::name('recruiterassignment', P::UPDATE),
+            P::name('recruiterprofilerequest', P::VIEW),
+            P::name('recruiterprofilerequest', P::UPDATE),
+            P::name('partnerorganization', P::VIEW),
+            P::name('partnercohort', P::VIEW),
+            P::name('partnercohort', P::UPDATE),
+            P::name('partnercohortstudent', P::VIEW),
+            P::name('partnercohortstudent', P::UPDATE),
+        ];
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function partnerPermissions(): array
+    {
+        return [
+            P::name('partnerorganization', P::VIEW),
+            P::name('partnercohort', P::VIEW),
+            P::name('partnercohort', P::CREATE),
+            P::name('partnercohort', P::UPDATE),
+            P::name('partnercohortstudent', P::VIEW),
+            P::name('partnercohortstudent', P::CREATE),
+            P::name('partnercohortstudent', P::UPDATE),
+            P::name('userdocument', P::VIEW),
         ];
     }
 
@@ -142,6 +170,9 @@ class RoleSeeder extends Seeder
             P::name('recruiteroffer', P::VIEW),
             P::name('recruiteroffer', P::CREATE),
             P::name('recruiteroffer', P::UPDATE),
+            P::name('recruiterprofilerequest', P::VIEW),
+            P::name('recruiterprofilerequest', P::CREATE),
+            P::name('recruiterprofilerequest', P::UPDATE),
             P::name('recruiterassignment', P::VIEW),
             P::name('userprofile', P::VIEW),
             P::name('userdocument', P::VIEW),

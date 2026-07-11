@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Core\Application\Api\V1\Recruiter\Controllers;
 
 use App\Core\Application\Api\Responses\BaseResponse;
+use App\Core\Application\Api\V1\Recruiter\Requests\UpdateRecruiterAssignmentFeedbackRequest;
 use App\Core\Application\Api\V1\Recruiter\Resources\RecruiterAssignmentResource;
 use App\Core\Domain\Identity\Models\User;
 use App\Core\Domain\Recruiter\Enums\RecruiterAssignmentStatus;
@@ -54,12 +55,35 @@ final class RecruiterAssignmentController extends Controller
         abort_if($assignment === null, 403);
 
         $visibleSections = $assignment->resolvedVisibleSections();
+        $maskedFields = $assignment->resolvedMaskedFields();
         $candidateUser->load($this->presenter->eagerLoadsFor($visibleSections));
 
         return BaseResponse::ok([
-            'candidate' => $this->presenter->present($candidateUser, $visibleSections),
+            'candidate' => $this->presenter->present($candidateUser, $visibleSections, $maskedFields),
             'visible_sections' => $visibleSections,
-            'assignment' => new RecruiterAssignmentResource($assignment->load(['assignedBy:id,name'])),
+            'masked_fields' => $maskedFields,
+            'assignment' => new RecruiterAssignmentResource($assignment->load(['assignedBy:id,name', 'feedbackUpdatedBy:id,name'])),
+        ])->toJsonResponse();
+    }
+
+    public function updateFeedback(
+        UpdateRecruiterAssignmentFeedbackRequest $request,
+        RecruiterProfileAssignment $assignment,
+    ): JsonResponse {
+        $user = $request->user();
+        abort_if($user === null, 401);
+        $this->authorize('viewAny', RecruiterProfileAssignment::class);
+        abort_unless($this->access->belongsToOrganization($user, $assignment->recruiter_organization_id), 403);
+
+        $assignment->feedback_status = (string) $request->validated('feedback_status');
+        $assignment->feedback_note = $request->validated('feedback_note');
+        $assignment->feedback_updated_at = now();
+        $assignment->feedback_updated_by_user_id = $user->id;
+        $assignment->save();
+
+        return BaseResponse::ok([
+            'assignment' => new RecruiterAssignmentResource($assignment->fresh(['candidate.profile', 'assignedBy:id,name', 'feedbackUpdatedBy:id,name'])),
+            'message' => __('Retour enregistré.'),
         ])->toJsonResponse();
     }
 

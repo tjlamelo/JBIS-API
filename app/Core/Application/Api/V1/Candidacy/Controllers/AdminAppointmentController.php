@@ -47,6 +47,7 @@ class AdminAppointmentController extends Controller
                 'id',
                 'user_id',
                 'agency_id',
+                'contact_reason',
                 'full_name',
                 'email',
                 'phone',

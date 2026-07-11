@@ -28,6 +28,8 @@ final readonly class ApplicationProgressView
         public string $flowGroupId,
         public ?string $offerLabel,
         public ?string $programLabel,
+        public ?int $offerId,
+        public ?string $processFlowLabel,
         public ?int $currentStepId,
         public ?int $currentStepOrder,
         public ?string $currentStepTitle,
@@ -39,6 +41,7 @@ final readonly class ApplicationProgressView
         public bool $hasAcceptedProtocol,
         public array $steps,
         public array $activityLog,
+        public ?array $user = null,
     ) {}
 
     /**
@@ -67,6 +70,10 @@ final readonly class ApplicationProgressView
 
         $offer = $application->offer;
         $program = $application->program;
+        $processFlow = $application->relationLoaded('processFlow') ? $application->processFlow : null;
+        $candidate = $application->relationLoaded('user') && $application->user
+            ? UserPersonName::toContactArray($application->user)
+            : null;
 
         $stepPayload = $steps->map(static function (ApplicationStep $step) use ($pick, $current): array {
             $status = $step->status instanceof ApplicationStepStatus
@@ -204,6 +211,8 @@ final readonly class ApplicationProgressView
             flowGroupId: (string) $application->flow_group_id,
             offerLabel: $offer ? $pick($offer->resolvedTitleTranslations()) : null,
             programLabel: $program ? $pick($program->name) : null,
+            offerId: $application->offer_id !== null ? (int) $application->offer_id : null,
+            processFlowLabel: $processFlow ? $pick($processFlow->name) : null,
             currentStepId: $current?->id,
             currentStepOrder: $current?->step_order,
             currentStepTitle: $current ? $pick($current->title) : null,
@@ -215,6 +224,7 @@ final readonly class ApplicationProgressView
             hasAcceptedProtocol: (bool) $application->has_accepted_protocol,
             steps: $stepPayload,
             activityLog: $activityLog,
+            user: $candidate,
         );
     }
 
@@ -233,6 +243,8 @@ final readonly class ApplicationProgressView
             'flow_group_id' => $this->flowGroupId,
             'offer_label' => $this->offerLabel,
             'program_label' => $this->programLabel,
+            'offer_id' => $this->offerId,
+            'process_flow_label' => $this->processFlowLabel,
             'current_step_id' => $this->currentStepId,
             'current_step_order' => $this->currentStepOrder,
             'current_step_title' => $this->currentStepTitle,
@@ -244,6 +256,7 @@ final readonly class ApplicationProgressView
             'has_accepted_protocol' => $this->hasAcceptedProtocol,
             'steps' => $this->steps,
             'activity_log' => $this->activityLog,
+            'user' => $this->user,
         ];
     }
 }

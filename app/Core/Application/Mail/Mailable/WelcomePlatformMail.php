@@ -2,6 +2,7 @@
 
 namespace App\Core\Application\Mail\Mailable;
 
+use App\Core\Domain\Communication\Support\JbisMailbox;
 use App\Core\Domain\Identity\Models\User;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
@@ -20,9 +21,7 @@ class WelcomePlatformMail extends Mailable
 
     public function envelope(): Envelope
     {
-        return new Envelope(
-            subject: 'Bienvenue sur la plateforme JBIS',
-        );
+        return JbisMailbox::transactionalEnvelope('Bienvenue sur la plateforme JBIS');
     }
 
     public function content(): Content

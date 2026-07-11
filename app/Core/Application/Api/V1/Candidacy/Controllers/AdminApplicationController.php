@@ -7,6 +7,7 @@ namespace App\Core\Application\Api\V1\Candidacy\Controllers;
 use App\Core\Application\Api\Responses\BaseResponse;
 use App\Core\Domain\Candidacy\Actions\CancelApplicationAction;
 use App\Core\Domain\Candidacy\Actions\RejectApplicationAction;
+use App\Core\Domain\Candidacy\Actions\ResumePendingApplicationsAction;
 use App\Core\Domain\Candidacy\Models\Application;
 use App\Core\Domain\Candidacy\Queries\ApplicationProgressQuery;
 use App\Core\Domain\Candidacy\States\ApplicationStatus;
@@ -21,6 +22,7 @@ final class AdminApplicationController extends Controller
         private readonly ApplicationProgressQuery $applicationProgressQuery,
         private readonly RejectApplicationAction $rejectApplicationAction,
         private readonly CancelApplicationAction $cancelApplicationAction,
+        private readonly ResumePendingApplicationsAction $resumePendingApplicationsAction,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -37,6 +39,7 @@ final class AdminApplicationController extends Controller
                 'offer:id,trade_id',
                 'offer.trade:id,name',
                 'program:id,name',
+                'processFlow:id,name,version,offer_id',
             ])
             ->orderByDesc('updated_at');
 
@@ -80,8 +83,12 @@ final class AdminApplicationController extends Controller
                     'status' => $status,
                     'status_label' => ApplicationStatus::tryFrom((string) $status)?->label($locale) ?? (string) $status,
                     'user' => $app->user ? UserPersonName::toContactArray($app->user) : null,
+                    'offer_id' => $app->offer_id,
                     'offer_label' => $app->offer ? $pick($app->offer->resolvedTitleTranslations()) : null,
                     'program_label' => $app->program ? $pick($app->program->name) : null,
+                    'process_flow_id' => $app->process_flow_id,
+                    'process_flow_version' => (int) $app->process_flow_version,
+                    'process_flow_label' => $app->processFlow ? $pick($app->processFlow->name) : null,
                     'current_step' => $app->currentStep ? [
                         'id' => $app->currentStep->id,
                         'step_order' => $app->currentStep->step_order,
@@ -158,6 +165,25 @@ final class AdminApplicationController extends Controller
 
         return BaseResponse::ok([
             'message' => __('Candidature annulée.'),
+            'application' => $progress->toArray(),
+        ])->toJsonResponse();
+    }
+
+    public function resume(Request $request, Application $application): JsonResponse
+    {
+        $this->authorize('update', $application);
+
+        if (! $this->resumePendingApplicationsAction->resumeApplication($application)) {
+            return BaseResponse::unprocessableEntity(
+                message: __('Impossible de démarrer le parcours : des documents obligatoires du candidat sont encore en attente de validation.'),
+            )->toJsonResponse();
+        }
+
+        $locale = str_starts_with(strtolower((string) $request->header('X-Locale', 'fr')), 'en') ? 'en' : 'fr';
+        $progress = $this->applicationProgressQuery->forApplication($application->fresh(), $locale);
+
+        return BaseResponse::ok([
+            'message' => __('Parcours démarré.'),
             'application' => $progress->toArray(),
         ])->toJsonResponse();
     }

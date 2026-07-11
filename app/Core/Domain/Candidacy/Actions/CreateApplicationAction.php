@@ -104,13 +104,15 @@ final class CreateApplicationAction
                 ->get();
 
             $first = $steps->first();
-            if ($first !== null && $initialStatus === ApplicationStatus::InProgress) {
-                ApplicationStep::query()
-                    ->whereKey($first->id)
-                    ->update([
-                        'status' => ApplicationStepStatus::Pending->value,
-                        'updated_at' => $now,
-                    ]);
+            if ($first !== null) {
+                if ($initialStatus === ApplicationStatus::InProgress) {
+                    ApplicationStep::query()
+                        ->whereKey($first->id)
+                        ->update([
+                            'status' => ApplicationStepStatus::Pending->value,
+                            'updated_at' => $now,
+                        ]);
+                }
 
                 $application->update([
                     'current_application_step_id' => $first->id,

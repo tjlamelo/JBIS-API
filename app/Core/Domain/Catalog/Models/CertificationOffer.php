@@ -16,20 +16,29 @@ class CertificationOffer extends Model
     protected $fillable = [
         'domain',
         'title',
+        'duration_label',
         'organization',
         'description',
         'cost',
+        'first_installment',
+        'second_installment',
+        'registration_fee',
         'currency',
         'exam_mode',
         'validity_years',
         'level',
         'process_flow_id',
+        'sort_order',
         'is_active',
     ];
 
     protected $casts = [
         'cost' => 'decimal:2',
+        'first_installment' => 'decimal:2',
+        'second_installment' => 'decimal:2',
+        'registration_fee' => 'decimal:2',
         'validity_years' => 'integer',
+        'sort_order' => 'integer',
         'is_active' => 'boolean',
     ];
 

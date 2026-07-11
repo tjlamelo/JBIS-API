@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Core\Application\Mail\Mailable;
 
+use App\Core\Domain\Communication\Support\JbisMailbox;
 use App\Core\Domain\Communication\Models\NewsletterSubscription;
 use App\Core\Domain\Communication\Services\NewsletterUnsubscribeUrlBuilder;
 use Illuminate\Bus\Queueable;
@@ -34,7 +35,7 @@ class OfferNewsletterMail extends Mailable
             ? 'JBIS — New job opportunities'
             : 'JBIS — Nouvelles offres d\'emploi';
 
-        return new Envelope(subject: $subject);
+        return JbisMailbox::transactionalEnvelope($subject);
     }
 
     public function content(): Content

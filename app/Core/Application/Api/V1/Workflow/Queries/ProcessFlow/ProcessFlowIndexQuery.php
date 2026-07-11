@@ -5,14 +5,15 @@ declare(strict_types=1);
 namespace App\Core\Application\Api\V1\Workflow\Queries\ProcessFlow;
 
 use App\Core\Domain\Workflow\Models\ProcessFlow;
+use Illuminate\Http\Request;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
 
 class ProcessFlowIndexQuery extends QueryBuilder
 {
-    public function __construct()
+    public function __construct(Request $request)
     {
-        parent::__construct(ProcessFlow::query());
+        parent::__construct(ProcessFlow::query(), $request);
 
         $this->allowedFilters([
             AllowedFilter::exact('program_id'),

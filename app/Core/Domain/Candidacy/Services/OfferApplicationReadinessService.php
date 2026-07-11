@@ -25,7 +25,7 @@ final class OfferApplicationReadinessService
 
     public function assess(Offer $offer, User $user): OfferApplicationReadiness
     {
-        $offer->loadMissing(['requiredDocuments', 'program.requiredDocuments']);
+        $offer->loadMissing(['requiredDocuments']);
 
         $blockingReasons = [];
         $emailVerified = $user->hasVerifiedEmail();
@@ -144,13 +144,16 @@ final class OfferApplicationReadinessService
     }
 
     /**
+     * Documents requis pour candidater : uniquement la configuration au niveau de l'offre.
+     * Les documents du programme lié ne sont pas fusionnés (configurés séparément sur l'offre).
+     *
      * @return Collection<int, RequiredDocument>
      */
     private function collectRequiredDocuments(Offer $offer): Collection
     {
-        $docs = $offer->requiredDocuments->concat($offer->program?->requiredDocuments ?? collect());
-
-        return $docs->unique('id')->sortBy(fn (RequiredDocument $doc) => (int) ($doc->pivot->sort_order ?? 0))->values();
+        return $offer->requiredDocuments
+            ->sortBy(fn (RequiredDocument $doc) => (int) ($doc->pivot->sort_order ?? 0))
+            ->values();
     }
 
     /**

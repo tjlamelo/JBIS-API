@@ -2,8 +2,10 @@
 
 namespace App\Core\Application\Mail\Mailable;
 
+use App\Core\Domain\Communication\Support\JbisMailbox;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
+use Illuminate\Mail\Mailables\Address;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
@@ -23,19 +25,21 @@ class GenericCampaignMail extends Mailable
 
     public function envelope(): Envelope
     {
-        return new Envelope(
-            subject: $this->subjectLine,
-            using: [
-                function (\Symfony\Component\Mime\Email $message): void {
-                    if ($this->fromName) {
-                        $message->from(config('mail.from.address'), $this->fromName);
-                    }
+        $fromKey = (string) config('mailboxes.routing.newsletter', 'noreply');
+        $replyKey = (string) config('mailboxes.routing.campaign_reply_to', 'contact');
 
-                    if ($this->replyTo) {
-                        $message->replyTo($this->replyTo);
-                    }
-                },
-            ],
+        $from = $this->fromName
+            ? new Address(JbisMailbox::address($fromKey), $this->fromName)
+            : JbisMailbox::from($fromKey);
+
+        $replyTo = $this->replyTo
+            ? [new Address($this->replyTo)]
+            : [JbisMailbox::from($replyKey)];
+
+        return new Envelope(
+            from: $from,
+            replyTo: $replyTo,
+            subject: $this->subjectLine,
         );
     }
 

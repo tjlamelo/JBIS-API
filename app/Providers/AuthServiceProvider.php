@@ -8,8 +8,10 @@ use App\Core\Domain\Candidacy\Models\Application;
 use App\Core\Domain\Candidacy\Models\Appointment;
 use App\Core\Domain\Candidacy\Policies\ApplicationPolicy;
 use App\Core\Domain\Candidacy\Policies\AppointmentPolicy;
+use App\Core\Domain\Catalog\Models\CertificationOffer;
 use App\Core\Domain\Catalog\Models\Program;
 use App\Core\Domain\Catalog\Models\Training;
+use App\Core\Domain\Catalog\Policies\CertificationOffer\CertificationOfferPolicy;
 use App\Core\Domain\Catalog\Policies\Program\ProgramPolicy;
 use App\Core\Domain\Catalog\Policies\Training\TrainingPolicy;
 use App\Core\Domain\Identity\Models\Archive;
@@ -43,14 +45,22 @@ use App\Core\Domain\Identity\Policies\UserTrainingPolicy;
 use App\Core\Domain\Identity\Policies\UserVisaHistoryPolicy;
 use App\Core\Domain\Identity\Support\ApplicationRole;
 use App\Core\Domain\Identity\Support\PermissionManagement;
+use App\Core\Domain\Partner\Models\PartnerCohort;
+use App\Core\Domain\Partner\Models\PartnerCohortStudent;
+use App\Core\Domain\Partner\Models\PartnerOrganization;
+use App\Core\Domain\Partner\Policies\PartnerCohortPolicy;
+use App\Core\Domain\Partner\Policies\PartnerCohortStudentPolicy;
+use App\Core\Domain\Partner\Policies\PartnerOrganizationPolicy;
 use App\Core\Domain\Recruiter\Models\RecruiterOfferSubmission;
 use App\Core\Domain\Recruiter\Models\RecruiterOnboardingApplication;
 use App\Core\Domain\Recruiter\Models\RecruiterOrganization;
 use App\Core\Domain\Recruiter\Models\RecruiterProfileAssignment;
+use App\Core\Domain\Recruiter\Models\RecruiterProfileRequest;
 use App\Core\Domain\Recruiter\Policies\RecruiterOfferSubmissionPolicy;
 use App\Core\Domain\Recruiter\Policies\RecruiterOnboardingApplicationPolicy;
 use App\Core\Domain\Recruiter\Policies\RecruiterOrganizationPolicy;
 use App\Core\Domain\Recruiter\Policies\RecruiterProfileAssignmentPolicy;
+use App\Core\Domain\Recruiter\Policies\RecruiterProfileRequestPolicy;
 use App\Core\Domain\Workflow\Models\ProcessFlow;
 use App\Core\Domain\Workflow\Models\ProcessStep;
 use App\Core\Domain\Workflow\Policies\ProcessFlowPolicy;
@@ -68,6 +78,7 @@ final class AuthServiceProvider extends ServiceProvider
         Appointment::class => AppointmentPolicy::class,
         Program::class => ProgramPolicy::class,
         Training::class => TrainingPolicy::class,
+        CertificationOffer::class => CertificationOfferPolicy::class,
         ProcessFlow::class => ProcessFlowPolicy::class,
         ProcessStep::class => ProcessStepPolicy::class,
         Experience::class => ExperiencePolicy::class,
@@ -88,7 +99,11 @@ final class AuthServiceProvider extends ServiceProvider
         RecruiterOrganization::class => RecruiterOrganizationPolicy::class,
         RecruiterOnboardingApplication::class => RecruiterOnboardingApplicationPolicy::class,
         RecruiterOfferSubmission::class => RecruiterOfferSubmissionPolicy::class,
+        RecruiterProfileRequest::class => RecruiterProfileRequestPolicy::class,
         RecruiterProfileAssignment::class => RecruiterProfileAssignmentPolicy::class,
+        PartnerOrganization::class => PartnerOrganizationPolicy::class,
+        PartnerCohort::class => PartnerCohortPolicy::class,
+        PartnerCohortStudent::class => PartnerCohortStudentPolicy::class,
     ];
 
     public function boot(): void
@@ -105,6 +120,7 @@ final class AuthServiceProvider extends ServiceProvider
                 ApplicationRole::ADMIN,
                 ApplicationRole::STAFF,
                 ApplicationRole::RECRUITER,
+                ApplicationRole::PARTNER,
                 ApplicationRole::CANDIDATE,
             ]);
         });

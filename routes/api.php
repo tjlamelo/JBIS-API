@@ -41,6 +41,8 @@ use App\Core\Application\Api\V1\Catalog\Controllers\SkillCategoryController;
 use App\Core\Application\Api\V1\Catalog\Controllers\SkillController;
 use App\Core\Application\Api\V1\Catalog\Controllers\Training\AdminTrainingController;
 use App\Core\Application\Api\V1\Catalog\Controllers\TrainingController;
+use App\Core\Application\Api\V1\Catalog\Controllers\CertificationOffer\AdminCertificationOfferController;
+use App\Core\Application\Api\V1\Catalog\Controllers\CertificationOffer\CertificationOfferController;
 use App\Core\Application\Api\V1\Catalog\Controllers\UserSkillController;
 use App\Core\Application\Api\V1\Catalog\Controllers\UserTrainingController;
 use App\Core\Application\Api\V1\Catalog\Controllers\WorkScheduleController;
@@ -78,16 +80,25 @@ use App\Core\Application\Api\V1\Communication\Controllers\NewsletterSubscription
 use App\Core\Application\Api\V1\Mail\Controllers\CpanelMailboxController;
 use App\Core\Application\Api\V1\Mail\Controllers\MailCampaignController;
 use App\Core\Application\Api\V1\Recruiter\Controllers\AdminRecruiterAssignmentController;
+use App\Core\Application\Api\V1\Recruiter\Controllers\AdminRecruiterProfileRequestController;
 use App\Core\Application\Api\V1\Recruiter\Controllers\AdminRecruiterOfferController;
 use App\Core\Application\Api\V1\Recruiter\Controllers\AdminRecruiterOnboardingController;
 use App\Core\Application\Api\V1\Recruiter\Controllers\AdminRecruiterOrganizationController;
 use App\Core\Application\Api\V1\Recruiter\Controllers\RecruiterAssignmentController;
 use App\Core\Application\Api\V1\Recruiter\Controllers\RecruiterOfferController;
+use App\Core\Application\Api\V1\Recruiter\Controllers\RecruiterProfileRequestController;
 use App\Core\Application\Api\V1\Recruiter\Controllers\RecruiterOnboardingController;
 use App\Core\Application\Api\V1\Recruiter\Controllers\RecruiterOrganizationController;
+use App\Core\Application\Api\V1\Partner\Controllers\AdminPartnerCohortController;
+use App\Core\Application\Api\V1\Partner\Controllers\AdminPartnerOrganizationController;
+use App\Core\Application\Api\V1\Partner\Controllers\PartnerCohortController;
+use App\Core\Application\Api\V1\Partner\Controllers\PartnerCohortStudentController;
+use App\Core\Application\Api\V1\Partner\Controllers\PartnerDashboardController;
+use App\Core\Application\Api\V1\Partner\Controllers\PartnerOrganizationController;
 use App\Core\Application\Api\V1\Public\Controllers\AgencyPublicController;
 use App\Core\Application\Api\V1\Public\Controllers\AppointmentPublicController;
 use App\Core\Application\Api\V1\Public\Controllers\DiscoverySourceController;
+use App\Core\Application\Api\V1\Public\Controllers\PublicMailboxController;
 use App\Core\Application\Api\V1\Public\Controllers\NewsletterPublicController;
 use App\Core\Application\Api\V1\Public\Controllers\RecruiterOnboardingPublicController;
 use App\Core\Application\Api\V1\Sms\Controllers\SmsCampaignController;
@@ -146,12 +157,14 @@ Route::prefix('v1')->group(function (): void {
         });
 
         Route::get('/discovery-sources', DiscoverySourceController::class);
+        Route::get('/mail-addresses', PublicMailboxController::class);
         Route::get('/agencies', AgencyPublicController::class);
         Route::post('/appointments', AppointmentPublicController::class);
         Route::post('/recruiter-onboarding', [RecruiterOnboardingPublicController::class, 'store']);
         Route::post('/newsletter/subscribe', [NewsletterPublicController::class, 'subscribe']);
         Route::post('/newsletter/unsubscribe', [NewsletterPublicController::class, 'unsubscribe']);
         Route::get('/newsletter/unsubscribe', [NewsletterPublicController::class, 'showByToken']);
+        Route::get('/certification-offers', [CertificationOfferController::class, 'index']);
     });
 
     Route::prefix('legal')->group(function (): void {
@@ -206,6 +219,7 @@ Route::prefix('v1')->group(function (): void {
 
         Route::prefix('identity/admin/recruiter-assignments')->group(function (): void {
             Route::get('/', [AdminRecruiterAssignmentController::class, 'index']);
+            Route::post('/bulk', [AdminRecruiterAssignmentController::class, 'bulkStore']);
             Route::post('/', [AdminRecruiterAssignmentController::class, 'store']);
             Route::delete('/{recruiterAssignment}', [AdminRecruiterAssignmentController::class, 'destroy']);
         });
@@ -220,6 +234,26 @@ Route::prefix('v1')->group(function (): void {
             Route::get('/', [AdminRecruiterOfferController::class, 'index']);
             Route::get('/{recruiterOfferSubmission}', [AdminRecruiterOfferController::class, 'show']);
             Route::patch('/{recruiterOfferSubmission}/review', [AdminRecruiterOfferController::class, 'review']);
+        });
+
+        Route::prefix('identity/admin/recruiter-profile-requests')->group(function (): void {
+            Route::get('/', [AdminRecruiterProfileRequestController::class, 'index']);
+            Route::get('/{profileRequest}', [AdminRecruiterProfileRequestController::class, 'show']);
+            Route::post('/{profileRequest}/match', [AdminRecruiterProfileRequestController::class, 'match']);
+            Route::post('/{profileRequest}/transmit', [AdminRecruiterProfileRequestController::class, 'transmit']);
+            Route::patch('/{profileRequest}/review', [AdminRecruiterProfileRequestController::class, 'review']);
+        });
+
+        Route::prefix('identity/admin/partner-organizations')->group(function (): void {
+            Route::get('/', [AdminPartnerOrganizationController::class, 'index']);
+            Route::post('/', [AdminPartnerOrganizationController::class, 'store']);
+            Route::get('/{partnerOrganization}', [AdminPartnerOrganizationController::class, 'show']);
+        });
+
+        Route::prefix('identity/admin/partner-cohorts')->group(function (): void {
+            Route::get('/', [AdminPartnerCohortController::class, 'index']);
+            Route::get('/{partnerCohort}', [AdminPartnerCohortController::class, 'show']);
+            Route::patch('/{partnerCohort}/review', [AdminPartnerCohortController::class, 'review']);
         });
 
         Route::prefix('identity/admin/users')->group(function (): void {
@@ -272,6 +306,14 @@ Route::prefix('v1')->group(function (): void {
                 Route::get('/{training}', [AdminTrainingController::class, 'show']);
                 Route::put('/{training}', [AdminTrainingController::class, 'update']);
                 Route::delete('/{training}', [AdminTrainingController::class, 'destroy']);
+            });
+
+            Route::prefix('admin/certification-offers')->group(function (): void {
+                Route::get('/', [AdminCertificationOfferController::class, 'index']);
+                Route::post('/', [AdminCertificationOfferController::class, 'store']);
+                Route::get('/{certificationOffer}', [AdminCertificationOfferController::class, 'show']);
+                Route::put('/{certificationOffer}', [AdminCertificationOfferController::class, 'update']);
+                Route::delete('/{certificationOffer}', [AdminCertificationOfferController::class, 'destroy']);
             });
 
             Route::prefix('admin/programs')->group(function (): void {
@@ -359,8 +401,28 @@ Route::prefix('v1')->group(function (): void {
             Route::get('/offers/{submission}', [RecruiterOfferController::class, 'show']);
             Route::patch('/offers/{submission}', [RecruiterOfferController::class, 'update']);
             Route::post('/offers/{submission}/submit', [RecruiterOfferController::class, 'submit']);
+            Route::get('/profile-requests', [RecruiterProfileRequestController::class, 'index']);
+            Route::post('/profile-requests', [RecruiterProfileRequestController::class, 'store']);
+            Route::get('/profile-requests/{profileRequest}', [RecruiterProfileRequestController::class, 'show']);
+            Route::patch('/profile-requests/{profileRequest}', [RecruiterProfileRequestController::class, 'update']);
+            Route::post('/profile-requests/{profileRequest}/submit', [RecruiterProfileRequestController::class, 'submit']);
             Route::get('/assignments', [RecruiterAssignmentController::class, 'index']);
             Route::get('/assignments/{candidateUser}', [RecruiterAssignmentController::class, 'show']);
+            Route::patch('/assignments/{assignment}/feedback', [RecruiterAssignmentController::class, 'updateFeedback']);
+        });
+
+        Route::prefix('partner')->group(function (): void {
+            Route::get('/me/organization', [PartnerOrganizationController::class, 'me']);
+            Route::get('/dashboard', [PartnerDashboardController::class, 'index']);
+            Route::get('/cohorts', [PartnerCohortController::class, 'index']);
+            Route::post('/cohorts', [PartnerCohortController::class, 'store']);
+            Route::get('/cohorts/{partnerCohort}', [PartnerCohortController::class, 'show']);
+            Route::patch('/cohorts/{partnerCohort}', [PartnerCohortController::class, 'update']);
+            Route::post('/cohorts/{partnerCohort}/submit', [PartnerCohortController::class, 'submit']);
+            Route::get('/cohorts/{partnerCohort}/students', [PartnerCohortStudentController::class, 'index']);
+            Route::post('/cohorts/{partnerCohort}/students', [PartnerCohortStudentController::class, 'store']);
+            Route::get('/cohorts/{partnerCohort}/students/{partnerCohortStudent}', [PartnerCohortStudentController::class, 'show']);
+            Route::post('/cohorts/{partnerCohort}/students/{partnerCohortStudent}/refresh-documents', [PartnerCohortStudentController::class, 'refreshDocuments']);
         });
 
         Route::prefix('cpanel')->middleware('can:admin.access')->group(function (): void {
@@ -406,6 +468,7 @@ Route::prefix('v1')->group(function (): void {
             Route::post('/applications/{application}/cancel', [ApplicationController::class, 'cancel']);
             Route::post('/applications/{application}/accept-protocol', [ApplicationController::class, 'acceptProtocol']);
             Route::post('/admin/applications/{application}/reject', [AdminApplicationController::class, 'reject']);
+            Route::post('/admin/applications/{application}/resume', [AdminApplicationController::class, 'resume']);
             Route::post('/admin/applications/{application}/cancel', [AdminApplicationController::class, 'cancel']);
             Route::post('/applications/{application}/steps/{step}/documents', [ApplicationDocumentController::class, 'attach']);
             Route::patch('/applications/{application}/documents/{applicationDocument}', [ApplicationDocumentController::class, 'review']);
@@ -416,6 +479,7 @@ Route::prefix('v1')->group(function (): void {
             Route::post('/applications/{application}/steps/{step}/payments/waive', [AdminApplicationStepController::class, 'waivePayment']);
             Route::post('/applications/{application}/payments/{payment}/confirm', [AdminApplicationStepController::class, 'confirmPayment']);
             Route::post('/applications/{application}/steps/{step}/advance', [AdminApplicationStepController::class, 'advance']);
+            Route::post('/applications/{application}/steps/{step}/reopen', [AdminApplicationStepController::class, 'reopen']);
         });
 
         Route::prefix('documents')->group(function (): void {

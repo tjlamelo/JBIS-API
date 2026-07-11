@@ -19,6 +19,10 @@ final class CertificationOfferAttributeMapper
             $certificationOffer->title = $dto->title;
         }
 
+        if ($isCreate || $this->hasKey($dto, 'duration_label')) {
+            $certificationOffer->duration_label = $dto->duration_label;
+        }
+
         if ($isCreate || $this->hasKey($dto, 'organization')) {
             $certificationOffer->organization = $dto->organization;
         }
@@ -29,6 +33,18 @@ final class CertificationOfferAttributeMapper
 
         if ($isCreate || $this->hasKey($dto, 'cost')) {
             $certificationOffer->cost = $dto->cost;
+        }
+
+        if ($isCreate || $this->hasKey($dto, 'first_installment')) {
+            $certificationOffer->first_installment = $dto->first_installment;
+        }
+
+        if ($isCreate || $this->hasKey($dto, 'second_installment')) {
+            $certificationOffer->second_installment = $dto->second_installment;
+        }
+
+        if ($isCreate || $this->hasKey($dto, 'registration_fee')) {
+            $certificationOffer->registration_fee = $dto->registration_fee;
         }
 
         if ($isCreate || $this->hasKey($dto, 'currency')) {
@@ -49,6 +65,10 @@ final class CertificationOfferAttributeMapper
 
         if ($isCreate || $this->hasKey($dto, 'process_flow_id')) {
             $certificationOffer->process_flow_id = $dto->process_flow_id;
+        }
+
+        if ($isCreate || $this->hasKey($dto, 'sort_order')) {
+            $certificationOffer->sort_order = $dto->sort_order;
         }
 
         if ($isCreate || $this->hasKey($dto, 'is_active')) {

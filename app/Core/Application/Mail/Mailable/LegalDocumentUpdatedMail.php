@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Core\Application\Mail\Mailable;
 
+use App\Core\Domain\Communication\Support\JbisMailbox;
 use App\Core\Domain\Identity\Models\LegalDocument;
 use App\Core\Domain\Identity\Models\User;
 use Illuminate\Bus\Queueable;
@@ -26,8 +27,9 @@ final class LegalDocumentUpdatedMail extends Mailable
     {
         $label = $this->documentLabel();
 
-        return new Envelope(
-            subject: "JBIS — Mise à jour : {$label}",
+        return JbisMailbox::transactionalEnvelope(
+            "JBIS — Mise à jour : {$label}",
+            'dpo',
         );
     }
 

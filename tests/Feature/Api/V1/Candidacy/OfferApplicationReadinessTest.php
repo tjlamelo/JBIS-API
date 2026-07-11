@@ -122,6 +122,73 @@ class OfferApplicationReadinessTest extends TestCase
         ]);
     }
 
+    #[Test]
+    public function pending_application_keeps_current_step_pointer_for_admin(): void
+    {
+        [$offer, $candidate, $passportType] = $this->makeOfferWithRequiredPassport();
+
+        UserDocument::query()->create([
+            'user_id' => $candidate->id,
+            'uploaded_by' => $candidate->id,
+            'document_type_id' => $passportType->id,
+            'file_path' => 'Document/users/'.$candidate->id.'/passport.pdf',
+            'original_filename' => 'passport.pdf',
+            'mime_type' => 'application/pdf',
+            'file_size' => 1024,
+            'status' => 'PENDING',
+        ]);
+
+        Sanctum::actingAs($candidate);
+
+        $create = $this->postJson('/api/v1/candidacy/applications', ['offer_id' => $offer->id]);
+        $create->assertStatus(201)
+            ->assertJsonPath('data.application.status', 'PENDING');
+
+        $applicationId = (int) ($create->json('data.application.application_id') ?? $create->json('data.application.id'));
+
+        $this->assertDatabaseHas('applications', [
+            'id' => $applicationId,
+            'status' => 'PENDING',
+        ]);
+
+        $this->assertNotNull(
+            \App\Core\Domain\Candidacy\Models\Application::query()->find($applicationId)?->current_application_step_id,
+        );
+    }
+
+    #[Test]
+    public function readiness_uses_only_offer_required_documents_not_program_inheritance(): void
+    {
+        [$offer, $candidate] = $this->makeOfferWithRequiredPassport();
+
+        $programDoc = RequiredDocument::query()->firstOrCreate(
+            ['slug' => 'preuve-de-fonds'],
+            [
+                'name' => json_encode(['fr' => 'Preuve de fonds']),
+                'type' => 'PDF',
+                'description' => 'Test',
+            ],
+        );
+
+        $program = \App\Core\Domain\Catalog\Models\Program::query()->create([
+            'name' => ['fr' => 'Programme test', 'en' => 'Test program'],
+            'slug' => 'programme-test-'.Str::random(6),
+            'status' => 'PUBLISHED',
+        ]);
+        $program->requiredDocuments()->sync([
+            $programDoc->id => ['is_mandatory' => true, 'sort_order' => 1],
+        ]);
+
+        $offer->update(['program_id' => $program->id]);
+
+        Sanctum::actingAs($candidate);
+
+        $this->getJson("/api/v1/candidacy/offers/{$offer->id}/readiness")
+            ->assertOk()
+            ->assertJsonCount(1, 'data.readiness.required_documents')
+            ->assertJsonPath('data.readiness.required_documents.0.slug', 'passeport-valide');
+    }
+
     /**
      * @return array{0: Offer, 1: User, 2: DocumentType}
      */

@@ -12,9 +12,11 @@ use App\Core\Application\Api\V1\Candidacy\Requests\ValidateApplicationStepReques
 use App\Core\Domain\Candidacy\Actions\AdvanceApplicationStepAction;
 use App\Core\Domain\Candidacy\Actions\ConfirmApplicationStepPaymentAction;
 use App\Core\Domain\Candidacy\Actions\RecordApplicationStepPaymentAction;
+use App\Core\Domain\Candidacy\Actions\ReopenApplicationStepAction;
 use App\Core\Domain\Candidacy\Actions\UpsertApplicationInterviewAction;
 use App\Core\Domain\Candidacy\Actions\WaiveApplicationStepPaymentAction;
 use App\Core\Domain\Candidacy\Exceptions\ApplicationStepAdvanceException;
+use App\Core\Domain\Candidacy\Exceptions\ApplicationStepReopenException;
 use App\Core\Domain\Candidacy\Models\Application;
 use App\Core\Domain\Candidacy\Models\ApplicationStep;
 use App\Core\Domain\Candidacy\Queries\ApplicationProgressQuery;
@@ -30,6 +32,7 @@ final class AdminApplicationStepController extends Controller
 {
     public function __construct(
         private readonly AdvanceApplicationStepAction $advanceApplicationStepAction,
+        private readonly ReopenApplicationStepAction $reopenApplicationStepAction,
         private readonly RecordApplicationStepPaymentAction $recordPaymentAction,
         private readonly ApplicationProgressQuery $applicationProgressQuery,
         private readonly ApplicationActivityLogger $activityLogger,
@@ -172,6 +175,20 @@ final class AdminApplicationStepController extends Controller
                 (bool) $request->boolean('force'),
             );
         } catch (ApplicationStepAdvanceException $e) {
+            return BaseResponse::unprocessableEntity(message: $e->getMessage())->toJsonResponse();
+        }
+
+        return $this->progressResponse($request, $application->fresh());
+    }
+
+    public function reopen(Request $request, Application $application, ApplicationStep $step): JsonResponse
+    {
+        $this->authorize('update', $application);
+        $this->assertStepBelongsToApplication($application, $step);
+
+        try {
+            $this->reopenApplicationStepAction->execute($step, (int) $request->user()->id);
+        } catch (ApplicationStepReopenException $e) {
             return BaseResponse::unprocessableEntity(message: $e->getMessage())->toJsonResponse();
         }
 

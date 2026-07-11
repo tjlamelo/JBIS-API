@@ -18,11 +18,25 @@ final class ApplicationStepSnapshotBuilder
      */
     public function buildRows(int $applicationId, ProcessFlow $flow, Carbon $now): array
     {
-        $flow->loadMissing(['steps.section']);
+        $flow->loadMissing(['steps.section', 'sections']);
+
+        $sectionOrderById = $flow->sections
+            ->keyBy('id')
+            ->map(static fn ($section): int => (int) ($section->section_order ?? 0));
+
+        $sortedSteps = $flow->steps
+            ->sortBy(static function (ProcessStep $step) use ($sectionOrderById): string {
+                $sectionOrder = $sectionOrderById->get($step->process_flow_section_id, PHP_INT_MAX);
+
+                return sprintf('%010d-%010d', $sectionOrder, (int) $step->step_order);
+            })
+            ->values();
 
         $rows = [];
-        foreach ($flow->steps as $step) {
-            $rows[] = $this->mapStep($applicationId, $step, $now);
+        $globalOrder = 1;
+        foreach ($sortedSteps as $step) {
+            $rows[] = $this->mapStep($applicationId, $step, $now, $globalOrder);
+            $globalOrder++;
         }
 
         return $rows;
@@ -31,7 +45,7 @@ final class ApplicationStepSnapshotBuilder
     /**
      * @return array<string, mixed>
      */
-    private function mapStep(int $applicationId, ProcessStep $step, Carbon $now): array
+    private function mapStep(int $applicationId, ProcessStep $step, Carbon $now, int $globalStepOrder): array
     {
         $stepType = $step->step_type;
         $stepTypeValue = $stepType instanceof ProcessStepType ? $stepType->value : (string) $stepType;
@@ -44,7 +58,7 @@ final class ApplicationStepSnapshotBuilder
         return [
             'application_id' => $applicationId,
             'process_step_id' => $step->id,
-            'step_order' => (int) $step->step_order,
+            'step_order' => $globalStepOrder,
             'section_key' => $step->section?->key,
             'step_type' => $stepTypeValue,
             'payment_type' => $step->payment_type?->value ?? $step->payment_type,

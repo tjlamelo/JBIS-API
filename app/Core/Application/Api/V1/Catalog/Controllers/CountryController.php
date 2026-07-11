@@ -19,17 +19,25 @@ class CountryController extends Controller
     public function index(Request $request): JsonResponse
     {
         $search = $request->query('search');
+        $countryId = $request->query('country_id');
+
+        if ($countryId !== null && $countryId !== '') {
+            return response()->json($this->fetchCountryById((int) $countryId));
+        }
 
         if ($search) {
-            return response()->json($this->fetchCountries($request));
+            $perPage = (int) $request->query('per_page', 100);
+            $page = max(1, (int) $request->query('page', 1));
+
+            return response()->json($this->fetchCountries($request, $page, $perPage));
         }
 
         $perPage = (int) $request->query('per_page', 100);
         $page = max(1, (int) $request->query('page', 1));
         $payload = $this->cache->remember(
-            $this->cache->referenceKey('countries', app()->getLocale(), "p{$perPage}", "page{$page}"),
+            $this->cache->referenceKey('countries', app()->getLocale(), "p{$perPage}:page{$page}"),
             86400,
-            fn () => $this->fetchCountries($request),
+            fn () => $this->fetchCountries($request, $page, $perPage),
         );
 
         return response()->json($payload);
@@ -38,7 +46,27 @@ class CountryController extends Controller
     /**
      * @return array<string, mixed>
      */
-    private function fetchCountries(Request $request): array
+    private function fetchCountryById(int $countryId): array
+    {
+        $item = Country::query()
+            ->where('is_active', true)
+            ->where('id', $countryId)
+            ->select(['id', 'name', 'code'])
+            ->first();
+
+        return [
+            'data' => $item ? [$item->toArray()] : [],
+            'current_page' => 1,
+            'last_page' => 1,
+            'per_page' => 1,
+            'total' => $item ? 1 : 0,
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function fetchCountries(Request $request, int $page, int $perPage): array
     {
         $search = $request->query('search');
 
@@ -51,7 +79,7 @@ class CountryController extends Controller
             })
             ->select(['id', 'name', 'code'])
             ->orderBy('name->fr')
-            ->paginate((int) $request->query('per_page', 100))
+            ->paginate($perPage, ['*'], 'page', $page)
             ->toArray();
     }
 }

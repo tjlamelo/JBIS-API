@@ -47,7 +47,7 @@ final class AttachApplicationDocumentAction
             throw ApplicationDocumentException::documentTypeNotAllowed();
         }
 
-        return DB::transaction(function () use ($application, $step, $user, $userDocumentId, $user): ApplicationDocument {
+        return DB::transaction(function () use ($application, $step, $user, $userDocumentId): ApplicationDocument {
             $doc = ApplicationDocument::query()->updateOrCreate(
                 [
                     'application_id' => $application->id,

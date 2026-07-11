@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
             RoleSeeder::class,
             UserSeeder::class,
             RecruiterOrganizationSeeder::class,
+            PartnerOrganizationSeeder::class,
             LegalDocumentSeeder::class,
         ]);
 
@@ -39,6 +40,7 @@ class DatabaseSeeder extends Seeder
             BenefitSeeder::class,        // Avantages sociaux (Relation Many-to-Many)
             DiscoverySourceSeeder::class, // Provenance (Comment avez-vous connu JBIS ?)
             TrainingSeeder::class,       // Catalogue formations (ex. cours d'anglais)
+            CertificationOfferSeeder::class,
         ]);
 
         // --- 3. GÉOGRAPHIE & PARTENAIRES (Niveau 1) ---

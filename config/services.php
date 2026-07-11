@@ -66,7 +66,7 @@ return [
 
     'recruiter' => [
         'onboarding_enabled' => (bool) env('RECRUITER_ONBOARDING_ENABLED', true),
-        'notify_email' => env('RECRUITER_PORTAL_NOTIFY_EMAIL'),
+        'notify_email' => env('RECRUITER_PORTAL_NOTIFY_EMAIL', env('JBIS_MAIL_CONTACT', 'contact@jbis.cm')),
         'frontend_url' => env('FRONTEND_URL', 'http://localhost:3000'),
         'auto_provision_on_approval' => (bool) env('RECRUITER_AUTO_PROVISION_ON_APPROVAL', false),
     ],

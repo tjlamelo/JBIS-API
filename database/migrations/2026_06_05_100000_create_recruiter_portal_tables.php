@@ -35,25 +35,67 @@ return new class extends Migration
             $table->unique(['recruiter_organization_id', 'user_id'], 'rec_org_user_unique');
         });
 
+        Schema::create('recruiter_profile_requests', function (Blueprint $table): void {
+            $table->id();
+            $table->foreignId('recruiter_organization_id')->constrained('recruiter_organizations')->cascadeOnDelete();
+            $table->foreignId('submitted_by_user_id')->constrained('users')->cascadeOnDelete();
+            $table->string('status', 32)->default('draft');
+            $table->string('title');
+            $table->json('criteria');
+            $table->unsignedSmallInteger('quantity_needed')->default(10);
+            $table->text('note')->nullable();
+            $table->json('matched_candidate_ids')->nullable();
+            $table->unsignedSmallInteger('matched_count')->default(0);
+            $table->timestamp('submitted_at')->nullable();
+            $table->foreignId('reviewed_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->timestamp('reviewed_at')->nullable();
+            $table->text('staff_note')->nullable();
+            $table->text('rejection_reason')->nullable();
+            $table->timestamp('transmitted_at')->nullable();
+            $table->foreignId('transmitted_by_user_id')->nullable()->constrained('users')->nullOnDelete();
+            $table->json('transmitted_candidate_ids')->nullable();
+            $table->timestamps();
+
+            $table->index(['recruiter_organization_id', 'status'], 'rpr_org_status_idx');
+            $table->index('submitted_at', 'rpr_submitted_at_idx');
+        });
+
         Schema::create('recruiter_profile_assignments', function (Blueprint $table): void {
             $table->id();
             $table->foreignId('recruiter_organization_id')->constrained()->cascadeOnDelete();
             $table->foreignId('candidate_user_id')->constrained('users')->cascadeOnDelete();
             $table->foreignId('assigned_by_user_id')->constrained('users')->cascadeOnDelete();
+            $table->unsignedBigInteger('recruiter_profile_request_id')->nullable();
             $table->string('status', 32)->default('active')->index();
+            $table->string('feedback_status', 32)->nullable();
             $table->text('note')->nullable();
+            $table->text('feedback_note')->nullable();
+            $table->timestamp('feedback_updated_at')->nullable();
+            $table->unsignedBigInteger('feedback_updated_by_user_id')->nullable();
             $table->json('visible_sections')->nullable();
-            $table->timestamp('assigned_at');
+            $table->json('masked_fields')->nullable();
+            $table->timestamp('assigned_at')->useCurrent();
             $table->timestamp('revoked_at')->nullable();
             $table->timestamps();
 
             $table->index(['recruiter_organization_id', 'candidate_user_id'], 'recruiter_assignments_org_candidate_idx');
+
+            $table->foreign('recruiter_profile_request_id', 'rpa_profile_request_id_foreign')
+                ->references('id')
+                ->on('recruiter_profile_requests')
+                ->nullOnDelete();
+
+            $table->foreign('feedback_updated_by_user_id', 'rpa_feedback_updated_by_foreign')
+                ->references('id')
+                ->on('users')
+                ->nullOnDelete();
         });
     }
 
     public function down(): void
     {
         Schema::dropIfExists('recruiter_profile_assignments');
+        Schema::dropIfExists('recruiter_profile_requests');
         Schema::dropIfExists('recruiter_organization_user');
         Schema::dropIfExists('recruiter_organizations');
     }

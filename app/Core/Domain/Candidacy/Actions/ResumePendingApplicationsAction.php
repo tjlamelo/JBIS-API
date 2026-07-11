@@ -30,19 +30,35 @@ final class ResumePendingApplicationsAction
             ->where('user_id', $user->id)
             ->where('status', ApplicationStatus::Pending->value)
             ->whereNotNull('offer_id')
-            ->with(['offer.requiredDocuments', 'offer.program.requiredDocuments', 'steps'])
+            ->with(['offer.requiredDocuments', 'steps'])
             ->get();
 
         foreach ($applications as $application) {
-            $this->tryResume($application, $user);
+            $this->resumeApplication($application, $user);
         }
     }
 
-    private function tryResume(Application $application, User $user): void
+    public function resumeApplication(Application $application, ?User $user = null): bool
+    {
+        if ($application->status !== ApplicationStatus::Pending) {
+            return false;
+        }
+
+        $application->loadMissing(['offer.requiredDocuments', 'steps', 'user']);
+        $candidate = $user ?? $application->user;
+
+        if ($candidate === null) {
+            return false;
+        }
+
+        return $this->tryResume($application, $candidate);
+    }
+
+    private function tryResume(Application $application, User $user): bool
     {
         $offer = $application->offer;
         if (! $offer instanceof Offer) {
-            return;
+            return false;
         }
 
         $readiness = $this->offerReadiness->assess($offer, $user);
@@ -55,7 +71,7 @@ final class ResumePendingApplicationsAction
             ->count();
 
         if ($pendingValidation > 0 || $missingMandatory > 0) {
-            return;
+            return false;
         }
 
         DB::transaction(function () use ($application, $user): void {
@@ -82,5 +98,7 @@ final class ResumePendingApplicationsAction
 
             $this->attachOfferDocuments->execute($application->fresh(), $user);
         });
+
+        return true;
     }
 }

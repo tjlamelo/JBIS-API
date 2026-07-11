@@ -11,6 +11,8 @@ final class ApplicationActivityLogger
 {
     public const ACTION_STEP_ADVANCED = 'step.advanced';
 
+    public const ACTION_STEP_REOPENED = 'step.reopened';
+
     public const ACTION_PAYMENT_RECORDED = 'payment.recorded';
 
     public const ACTION_DOCUMENTS_VALIDATED = 'step.documents_validated';

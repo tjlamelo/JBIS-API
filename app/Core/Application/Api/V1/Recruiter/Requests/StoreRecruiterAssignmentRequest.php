@@ -24,6 +24,8 @@ final class StoreRecruiterAssignmentRequest extends FormRequest
             'note' => ['nullable', 'string', 'max:2000'],
             'visible_sections' => ['nullable', 'array', 'min:1'],
             'visible_sections.*' => ['string', 'in:'.implode(',', \App\Core\Domain\Recruiter\Enums\RecruiterSharedProfileSection::values())],
+            'masked_fields' => ['nullable', 'array'],
+            'masked_fields.*' => ['string', 'in:'.implode(',', \App\Core\Domain\Recruiter\Enums\RecruiterMaskedField::values())],
         ];
     }
 }

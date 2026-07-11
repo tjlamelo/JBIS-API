@@ -85,6 +85,33 @@ class RecruiterPortalTest extends TestCase
     }
 
     #[Test]
+    public function staff_can_mask_contact_fields_when_sharing_profile(): void
+    {
+        [$recruiter, $organization] = $this->makeRecruiterWithOrganization();
+        $candidate = $this->makeApprovedCandidate();
+        $candidate->update(['email' => 'marie-'.uniqid().'@example.com', 'phone_number1' => '+2376'.random_int(10000000, 99999999)]);
+
+        $staff = User::factory()->create();
+        $staff->assignRole(ApplicationRole::STAFF);
+        Sanctum::actingAs($staff);
+
+        $this->postJson('/api/v1/identity/admin/recruiter-assignments', [
+            'recruiter_organization_id' => $organization->id,
+            'candidate_user_id' => $candidate->id,
+            'visible_sections' => ['profile', 'professional', 'experiences'],
+            'masked_fields' => ['contact_email', 'contact_phone', 'profile_address'],
+        ])->assertStatus(201);
+
+        Sanctum::actingAs($recruiter);
+
+        $this->getJson("/api/v1/recruiter/assignments/{$candidate->id}")
+            ->assertOk()
+            ->assertJsonMissingPath('data.candidate.email')
+            ->assertJsonMissingPath('data.candidate.phone_number1')
+            ->assertJsonPath('data.masked_fields', ['contact_email', 'contact_phone', 'profile_address']);
+    }
+
+    #[Test]
     public function recruiter_cannot_view_unassigned_candidate(): void
     {
         [$recruiter] = $this->makeRecruiterWithOrganization();
@@ -93,6 +120,55 @@ class RecruiterPortalTest extends TestCase
         Sanctum::actingAs($recruiter);
 
         $this->getJson("/api/v1/recruiter/assignments/{$candidate->id}")
+            ->assertForbidden();
+    }
+
+    #[Test]
+    public function staff_can_bulk_assign_candidates_matching_profile_search_filters(): void
+    {
+        [$recruiter, $organization] = $this->makeRecruiterWithOrganization();
+
+        $category = Category::query()->create([
+            'name' => ['fr' => 'Santé bulk', 'en' => 'Health bulk'],
+            'slug' => 'sante-bulk-'.uniqid(),
+            'description' => ['fr' => 'Santé', 'en' => 'Health'],
+        ]);
+        $trade = Trade::query()->create([
+            'category_id' => $category->id,
+            'name' => ['fr' => 'Infirmier', 'en' => 'Nurse'],
+            'slug' => 'infirmier-bulk-'.uniqid(),
+            'is_active' => true,
+        ]);
+
+        $matching = $this->makeApprovedCandidate();
+        $matching->trades()->attach($trade->id, ['years_of_experience' => 3]);
+
+        $other = $this->makeApprovedCandidate();
+
+        $staff = User::factory()->create();
+        $staff->assignRole(ApplicationRole::STAFF);
+        Sanctum::actingAs($staff);
+
+        $this->postJson('/api/v1/identity/admin/recruiter-assignments/bulk', [
+            'recruiter_organization_id' => $organization->id,
+            'note' => 'Lot infirmiers',
+            'visible_sections' => ['profile', 'contact'],
+            'filters' => [
+                'role' => ApplicationRole::CANDIDATE,
+                'trade_ids' => [(string) $trade->id],
+            ],
+            'only_approved' => true,
+        ])
+            ->assertOk()
+            ->assertJsonPath('data.bulk.assigned_count', 1)
+            ->assertJsonPath('data.matched_count', 1);
+
+        Sanctum::actingAs($recruiter);
+
+        $this->getJson("/api/v1/recruiter/assignments/{$matching->id}")
+            ->assertOk();
+
+        $this->getJson("/api/v1/recruiter/assignments/{$other->id}")
             ->assertForbidden();
     }
 
@@ -242,6 +318,87 @@ class RecruiterPortalTest extends TestCase
 
         $this->assertGreaterThan(0, $offerId);
         $this->assertDatabaseHas('offers', ['id' => $offerId, 'status' => 'PUBLISHED']);
+    }
+
+    #[Test]
+    public function recruiter_can_submit_profile_request_and_staff_can_transmit_matches(): void
+    {
+        if (! Schema::hasTable('recruiter_profile_requests')) {
+            $this->artisan('migrate', [
+                '--path' => 'database/migrations/2026_07_06_100000_create_recruiter_profile_requests_table.php',
+                '--force' => true,
+            ]);
+        }
+        if (! Schema::hasColumn('recruiter_profile_assignments', 'recruiter_profile_request_id')) {
+            $this->artisan('migrate', [
+                '--path' => 'database/migrations/2026_07_06_100001_add_recruiter_profile_request_id_to_assignments.php',
+                '--force' => true,
+            ]);
+        }
+
+        [$recruiter, $organization] = $this->makeRecruiterWithOrganization();
+        $candidate = $this->makeApprovedCandidate();
+
+        $category = Category::query()->create([
+            'name' => ['fr' => 'BTP', 'en' => 'Construction'],
+            'slug' => 'btp-recruiter-test-'.uniqid(),
+            'description' => ['fr' => 'BTP', 'en' => 'Construction'],
+        ]);
+        $trade = Trade::query()->create([
+            'category_id' => $category->id,
+            'name' => ['fr' => 'Soudeur', 'en' => 'Welder'],
+            'slug' => 'soudeur-test-'.uniqid(),
+            'is_active' => true,
+        ]);
+        $candidate->trades()->attach($trade->id, ['years_of_experience' => 5]);
+
+        $this->seed(\Database\Seeders\PermissionSeeder::class);
+        $recruiter->givePermissionTo([
+            'recruiterprofilerequest.view',
+            'recruiterprofilerequest.create',
+            'recruiterprofilerequest.update',
+        ]);
+
+        Sanctum::actingAs($recruiter);
+
+        $requestId = (int) $this->postJson('/api/v1/recruiter/profile-requests', [
+            'title' => 'Soudeurs Canada',
+            'trade_ids' => [$trade->id],
+            'quantity_needed' => 5,
+            'min_years_experience' => 2,
+        ])->assertCreated()
+            ->json('data.request.id');
+
+        $this->postJson("/api/v1/recruiter/profile-requests/{$requestId}/submit")
+            ->assertOk()
+            ->assertJsonPath('data.request.status', 'matched')
+            ->assertJsonPath('data.request.matched_count', 1);
+
+        $staff = User::factory()->create();
+        $staff->assignRole(ApplicationRole::STAFF);
+        $staff->givePermissionTo([
+            'recruiterprofilerequest.view',
+            'recruiterprofilerequest.update',
+            'recruiterassignment.create',
+        ]);
+        Sanctum::actingAs($staff);
+
+        $this->getJson("/api/v1/identity/admin/recruiter-profile-requests/{$requestId}")
+            ->assertOk()
+            ->assertJsonPath('data.request.matched_count', 1);
+
+        $this->postJson("/api/v1/identity/admin/recruiter-profile-requests/{$requestId}/transmit", [
+            'candidate_user_ids' => [$candidate->id],
+            'masked_fields' => ['contact_email', 'contact_phone'],
+        ])->assertOk()
+            ->assertJsonPath('data.request.status', 'transmitted')
+            ->assertJsonPath('data.bulk.assigned_count', 1);
+
+        Sanctum::actingAs($recruiter);
+
+        $this->getJson("/api/v1/recruiter/assignments/{$candidate->id}")
+            ->assertOk()
+            ->assertJsonPath('data.candidate.id', $candidate->id);
     }
 
     #[Test]

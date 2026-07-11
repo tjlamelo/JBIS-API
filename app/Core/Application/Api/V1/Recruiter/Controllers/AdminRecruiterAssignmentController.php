@@ -5,10 +5,13 @@ declare(strict_types=1);
 namespace App\Core\Application\Api\V1\Recruiter\Controllers;
 
 use App\Core\Application\Api\Responses\BaseResponse;
+use App\Core\Application\Api\V1\Recruiter\Requests\BulkStoreRecruiterAssignmentRequest;
 use App\Core\Application\Api\V1\Recruiter\Requests\StoreRecruiterAssignmentRequest;
 use App\Core\Application\Api\V1\Recruiter\Resources\RecruiterAssignmentResource;
 use App\Core\Domain\Identity\Models\User;
+use App\Core\Domain\Identity\Queries\AdminUserIdsFromFiltersQuery;
 use App\Core\Domain\Recruiter\Actions\AssignProfileToRecruiterAction;
+use App\Core\Domain\Recruiter\Actions\BulkAssignProfilesToRecruiterAction;
 use App\Core\Domain\Recruiter\Actions\RevokeRecruiterAssignmentAction;
 use App\Core\Domain\Recruiter\Models\RecruiterOrganization;
 use App\Core\Domain\Recruiter\Models\RecruiterProfileAssignment;
@@ -20,7 +23,9 @@ final class AdminRecruiterAssignmentController extends Controller
 {
     public function __construct(
         private readonly AssignProfileToRecruiterAction $assignProfile,
+        private readonly BulkAssignProfilesToRecruiterAction $bulkAssignProfiles,
         private readonly RevokeRecruiterAssignmentAction $revokeAssignment,
+        private readonly AdminUserIdsFromFiltersQuery $userIdsFromFilters,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -58,12 +63,54 @@ final class AdminRecruiterAssignmentController extends Controller
             $request->user(),
             $request->validated('note'),
             $request->validated('visible_sections'),
+            $request->validated('masked_fields'),
         );
 
         $assignment->load(['candidate.profile', 'organization', 'assignedBy:id,name']);
 
         return BaseResponse::created([
             'assignment' => new RecruiterAssignmentResource($assignment),
+        ])->toJsonResponse();
+    }
+
+    public function bulkStore(BulkStoreRecruiterAssignmentRequest $request): JsonResponse
+    {
+        $this->authorize('create', RecruiterProfileAssignment::class);
+
+        $organization = RecruiterOrganization::query()->findOrFail((int) $request->validated('recruiter_organization_id'));
+        $onlyApproved = $request->boolean('only_approved', true);
+
+        $candidateUserIds = $request->validated('candidate_user_ids') ?? [];
+        if ($candidateUserIds === [] && is_array($request->validated('filters'))) {
+            $candidateUserIds = $this->userIdsFromFilters
+                ->collect($request->validated('filters'), $onlyApproved)
+                ->all();
+        }
+
+        if ($candidateUserIds === []) {
+            return BaseResponse::unprocessableEntity(
+                message: __('Aucun candidat éligible ne correspond aux critères.'),
+            )->toJsonResponse();
+        }
+
+        if (count($candidateUserIds) > AdminUserIdsFromFiltersQuery::MAX_BULK_IDS) {
+            return BaseResponse::unprocessableEntity(
+                message: __('Maximum :max candidats par transmission.', ['max' => AdminUserIdsFromFiltersQuery::MAX_BULK_IDS]),
+            )->toJsonResponse();
+        }
+
+        $result = $this->bulkAssignProfiles->execute(
+            $organization,
+            $candidateUserIds,
+            $request->user(),
+            $request->validated('note'),
+            $request->validated('visible_sections'),
+            $request->validated('masked_fields'),
+        );
+
+        return BaseResponse::ok([
+            'bulk' => $result,
+            'matched_count' => count($candidateUserIds),
         ])->toJsonResponse();
     }
 

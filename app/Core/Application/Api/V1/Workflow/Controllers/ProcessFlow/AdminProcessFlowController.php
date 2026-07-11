@@ -21,18 +21,17 @@ use Illuminate\Http\Request;
 final class AdminProcessFlowController extends Controller
 {
     public function __construct(
-        private readonly ProcessFlowIndexQuery $processFlowIndexQuery,
         private readonly CreateProcessFlowAction $createProcessFlowAction,
         private readonly UpdateProcessFlowAction $updateProcessFlowAction,
         private readonly DeleteProcessFlowAction $deleteProcessFlowAction,
         private readonly PublishProcessFlowVersionAction $publishProcessFlowVersionAction,
     ) {}
 
-    public function index(Request $request): JsonResponse
+    public function index(Request $request, ProcessFlowIndexQuery $query): JsonResponse
     {
         $this->authorize('viewAny', ProcessFlow::class);
 
-        $flows = $this->processFlowIndexQuery
+        $flows = $query
             ->with(['program', 'offer', 'country'])
             ->withCount('steps')
             ->paginate($request->integer('per_page', 15));
