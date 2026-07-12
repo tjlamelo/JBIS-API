@@ -22,7 +22,16 @@ class OfferFactory extends Factory
 
         $trade = Trade::query()->inRandomOrder()->first();
         if (! $trade) {
-            $categoryId = Category::query()->inRandomOrder()->value('id');
+            $categoryId = Category::query()->inRandomOrder()->value('id')
+                ?? Category::query()->create([
+                    'name' => [
+                        'fr' => 'Catégorie test',
+                        'en' => 'Test category',
+                    ],
+                    'slug' => 'test-category-'.Str::lower(Str::random(6)),
+                    'is_active' => true,
+                ])->id;
+
             $trade = Trade::query()->create([
                 'category_id' => $categoryId,
                 'name' => [
