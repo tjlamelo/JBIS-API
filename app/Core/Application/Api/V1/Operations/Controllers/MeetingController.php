@@ -16,6 +16,7 @@ use App\Core\Domain\Operations\Models\AssignedTask;
 use App\Core\Domain\Operations\Models\DailyTask;
 use App\Core\Domain\Operations\Models\Meeting;
 use App\Core\Domain\Operations\Services\OperationsNotificationService;
+use App\Core\Domain\Operations\Support\OperationsAccess;
 use App\Core\Domain\Operations\Support\StaffUserResolver;
 use App\Core\Domain\Identity\Models\User;
 use App\Http\Controllers\Controller;
@@ -308,14 +309,30 @@ final class MeetingController extends Controller
             ->startOfDay();
         $weekEnd = $weekStart->copy()->endOfWeek(Carbon::SUNDAY)->endOfDay();
 
+        $user = $request->user();
+        abort_if($user === null, 401);
+
         $meetings = Meeting::query()
             ->with(['organizer:id,name,email', 'attendees:id,name,email'])
             ->whereBetween('scheduled_at', [$weekStart, $weekEnd])
+            ->when(! OperationsAccess::canViewAllTasks($user), function ($q) use ($user): void {
+                $q->where(function ($inner) use ($user): void {
+                    $inner->where('organizer_id', $user->id)
+                        ->orWhereHas('attendees', fn ($a) => $a->where('users.id', $user->id));
+                });
+            })
             ->orderBy('scheduled_at')
             ->get();
 
         $tasks = AssignedTask::query()
             ->with(['assignees:id,name,email', 'meeting:id,title', 'creator:id,name'])
+            ->when(! OperationsAccess::canViewAllTasks($user), function ($q) use ($user): void {
+                $uid = (int) $user->id;
+                $q->where(function ($inner) use ($uid): void {
+                    $inner->where('created_by', $uid)
+                        ->orWhereHas('assignees', fn ($a) => $a->where('users.id', $uid));
+                });
+            })
             ->where(function ($q) use ($weekStart, $weekEnd): void {
                 $q->whereBetween('due_date', [$weekStart->toDateString(), $weekEnd->toDateString()])
                     ->orWhereBetween('week_start_date', [$weekStart->toDateString(), $weekEnd->toDateString()])
@@ -332,6 +349,7 @@ final class MeetingController extends Controller
         $daily = DailyTask::query()
             ->with(['user:id,name,email', 'assignedTask:id,title'])
             ->whereBetween('task_date', [$weekStart->toDateString(), $weekEnd->toDateString()])
+            ->when(! OperationsAccess::canViewAllTasks($user), fn ($q) => $q->where('user_id', $user->id))
             ->orderBy('task_date')
             ->get();
 
@@ -376,6 +394,7 @@ final class MeetingController extends Controller
             'days' => $days,
             'assigned_tasks' => AssignedTaskResource::collection($tasks),
             'timeline' => $this->buildTimeline($meetings, $tasks, $daily),
+            'capabilities' => OperationsAccess::capabilities($user),
         ])->toJsonResponse();
     }
 

@@ -44,11 +44,12 @@ final class StaffUserResolver
 
     public static function canManageMeetingTasks(User $user, ?Meeting $meeting): bool
     {
-        if ($user->hasAnyRole([ApplicationRole::SUPERADMIN, ApplicationRole::ADMIN])) {
+        if (OperationsAccess::canManageMeetings($user)) {
             return true;
         }
 
         if ($meeting === null) {
+            // Tâche hors réunion : staff peut créer pour soi.
             return $user->hasAnyRole(ApplicationRole::STAFF_ROLES);
         }
 

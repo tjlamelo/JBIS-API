@@ -81,7 +81,12 @@ class RoleSeeder extends Seeder
             'partnerorganization', 'partnercohort', 'partnercohortstudent',
         ];
 
-        $names = [P::ADMIN_ACCESS, P::PERMISSION_MANAGE];
+        $names = [
+            P::ADMIN_ACCESS,
+            P::PERMISSION_MANAGE,
+            P::OPERATIONS_MANAGE_MEETINGS,
+            P::OPERATIONS_VIEW_ALL_TASKS,
+        ];
         foreach ($resources as $resource) {
             array_push($names, ...P::forResource($resource));
         }
@@ -129,8 +134,8 @@ class RoleSeeder extends Seeder
             P::name('archive', P::CREATE),
             P::name('archive', P::UPDATE),
             P::name('archive', P::DELETE),
-            ...$readUpdate('meeting'),
-            P::name('meeting', P::DELETE),
+            P::name('meeting', P::VIEW),
+            P::name('meeting', P::UPDATE),
             ...$readUpdate('assignedtask'),
             P::name('assignedtask', P::DELETE),
             ...$readUpdate('dailytask'),

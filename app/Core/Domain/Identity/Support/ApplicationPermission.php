@@ -25,6 +25,12 @@ final class ApplicationPermission
 
     public const PERMISSION_MANAGE = 'permission.manage';
 
+    /** Créer des réunions et assigner des tâches à des collaborateurs. */
+    public const OPERATIONS_MANAGE_MEETINGS = 'operations.manage_meetings';
+
+    /** Voir toutes les tâches de l’équipe (sinon : tâches assignées uniquement). */
+    public const OPERATIONS_VIEW_ALL_TASKS = 'operations.view_all_tasks';
+
     /** Guard Spatie unique (aligné seeders + rôles). */
     public const GUARD = 'web';
 
@@ -113,7 +119,12 @@ final class ApplicationPermission
      */
     public static function systemNames(): array
     {
-        return [self::ADMIN_ACCESS, self::PERMISSION_MANAGE];
+        return [
+            self::ADMIN_ACCESS,
+            self::PERMISSION_MANAGE,
+            self::OPERATIONS_MANAGE_MEETINGS,
+            self::OPERATIONS_VIEW_ALL_TASKS,
+        ];
     }
 
     /**

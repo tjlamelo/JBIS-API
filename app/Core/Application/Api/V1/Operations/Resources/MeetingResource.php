@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Core\Application\Api\V1\Operations\Resources;
 
 use App\Core\Domain\Operations\Models\Meeting;
+use App\Core\Domain\Operations\Support\OperationsAccess;
+use App\Core\Domain\Operations\Support\StaffUserResolver;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -49,14 +51,8 @@ final class MeetingResource extends JsonResource
                     if ($user === null) {
                         return false;
                     }
-                    if ((int) $this->organizer_id === (int) $user->id) {
-                        return true;
-                    }
-                    $attendee = $this->relationLoaded('attendees')
-                        ? $this->attendees->firstWhere('id', $user->id)
-                        : null;
 
-                    return $attendee !== null && (bool) $attendee->pivot?->is_present;
+                    return StaffUserResolver::canManageMeetingTasks($user, $this->resource);
                 }
             ),
             'can_assign_to_others' => $this->when(
@@ -67,15 +63,12 @@ final class MeetingResource extends JsonResource
                         return false;
                     }
 
-                    if ($user->hasAnyRole([
-                        \App\Core\Domain\Identity\Support\ApplicationRole::SUPERADMIN,
-                        \App\Core\Domain\Identity\Support\ApplicationRole::ADMIN,
-                    ])) {
-                        return true;
-                    }
-
-                    return (int) $this->organizer_id === (int) $user->id;
+                    return OperationsAccess::canAssignToOthers($user, $this->resource);
                 }
+            ),
+            'can_create_meeting' => $this->when(
+                $request->user() !== null,
+                fn () => OperationsAccess::canCreateMeeting($request->user()),
             ),
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),

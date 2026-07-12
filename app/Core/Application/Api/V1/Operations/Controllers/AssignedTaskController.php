@@ -11,6 +11,7 @@ use App\Core\Domain\Operations\Enums\AssignedTaskStatus;
 use App\Core\Domain\Operations\Models\AssignedTask;
 use App\Core\Domain\Operations\Models\Meeting;
 use App\Core\Domain\Operations\Services\OperationsNotificationService;
+use App\Core\Domain\Operations\Support\OperationsAccess;
 use App\Core\Domain\Operations\Support\StaffUserResolver;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
@@ -32,6 +33,13 @@ final class AssignedTaskController extends Controller
 
         $items = AssignedTask::query()
             ->with(['creator:id,name', 'meeting:id,title', 'assignees:id,name,email'])
+            ->when(! OperationsAccess::canViewAllTasks($request->user()), function ($q) use ($request): void {
+                $uid = (int) $request->user()->id;
+                $q->where(function ($inner) use ($uid): void {
+                    $inner->where('created_by', $uid)
+                        ->orWhereHas('assignees', fn ($a) => $a->where('users.id', $uid));
+                });
+            })
             ->when($request->query('status'), fn ($q, $s) => $q->where('status', $s))
             ->when($request->query('priority'), fn ($q, $p) => $q->where('priority', $p))
             ->when($request->query('meeting_id'), fn ($q, $id) => $q->where('meeting_id', (int) $id))
@@ -106,11 +114,8 @@ final class AssignedTaskController extends Controller
             array_values(array_unique(array_map('intval', $data['assignee_ids'] ?? [])))
         );
 
-        // Present staff (non-organizer) can only assign to self.
-        if ($meeting !== null
-            && (int) $meeting->organizer_id !== (int) $user->id
-            && ! $user->hasAnyRole([\App\Core\Domain\Identity\Support\ApplicationRole::SUPERADMIN, \App\Core\Domain\Identity\Support\ApplicationRole::ADMIN])
-        ) {
+        // Present staff (non-manager) can only assign to self unless manage_meetings.
+        if ($meeting !== null && ! OperationsAccess::canAssignToOthers($user, $meeting)) {
             $assigneeIds = [$user->id];
         }
 
@@ -171,21 +176,36 @@ final class AssignedTaskController extends Controller
 
         $previousStatus = $assignedTask->status?->value ?? (string) $assignedTask->status;
 
-        $data = $request->validate([
-            'title' => ['sometimes', 'string', 'max:255'],
-            'description' => ['nullable', 'string'],
-            'meeting_id' => ['nullable', 'integer', 'exists:meetings,id'],
-            'due_date' => ['nullable', 'date'],
-            'estimated_minutes' => ['nullable', 'integer', 'min:1', 'max:10080'],
-            'week_start_date' => ['nullable', 'date'],
-            'priority' => ['sometimes', Rule::in(AssignedTaskPriority::values())],
-            'progress_percentage' => ['sometimes', 'integer', 'min:0', 'max:100'],
-            'status' => ['sometimes', Rule::in(AssignedTaskStatus::values())],
-            'final_result' => ['nullable', 'string'],
-            'notes' => ['nullable', 'string'],
-            'assignee_ids' => ['sometimes', 'array'],
-            'assignee_ids.*' => ['integer', 'exists:users,id'],
-        ]);
+        $canFullyEdit = OperationsAccess::canViewAllTasks($user)
+            || OperationsAccess::canManageMeetings($user)
+            || (int) $assignedTask->created_by === (int) $user->id;
+
+        $data = $canFullyEdit
+            ? $request->validate([
+                'title' => ['sometimes', 'string', 'max:255'],
+                'description' => ['nullable', 'string'],
+                'meeting_id' => ['nullable', 'integer', 'exists:meetings,id'],
+                'due_date' => ['nullable', 'date'],
+                'estimated_minutes' => ['nullable', 'integer', 'min:1', 'max:10080'],
+                'week_start_date' => ['nullable', 'date'],
+                'priority' => ['sometimes', Rule::in(AssignedTaskPriority::values())],
+                'progress_percentage' => ['sometimes', 'integer', 'min:0', 'max:100'],
+                'status' => ['sometimes', Rule::in(AssignedTaskStatus::values())],
+                'final_result' => ['nullable', 'string'],
+                'notes' => ['nullable', 'string'],
+                'assignee_ids' => ['sometimes', 'array'],
+                'assignee_ids.*' => ['integer', 'exists:users,id'],
+            ])
+            : $request->validate([
+                'status' => ['sometimes', Rule::in(AssignedTaskStatus::values())],
+                'progress_percentage' => ['sometimes', 'integer', 'min:0', 'max:100'],
+                'final_result' => ['nullable', 'string'],
+                'notes' => ['nullable', 'string'],
+            ]);
+
+        if (! $canFullyEdit && array_key_exists('assignee_ids', $data)) {
+            unset($data['assignee_ids']);
+        }
 
         DB::transaction(function () use ($assignedTask, $data, $previousStatus): void {
             $payload = collect($data)->except(['assignee_ids'])->all();
