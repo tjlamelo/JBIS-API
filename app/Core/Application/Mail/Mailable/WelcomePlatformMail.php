@@ -32,7 +32,7 @@ class WelcomePlatformMail extends Mailable
             view: 'emails.welcome.platform',
             with: [
                 'user' => $this->user,
-                'frontendUrl' => rtrim((string) env('FRONTEND_URL', 'http://localhost:3000'), '/'),
+                'frontendUrl' => (string) config('app.frontend_url', 'http://localhost:3000'),
                 'logoUrl' => $appUrl.'/assets/img/logo-jbis.png',
             ],
         );

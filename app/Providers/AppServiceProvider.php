@@ -62,7 +62,7 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(SmsCampaignDispatched::class, RefreshSmsCampaignStatsListener::class);
 
         ResetPassword::createUrlUsing(function (User $user, string $token): string {
-            $frontUrl = rtrim((string) env('FRONTEND_URL', 'http://localhost:3000'), '/');
+            $frontUrl = (string) config('app.frontend_url', 'http://localhost:3000');
             $query = http_build_query([
                 'token' => $token,
                 'email' => $user->getEmailForPasswordReset(),

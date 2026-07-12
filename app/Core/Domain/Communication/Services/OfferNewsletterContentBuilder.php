@@ -79,7 +79,7 @@ final class OfferNewsletterContentBuilder
     private function mapOffer(Offer $offer, string $locale): array
     {
         $slug = TranslatableColumnResolver::resolve($offer->slug, $locale);
-        $frontend = rtrim((string) config('services.newsletter.frontend_url', env('FRONTEND_URL', 'http://localhost:3000')), '/');
+        $frontend = (string) config('app.frontend_url', 'http://localhost:3000');
 
         return [
             'id' => $offer->id,

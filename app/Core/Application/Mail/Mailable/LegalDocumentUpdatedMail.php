@@ -36,7 +36,7 @@ final class LegalDocumentUpdatedMail extends Mailable
     public function content(): Content
     {
         $appUrl = rtrim((string) config('app.url', env('APP_URL', 'http://127.0.0.1:8000')), '/');
-        $frontendUrl = rtrim((string) env('FRONTEND_URL', 'http://localhost:3000'), '/');
+        $frontendUrl = (string) config('app.frontend_url', 'http://localhost:3000');
 
         return new Content(
             view: 'emails.legal.document-updated',

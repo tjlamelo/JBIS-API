@@ -30,7 +30,7 @@ class RecruiterOnboardingSubmittedStaffMail extends Mailable
 
     public function content(): Content
     {
-        $frontendUrl = rtrim((string) config('services.recruiter.frontend_url', env('FRONTEND_URL', 'http://localhost:3000')), '/');
+        $frontendUrl = (string) config('app.frontend_url', 'http://localhost:3000');
 
         return new Content(
             view: 'emails.recruiter.onboarding-submitted-staff',

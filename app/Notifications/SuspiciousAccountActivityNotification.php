@@ -50,6 +50,6 @@ class SuspiciousAccountActivityNotification extends Notification implements Shou
 
         return $message
             ->line('Si cette activite ne vient pas de vous, changez votre mot de passe immediatement.')
-            ->action('Securiser mon compte', rtrim((string) env('FRONTEND_URL', 'http://localhost:3000'), '/').'/login');
+            ->action('Securiser mon compte', (string) config('app.frontend_url', 'http://localhost:3000').'/login');
     }
 }

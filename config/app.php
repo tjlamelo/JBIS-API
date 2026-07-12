@@ -56,6 +56,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Frontend URL (Next.js)
+    |--------------------------------------------------------------------------
+    |
+    | Used for OAuth redirects, password reset links, emails, etc.
+    | Must be read via config('app.frontend_url') — never env() after config:cache.
+    |
+    */
+
+    'frontend_url' => rtrim((string) env('FRONTEND_URL', 'http://localhost:3000'), '/'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |

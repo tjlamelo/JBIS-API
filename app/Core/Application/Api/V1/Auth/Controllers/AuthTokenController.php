@@ -165,7 +165,7 @@ class AuthTokenController extends Controller
             ])->toJsonResponse();
         }
 
-        $frontUrl = rtrim((string) env('FRONTEND_URL', 'http://localhost:3000'), '/');
+        $frontUrl = (string) config('app.frontend_url', 'http://localhost:3000');
 
         return redirect()->away($frontUrl.'/verify-email?verified=1');
     }
@@ -182,7 +182,7 @@ class AuthTokenController extends Controller
 
     public function handleGoogleCallback(Request $request): RedirectResponse
     {
-        $frontUrl = rtrim((string) env('FRONTEND_URL', 'http://localhost:3000'), '/');
+        $frontUrl = (string) config('app.frontend_url', 'http://localhost:3000');
         $result = $this->handleGoogleCallbackAction->execute($frontUrl);
 
         if (! $result['success']) {
