@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Core\Application\Mail\Mailable;
 
 use App\Core\Domain\Communication\Support\JbisMailbox;
+use App\Core\Domain\Communication\Support\MailBranding;
 use App\Core\Domain\Identity\Models\LegalDocument;
 use App\Core\Domain\Identity\Models\User;
 use Illuminate\Bus\Queueable;
@@ -28,14 +29,13 @@ final class LegalDocumentUpdatedMail extends Mailable
         $label = $this->documentLabel();
 
         return JbisMailbox::transactionalEnvelope(
-            "JBIS — Mise à jour : {$label}",
+            MailBranding::productName()." — Mise à jour : {$label}",
             'dpo',
         );
     }
 
     public function content(): Content
     {
-        $appUrl = rtrim((string) config('app.url', env('APP_URL', 'http://127.0.0.1:8000')), '/');
         $frontendUrl = (string) config('app.frontend_url', 'http://localhost:3000');
 
         return new Content(
@@ -45,7 +45,7 @@ final class LegalDocumentUpdatedMail extends Mailable
                 'document' => $this->document,
                 'documentLabel' => $this->documentLabel(),
                 'consentsUrl' => "{$frontendUrl}/settings/consents",
-                'logoUrl' => "{$appUrl}/assets/img/logo-jbis.png",
+                ...MailBranding::viewData(),
             ],
         );
     }

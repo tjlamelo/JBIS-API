@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Core\Domain\Communication\Support\MailBranding;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -12,7 +13,7 @@ class SuspiciousAccountActivityNotification extends Notification implements Shou
     use Queueable;
 
     /**
-     * @param array<int, string> $flags
+     * @param  array<int, string>  $flags
      */
     public function __construct(
         private readonly string $title,
@@ -33,23 +34,33 @@ class SuspiciousAccountActivityNotification extends Notification implements Shou
 
     public function toMail(object $notifiable): MailMessage
     {
-        $message = (new MailMessage())
-            ->subject('Alerte securite compte JBIS')
-            ->greeting('Bonjour '.$notifiable->name.',')
-            ->line($this->title)
-            ->line('IP detectee : '.$this->ip)
-            ->line('Appareil : '.$this->device);
+        $brand = MailBranding::productName();
+        $lines = [
+            $this->title,
+            'IP détectée : '.$this->ip,
+            'Appareil : '.$this->device,
+        ];
 
         if ($this->flags !== []) {
-            $message->line('Signaux : '.implode(', ', $this->flags));
+            $lines[] = 'Signaux : '.implode(', ', $this->flags);
         }
 
         if ($this->riskScore !== null) {
-            $message->line('Score de risque : '.$this->riskScore.($this->riskLevel ? ' ('.$this->riskLevel.')' : ''));
+            $lines[] = 'Score de risque : '.$this->riskScore.($this->riskLevel ? ' ('.$this->riskLevel.')' : '');
         }
 
-        return $message
-            ->line('Si cette activite ne vient pas de vous, changez votre mot de passe immediatement.')
-            ->action('Securiser mon compte', (string) config('app.frontend_url', 'http://localhost:3000').'/login');
+        $lines[] = 'Si cette activité ne vient pas de vous, changez votre mot de passe immédiatement.';
+
+        return (new MailMessage)
+            ->subject('Alerte sécurité compte '.$brand)
+            ->view('emails.system.notification', [
+                ...MailBranding::viewData(),
+                'title' => 'Alerte sécurité — '.$brand,
+                'headerSubtitle' => 'Sécurité du compte',
+                'userName' => $notifiable->name ?? 'utilisateur',
+                'lines' => $lines,
+                'actionUrl' => (string) config('app.frontend_url', 'http://localhost:3000').'/login',
+                'actionLabel' => 'Sécuriser mon compte',
+            ]);
     }
 }

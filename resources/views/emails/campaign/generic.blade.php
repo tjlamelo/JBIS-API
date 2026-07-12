@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Message JBIS</title>
+    <title>Message {{ $brandName }}</title>
     <link rel="icon" href="{{ $logoUrl }}">
 </head>
 <body style="margin:0; padding:0; font-family: Arial, sans-serif; background:#f4f6f8;">
@@ -11,13 +11,7 @@
         <tr>
             <td align="center">
                 <table role="presentation" width="680" cellspacing="0" cellpadding="0" border="0" style="width:100%; max-width:680px; background:#ffffff; border-radius:10px; overflow:hidden;">
-                    <tr>
-                        <td style="background:#0f172a; color:#ffffff; padding:18px 24px; text-align:center;">
-                            <img src="{{ $logoUrl }}" alt="Logo JBIS" style="display:block; margin:0 auto 10px; width:64px; height:64px; object-fit:contain;">
-                            <h1 style="margin:0; font-size:20px; font-weight:700;">JBIS</h1>
-                            <p style="margin:6px 0 0; font-size:12px; opacity:0.9;">Excellence - Innovation - Opportunites</p>
-                        </td>
-                    </tr>
+                    @include('emails.partials.brand-header', ['headerSubtitle' => 'Excellence · Innovation · Opportunités'])
 
                     <tr>
                         <td style="padding:32px 24px; color:#111827; font-size:15px; line-height:1.6; text-align:left;">
@@ -60,20 +54,16 @@
                         </td>
                     </tr>
 
-                    <tr>
-                        <td style="background:#f8fafc; border-top:1px solid #e5e7eb; padding:18px 24px; text-align:center; color:#6b7280; font-size:12px;">
-                            <p style="margin:0 0 6px;">Ce message vous est envoye par JBIS.</p>
-                            @if(!empty($template['footer_note']))
-                                <p style="margin:0 0 6px;">{{ $template['footer_note'] }}</p>
-                            @endif
-                            <p style="margin:0;">&copy; {{ date('Y') }} JBIS - Tous droits reserves.</p>
-                        </td>
-                    </tr>
+                    @include('emails.partials.brand-footer', [
+                        'footerNote' => !empty($template['footer_note'])
+                            ? $template['footer_note']
+                            : 'Ce message vous est envoyé par '.($brandName ?? 'MyJob Best').'.',
+                    ])
                 </table>
             </td>
         </tr>
     </table>
-    
+
     <div style="display:none; white-space:nowrap; font:15px courier; line-height:0;">
         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
     </div>

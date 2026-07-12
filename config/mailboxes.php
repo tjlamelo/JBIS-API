@@ -29,7 +29,7 @@ return [
         ],
         'noreply' => [
             'address' => env('JBIS_MAIL_NOREPLY', 'no-reply@jbis.cm'),
-            'name' => env('JBIS_MAIL_NOREPLY_NAME', 'JBIS'),
+            'name' => env('JBIS_MAIL_NOREPLY_NAME', 'MyJob Best'),
             'public' => false,
         ],
         'dpo' => [

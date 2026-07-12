@@ -112,7 +112,7 @@ return [
 
     'from' => [
         'address' => env('MAIL_FROM_ADDRESS', env('JBIS_MAIL_CONTACT', 'contact@jbis.cm')),
-        'name' => env('MAIL_FROM_NAME', env('JBIS_MAIL_CONTACT_NAME', 'Job Best International Services')),
+        'name' => env('MAIL_FROM_NAME', env('JBIS_MAIL_NOREPLY_NAME', 'MyJob Best')),
     ],
 
 ];

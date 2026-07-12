@@ -3,6 +3,7 @@
 namespace App\Core\Application\Mail\Mailable;
 
 use App\Core\Domain\Communication\Support\JbisMailbox;
+use App\Core\Domain\Communication\Support\MailBranding;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Address;
@@ -45,14 +46,12 @@ class GenericCampaignMail extends Mailable
 
     public function content(): Content
     {
-        $appUrl = rtrim((string) config('app.url', env('APP_URL', 'http://127.0.0.1:8000')), '/');
-
         return new Content(
             view: 'emails.campaign.generic',
             with: [
                 'content' => $this->bodyHtml,
                 'template' => $this->content,
-                'logoUrl' => $appUrl.'/assets/img/logo-jbis.png',
+                ...MailBranding::viewData(),
             ],
         );
     }

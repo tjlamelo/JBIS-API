@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>JBIS Newsletter</title>
+    <title>{{ $brandName }} Newsletter</title>
     <link rel="icon" href="{{ $logoUrl }}">
 </head>
 <body style="margin:0; padding:0; font-family:Arial, sans-serif; background:#f4f6f8;">
@@ -11,12 +11,7 @@
     <tr>
         <td align="center">
             <table role="presentation" width="680" cellspacing="0" cellpadding="0" border="0" style="width:100%; max-width:680px; background:#ffffff; border-radius:10px; overflow:hidden;">
-                <tr>
-                    <td style="background:#0f172a; color:#ffffff; padding:20px 24px; text-align:center;">
-                        <img src="{{ $logoUrl }}" alt="JBIS" style="display:block; margin:0 auto 10px; width:64px; height:64px; object-fit:contain;">
-                        <h1 style="margin:0; font-size:20px; font-weight:700;">JBIS Newsletter</h1>
-                    </td>
-                </tr>
+                @include('emails.partials.brand-header', ['headerSubtitle' => 'Newsletter offres'])
                 <tr>
                     <td style="padding:28px 24px; color:#111827; font-size:15px; line-height:1.6;">
                         <p style="margin:0 0 12px;">{{ $copy['greeting'] }},</p>
@@ -63,10 +58,10 @@
                         </p>
                     </td>
                 </tr>
+                @include('emails.partials.brand-footer', ['footerNote' => $copy['footer']])
                 <tr>
-                    <td style="background:#f8fafc; border-top:1px solid #e5e7eb; padding:16px 24px; text-align:center; color:#6b7280; font-size:12px;">
-                        <p style="margin:0 0 10px;">{{ $copy['footer'] }}</p>
-                        <a href="{{ $unsubscribeUrl }}" style="color:#6b7280; text-decoration:underline;">{{ $copy['unsubscribe'] }}</a>
+                    <td style="padding:0 24px 16px; text-align:center;">
+                        <a href="{{ $unsubscribeUrl }}" style="color:#6b7280; font-size:12px; text-decoration:underline;">{{ $copy['unsubscribe'] }}</a>
                     </td>
                 </tr>
             </table>

@@ -15,6 +15,7 @@ use App\Core\Domain\Communication\Services\CpanelSubdomainProvisionerService;
 use App\Core\Domain\Workflow\Services\ProcessFlow\Contracts\ProcessFlowPdfRenderer;
 use App\Core\Domain\Workflow\Services\ProcessFlow\ProcessFlowScreenshotPdfRenderer;
 use App\Core\Domain\Communication\Support\JbisMailbox;
+use App\Core\Domain\Communication\Support\MailBranding;
 use App\Core\Domain\Identity\Models\User;
 use App\Listeners\SendWelcomeEmailListener;
 use Illuminate\Auth\Events\Registered;
@@ -24,6 +25,7 @@ use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -59,6 +61,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        View::composer('emails.*', static function ($view): void {
+            $view->with(MailBranding::viewData());
+        });
+
         Event::listen(Registered::class, SendWelcomeEmailListener::class);
         Event::listen(MailCampaignDispatched::class, RefreshMailCampaignStatsListener::class);
         Event::listen(SmsCampaignDispatched::class, RefreshSmsCampaignStatsListener::class);
@@ -88,14 +94,25 @@ class AppServiceProvider extends ServiceProvider
                 60,
             );
 
+            $brand = MailBranding::productName();
+
             return (new MailMessage)
-                ->from(JbisMailbox::address('noreply'), JbisMailbox::name('noreply'))
+                ->from(JbisMailbox::address('noreply'), MailBranding::productName())
                 ->replyTo(JbisMailbox::address('contact'), JbisMailbox::name('contact'))
-                ->subject(__('Réinitialisation de votre mot de passe JBIS'))
-                ->line(__('Vous recevez cet e-mail car nous avons reçu une demande de réinitialisation de mot de passe pour votre compte.'))
-                ->action(__('Réinitialiser le mot de passe'), $url)
-                ->line(__('Ce lien expirera dans :count minutes.', ['count' => $expire]))
-                ->line(__('Si vous n\'avez pas demandé de réinitialisation, aucune action n\'est requise.'));
+                ->subject(__('Réinitialisation de votre mot de passe :brand', ['brand' => $brand]))
+                ->view('emails.system.notification', [
+                    ...MailBranding::viewData(),
+                    'title' => 'Réinitialisation du mot de passe',
+                    'headerSubtitle' => $brand,
+                    'userName' => $notifiable->name ?? 'utilisateur',
+                    'lines' => [
+                        __('Vous recevez cet e-mail car nous avons reçu une demande de réinitialisation de mot de passe pour votre compte.'),
+                        __('Ce lien expirera dans :count minutes.', ['count' => $expire]),
+                        __('Si vous n\'avez pas demandé de réinitialisation, aucune action n\'est requise.'),
+                    ],
+                    'actionUrl' => $url,
+                    'actionLabel' => __('Réinitialiser le mot de passe'),
+                ]);
         });
 
         VerifyEmail::createUrlUsing(function (User $user): string {

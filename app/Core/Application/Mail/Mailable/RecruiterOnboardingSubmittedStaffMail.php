@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Core\Application\Mail\Mailable;
 
 use App\Core\Domain\Communication\Support\JbisMailbox;
+use App\Core\Domain\Communication\Support\MailBranding;
 use App\Core\Domain\Recruiter\Models\RecruiterOnboardingApplication;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
@@ -37,6 +38,7 @@ class RecruiterOnboardingSubmittedStaffMail extends Mailable
             with: [
                 'application' => $this->application,
                 'reviewUrl' => $frontendUrl.'/admin/recruiters/onboarding/'.$this->application->id,
+                ...MailBranding::viewData(),
             ],
         );
     }
