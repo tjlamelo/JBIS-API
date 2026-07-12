@@ -40,7 +40,6 @@ final class UpdateAdminUserProfileWizardStepAction
             'email_institutional',
         ],
         'professional' => [
-            'matricule',
             'agency_id',
             'bio',
         ],

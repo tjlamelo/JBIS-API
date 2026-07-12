@@ -68,7 +68,6 @@ final class UpdateAdminUserProfileWizardStepRequest extends FormRequest
                 'email_institutional' => ['nullable', 'email', 'max:100'],
             ],
             'professional' => [
-                'matricule' => ['nullable', 'string', 'max:50'],
                 'agency_id' => ['nullable', 'integer', 'exists:agencies,id'],
                 'bio' => ['nullable', 'string', 'max:5000'],
             ],
