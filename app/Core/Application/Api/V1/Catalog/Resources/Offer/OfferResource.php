@@ -97,6 +97,7 @@ class OfferResource extends JsonResource
                 'logo' => $isAdminRequest || $this->is_company_public ? $this->company?->logo : null,
             ],
             'is_company_public' => (bool) $this->is_company_public,
+            'allows_public_applications' => (bool) ($this->allows_public_applications ?? true),
             'category' => $this->trade?->category ? [
                 'id' => $this->trade->category->id,
                 'name' => $this->trade->category->name,

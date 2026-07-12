@@ -8,6 +8,9 @@ use RuntimeException;
 
 final class ApplicationEnrollmentException extends RuntimeException
 {
+    /** @var list<string> */
+    private array $reasons = [];
+
     public static function missingTarget(): self
     {
         return new self('Une offre ou un programme est requis pour créer une candidature.');
@@ -32,6 +35,17 @@ final class ApplicationEnrollmentException extends RuntimeException
             ? implode(' ', $reasons)
             : 'Vous ne pouvez pas postuler à cette offre pour le moment.';
 
-        return new self($message);
+        $exception = new self($message);
+        $exception->reasons = array_values($reasons);
+
+        return $exception;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function reasons(): array
+    {
+        return $this->reasons !== [] ? $this->reasons : [$this->getMessage()];
     }
 }

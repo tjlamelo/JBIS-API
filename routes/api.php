@@ -472,6 +472,7 @@ Route::prefix('v1')->group(function (): void {
             Route::get('/applications', [ApplicationController::class, 'index']);
             Route::post('/applications', [ApplicationController::class, 'store']);
             Route::get('/admin/applications', [AdminApplicationController::class, 'index']);
+            Route::post('/admin/applications', [AdminApplicationController::class, 'store']);
             Route::get('/admin/applications/{application}', [AdminApplicationController::class, 'show']);
             Route::get('/applications/{application}', [ApplicationController::class, 'show']);
             Route::post('/applications/{application}/cancel', [ApplicationController::class, 'cancel']);
@@ -573,6 +574,9 @@ Route::prefix('v1')->group(function (): void {
         });
 
         Route::prefix('operations')->group(function (): void {
+            Route::get('staff-users', [MeetingController::class, 'staffUsers']);
+            Route::get('week-board', [MeetingController::class, 'weekBoard']);
+
             Route::get('meetings', [MeetingController::class, 'index']);
             Route::post('meetings', [MeetingController::class, 'store']);
             Route::get('meetings/{meeting}', [MeetingController::class, 'show']);
@@ -581,6 +585,7 @@ Route::prefix('v1')->group(function (): void {
 
             Route::get('assigned-tasks', [AssignedTaskController::class, 'index']);
             Route::post('assigned-tasks', [AssignedTaskController::class, 'store']);
+            Route::post('assigned-tasks/{assignedTask}/renew', [AssignedTaskController::class, 'renew']);
             Route::get('assigned-tasks/{assignedTask}', [AssignedTaskController::class, 'show']);
             Route::match(['put', 'patch'], 'assigned-tasks/{assignedTask}', [AssignedTaskController::class, 'update']);
             Route::delete('assigned-tasks/{assignedTask}', [AssignedTaskController::class, 'destroy']);

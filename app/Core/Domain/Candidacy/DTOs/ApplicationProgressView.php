@@ -23,6 +23,7 @@ final readonly class ApplicationProgressView
         public string $applicationNumber,
         public string $status,
         public string $statusLabel,
+        public bool $isPrivate,
         public int $processFlowId,
         public int $processFlowVersion,
         public string $flowGroupId,
@@ -206,6 +207,7 @@ final readonly class ApplicationProgressView
                     ? $application->status->value
                     : (string) $application->status,
             )?->label($locale) ?? (string) $application->status,
+            isPrivate: (bool) $application->is_private,
             processFlowId: (int) $application->process_flow_id,
             processFlowVersion: (int) $application->process_flow_version,
             flowGroupId: (string) $application->flow_group_id,
@@ -238,6 +240,7 @@ final readonly class ApplicationProgressView
             'application_number' => $this->applicationNumber,
             'status' => $this->status,
             'status_label' => $this->statusLabel,
+            'is_private' => $this->isPrivate,
             'process_flow_id' => $this->processFlowId,
             'process_flow_version' => $this->processFlowVersion,
             'flow_group_id' => $this->flowGroupId,

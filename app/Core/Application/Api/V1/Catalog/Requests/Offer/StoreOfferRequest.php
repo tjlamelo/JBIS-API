@@ -50,6 +50,7 @@ class StoreOfferRequest extends FormRequest
             'currency' => ['nullable', 'string', 'max:10'],
             'is_salary_public' => ['nullable', 'boolean'],
             'is_company_public' => ['nullable', 'boolean'],
+            'allows_public_applications' => ['nullable', 'boolean'],
             'work_mode' => ['nullable', 'string', 'max:50'],
             'available_positions' => ['nullable', 'integer', 'min:1'],
             'region' => ['nullable', 'string', 'max:255'],

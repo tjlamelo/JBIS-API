@@ -37,6 +37,8 @@ class Application extends AuditedModel
         'protocol_accepted_at',
         'protocol_acceptance_ip',
         'status',
+        'is_private',
+        'created_by',
         'current_application_step_id',
         'total_due',
         'total_paid',
@@ -51,6 +53,8 @@ class Application extends AuditedModel
         'has_accepted_protocol' => 'boolean',
         'protocol_accepted_at' => 'datetime',
         'status' => ApplicationStatus::class,
+        'is_private' => 'boolean',
+        'created_by' => 'integer',
         'current_application_step_id' => 'integer',
         'total_due' => 'decimal:2',
         'total_paid' => 'decimal:2',
@@ -59,6 +63,11 @@ class Application extends AuditedModel
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function createdBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
     }
 
     public function offer(): BelongsTo

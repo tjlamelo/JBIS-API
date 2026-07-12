@@ -20,10 +20,13 @@ final class DailyTaskResource extends JsonResource
             'id' => $this->id,
             'user_id' => $this->user_id,
             'assigned_task_id' => $this->assigned_task_id,
+            'is_outside_meeting' => (bool) ($this->is_outside_meeting ?? true),
             'title' => $this->title,
             'description' => $this->description,
             'task_date' => $this->task_date?->toDateString(),
             'hours_spent' => $this->hours_spent,
+            'minutes_spent' => $this->minutes_spent,
+            'total_minutes' => $this->resource->totalMinutes(),
             'status' => $this->status?->value ?? $this->status,
             'blockers_notes' => $this->blockers_notes,
             'user' => $this->whenLoaded('user', fn () => $this->user ? [

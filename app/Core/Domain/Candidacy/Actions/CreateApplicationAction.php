@@ -38,6 +38,8 @@ final class CreateApplicationAction
         ?int $programId,
         ?int $countryId = null,
         ?int $processFlowId = null,
+        bool $asPrivate = false,
+        ?User $enrolledBy = null,
     ): Application {
         if ($offerId === null && $programId === null && $processFlowId === null) {
             throw ApplicationEnrollmentException::missingTarget();
@@ -63,7 +65,7 @@ final class CreateApplicationAction
             $offer = Offer::query()
                 ->with(['requiredDocuments', 'program.requiredDocuments'])
                 ->findOrFail($offerId);
-            $readiness = $this->offerReadiness->assess($offer, $user);
+            $readiness = $this->offerReadiness->assess($offer, $user, $asPrivate);
 
             if (! $readiness->can_apply) {
                 throw ApplicationEnrollmentException::notEligible($readiness->blocking_reasons);
@@ -74,8 +76,10 @@ final class CreateApplicationAction
         }
 
         $now = Carbon::now();
+        $isPrivate = $asPrivate;
+        $createdById = $enrolledBy?->id;
 
-        return DB::transaction(function () use ($user, $offerId, $programId, $flow, $now, $initialStatus): Application {
+        return DB::transaction(function () use ($user, $offerId, $programId, $flow, $now, $initialStatus, $isPrivate, $createdById): Application {
             $this->assignMatricule->execute($user);
 
             $application = Application::query()->create([
@@ -87,6 +91,8 @@ final class CreateApplicationAction
                 'flow_group_id' => $flow->flow_group_id,
                 'process_flow_version' => (int) $flow->version,
                 'status' => $initialStatus->value,
+                'is_private' => $isPrivate,
+                'created_by' => $createdById,
                 'total_due' => 0,
                 'total_paid' => 0,
             ]);

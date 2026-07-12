@@ -5,12 +5,16 @@ declare(strict_types=1);
 namespace App\Core\Application\Api\V1\Candidacy\Controllers;
 
 use App\Core\Application\Api\Responses\BaseResponse;
+use App\Core\Application\Api\V1\Candidacy\Requests\AdminStoreApplicationRequest;
 use App\Core\Domain\Candidacy\Actions\CancelApplicationAction;
+use App\Core\Domain\Candidacy\Actions\CreateApplicationAction;
 use App\Core\Domain\Candidacy\Actions\RejectApplicationAction;
 use App\Core\Domain\Candidacy\Actions\ResumePendingApplicationsAction;
+use App\Core\Domain\Candidacy\Exceptions\ApplicationEnrollmentException;
 use App\Core\Domain\Candidacy\Models\Application;
 use App\Core\Domain\Candidacy\Queries\ApplicationProgressQuery;
 use App\Core\Domain\Candidacy\States\ApplicationStatus;
+use App\Core\Domain\Identity\Models\User;
 use App\Core\Domain\Identity\Support\UserPersonName;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
@@ -23,7 +27,41 @@ final class AdminApplicationController extends Controller
         private readonly RejectApplicationAction $rejectApplicationAction,
         private readonly CancelApplicationAction $cancelApplicationAction,
         private readonly ResumePendingApplicationsAction $resumePendingApplicationsAction,
+        private readonly CreateApplicationAction $createApplicationAction,
     ) {}
+
+    public function store(AdminStoreApplicationRequest $request): JsonResponse
+    {
+        $this->authorize('create', Application::class);
+        $this->authorize('manageAny', Application::class);
+
+        $candidate = User::query()->findOrFail((int) $request->validated('user_id'));
+
+        try {
+            $application = $this->createApplicationAction->execute(
+                user: $candidate,
+                offerId: (int) $request->validated('offer_id'),
+                programId: $request->filled('program_id') ? (int) $request->validated('program_id') : null,
+                countryId: $request->filled('country_id') ? (int) $request->validated('country_id') : null,
+                processFlowId: $request->filled('process_flow_id') ? (int) $request->validated('process_flow_id') : null,
+                asPrivate: true,
+                enrolledBy: $request->user(),
+            );
+        } catch (ApplicationEnrollmentException $e) {
+            return BaseResponse::unprocessableEntity(
+                data: ['enrollment' => $e->reasons()],
+                message: $e->getMessage(),
+            )->toJsonResponse();
+        }
+
+        $locale = str_starts_with(strtolower((string) $request->header('X-Locale', 'fr')), 'en') ? 'en' : 'fr';
+        $progress = $this->applicationProgressQuery->forApplication($application, $locale);
+
+        return BaseResponse::created([
+            'message' => __('Candidature privée créée.'),
+            'application' => $progress->toArray(),
+        ])->toJsonResponse();
+    }
 
     public function index(Request $request): JsonResponse
     {
@@ -82,6 +120,7 @@ final class AdminApplicationController extends Controller
                     'application_number' => $app->application_number,
                     'status' => $status,
                     'status_label' => ApplicationStatus::tryFrom((string) $status)?->label($locale) ?? (string) $status,
+                    'is_private' => (bool) $app->is_private,
                     'user' => $app->user ? UserPersonName::toContactArray($app->user) : null,
                     'offer_id' => $app->offer_id,
                     'offer_label' => $app->offer ? $pick($app->offer->resolvedTitleTranslations()) : null,

@@ -14,10 +14,12 @@ class DailyTask extends Model
     protected $fillable = [
         'user_id',
         'assigned_task_id',
+        'is_outside_meeting',
         'title',
         'description',
         'task_date',
         'hours_spent',
+        'minutes_spent',
         'status',
         'blockers_notes',
     ];
@@ -25,6 +27,8 @@ class DailyTask extends Model
     protected $casts = [
         'task_date' => 'date',
         'hours_spent' => 'integer',
+        'minutes_spent' => 'integer',
+        'is_outside_meeting' => 'boolean',
         'status' => DailyTaskStatus::class,
     ];
 
@@ -36,5 +40,14 @@ class DailyTask extends Model
     public function assignedTask(): BelongsTo
     {
         return $this->belongsTo(AssignedTask::class);
+    }
+
+    public function totalMinutes(): int
+    {
+        if ($this->minutes_spent !== null && (int) $this->minutes_spent > 0) {
+            return (int) $this->minutes_spent;
+        }
+
+        return ((int) ($this->hours_spent ?? 0)) * 60;
     }
 }

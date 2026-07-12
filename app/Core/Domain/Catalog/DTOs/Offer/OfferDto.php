@@ -27,6 +27,7 @@ readonly class OfferDto
         public ?string $currency = null,
         public bool $is_salary_public = false,
         public bool $is_company_public = false,
+        public bool $allows_public_applications = true,
         public ?string $work_mode = null,
         public int $available_positions = 1,
         public ?string $language = null,
@@ -69,6 +70,7 @@ readonly class OfferDto
             currency: $request->input('currency', 'XAF'),
             is_salary_public: $request->boolean('is_salary_public'),
             is_company_public: $request->boolean('is_company_public'),
+            allows_public_applications: $request->boolean('allows_public_applications', true),
             work_mode: $request->input('work_mode'),
             available_positions: $request->input('available_positions', 1),
             language: $request->input('language'),
@@ -129,6 +131,9 @@ readonly class OfferDto
             currency: $data['currency'] ?? null,
             is_salary_public: (bool) ($data['is_salary_public'] ?? false),
             is_company_public: (bool) ($data['is_company_public'] ?? false),
+            allows_public_applications: array_key_exists('allows_public_applications', $data)
+                ? (bool) $data['allows_public_applications']
+                : true,
             work_mode: isset($data['work_mode']) ? (string) $data['work_mode'] : null,
             available_positions: (int) ($data['available_positions'] ?? 1),
             language: $data['language'] ?? null,

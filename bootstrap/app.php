@@ -71,5 +71,17 @@ return Application::configure(basePath: dirname(__DIR__))
             ->timezone('Africa/Douala')
             ->withoutOverlapping()
             ->onOneServer();
+
+        $schedule->command('operations:dispatch-notifications --only=task_reminders')
+            ->dailyAt('09:30')
+            ->timezone('Africa/Douala')
+            ->withoutOverlapping()
+            ->onOneServer();
+
+        $schedule->command('operations:dispatch-notifications --only=weekly_recap')
+            ->weeklyOn(6, '10:00')
+            ->timezone('Africa/Douala')
+            ->withoutOverlapping()
+            ->onOneServer();
     })
     ->create();

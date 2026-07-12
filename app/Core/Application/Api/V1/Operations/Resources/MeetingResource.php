@@ -41,6 +41,24 @@ final class MeetingResource extends JsonResource
                 'excuse_reason' => $u->pivot?->excuse_reason,
             ])->values()),
             'assigned_tasks_count' => $this->whenCounted('assignedTasks'),
+            'assigned_tasks' => $this->whenLoaded('assignedTasks', fn () => AssignedTaskResource::collection($this->assignedTasks)),
+            'can_add_own_tasks' => $this->when(
+                $request->user() !== null,
+                function () use ($request) {
+                    $user = $request->user();
+                    if ($user === null) {
+                        return false;
+                    }
+                    if ((int) $this->organizer_id === (int) $user->id) {
+                        return true;
+                    }
+                    $attendee = $this->relationLoaded('attendees')
+                        ? $this->attendees->firstWhere('id', $user->id)
+                        : null;
+
+                    return $attendee !== null && (bool) $attendee->pivot?->is_present;
+                }
+            ),
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
         ];

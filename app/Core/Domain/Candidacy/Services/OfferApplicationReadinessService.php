@@ -23,7 +23,7 @@ final class OfferApplicationReadinessService
         private readonly PublishedProcessFlowResolver $processFlowResolver,
     ) {}
 
-    public function assess(Offer $offer, User $user): OfferApplicationReadiness
+    public function assess(Offer $offer, User $user, bool $staffEnrollment = false): OfferApplicationReadiness
     {
         $offer->loadMissing(['requiredDocuments']);
 
@@ -35,17 +35,21 @@ final class OfferApplicationReadinessService
         }
 
         $offerStatus = $offer->status instanceof OfferStatus ? $offer->status->value : (string) $offer->status;
-        $accepting = $this->offerAcceptsApplications($offer);
+        $accepting = $this->offerAcceptsApplications($offer, $staffEnrollment);
 
         if (! $accepting) {
-            $blockingReasons[] = match ($offerStatus) {
-                OfferStatus::Draft->value => __('Cette offre n\'est pas encore publiée.'),
-                OfferStatus::Closed->value => __('Cette offre n\'accepte plus de candidatures.'),
-                OfferStatus::Archived->value => __('Cette offre est archivée.'),
-                default => $this->isExpired($offer)
-                    ? __('La date limite de candidature est dépassée.')
-                    : __('Cette offre n\'accepte pas de candidatures pour le moment.'),
-            };
+            if (! $staffEnrollment && $offer->allows_public_applications === false) {
+                $blockingReasons[] = __('Les candidatures publiques sont fermées pour cette offre. Contactez JBIS pour une inscription.');
+            } else {
+                $blockingReasons[] = match ($offerStatus) {
+                    OfferStatus::Draft->value => __('Cette offre n\'est pas encore publiée.'),
+                    OfferStatus::Closed->value => __('Cette offre n\'accepte plus de candidatures.'),
+                    OfferStatus::Archived->value => __('Cette offre est archivée.'),
+                    default => $this->isExpired($offer)
+                        ? __('La date limite de candidature est dépassée.')
+                        : __('Cette offre n\'accepte pas de candidatures pour le moment.'),
+                };
+            }
         }
 
         if ($offer->available_positions !== null && (int) $offer->available_positions <= 0) {
@@ -90,7 +94,7 @@ final class OfferApplicationReadinessService
             }
         }
 
-        if ($missingMandatory > 0) {
+        if ($missingMandatory > 0 && ! $staffEnrollment) {
             $blockingReasons[] = __('Des documents obligatoires manquent dans votre dossier. Téléversez-les avant de postuler.');
         }
 
@@ -99,14 +103,14 @@ final class OfferApplicationReadinessService
             $blockingReasons[] = __('Aucun parcours de candidature n\'est configuré pour cette offre.');
         }
 
-        $recommendedStatus = ($pendingValidation > 0 && $missingMandatory === 0)
+        $recommendedStatus = ($pendingValidation > 0 && $missingMandatory === 0) || ($staffEnrollment && $missingMandatory > 0)
             ? ApplicationStatus::Pending->value
             : ApplicationStatus::InProgress->value;
 
         $canApply = $emailVerified
             && $accepting
             && $existing === null
-            && $missingMandatory === 0
+            && ($staffEnrollment || $missingMandatory === 0)
             && $flow !== null;
 
         return new OfferApplicationReadiness(
@@ -127,7 +131,7 @@ final class OfferApplicationReadinessService
         );
     }
 
-    private function offerAcceptsApplications(Offer $offer): bool
+    private function offerAcceptsApplications(Offer $offer, bool $staffEnrollment = false): bool
     {
         $status = $offer->status instanceof OfferStatus ? $offer->status : OfferStatus::tryFrom((string) $offer->status);
 
@@ -135,7 +139,15 @@ final class OfferApplicationReadinessService
             return false;
         }
 
-        return ! $this->isExpired($offer);
+        if ($this->isExpired($offer)) {
+            return false;
+        }
+
+        if (! $staffEnrollment && $offer->allows_public_applications === false) {
+            return false;
+        }
+
+        return true;
     }
 
     private function isExpired(Offer $offer): bool

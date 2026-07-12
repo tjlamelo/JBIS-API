@@ -48,6 +48,7 @@ class Offer extends Model
         'company_id', 'program_id', 'user_id',
         'offer_type_id', 'work_schedule_id', 'education_level_id',
         'meta', 'published_at', 'expiration_date', 'status', 'is_company_public',
+        'allows_public_applications',
         'photo_media',
     ];
 
@@ -68,6 +69,7 @@ class Offer extends Model
         'available_positions' => 'integer',
         'is_salary_public' => 'boolean',
         'is_company_public' => 'boolean',
+        'allows_public_applications' => 'boolean',
         'published_at' => 'datetime',
         'expiration_date' => 'datetime',
         'status' => OfferStatus::class,

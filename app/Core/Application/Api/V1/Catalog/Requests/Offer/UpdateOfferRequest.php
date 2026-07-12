@@ -32,6 +32,7 @@ class UpdateOfferRequest extends FormRequest
             'salary_max' => ['sometimes', 'nullable', 'numeric', 'min:0', 'gte:salary_min'],
             'is_salary_public' => ['sometimes', 'nullable', 'boolean'],
             'is_company_public' => ['sometimes', 'nullable', 'boolean'],
+            'allows_public_applications' => ['sometimes', 'nullable', 'boolean'],
             'work_mode' => ['sometimes', 'nullable', 'string', 'max:50'],
             'contract_type_id' => ['sometimes', 'nullable', 'integer', 'exists:contract_types,id'],
             'offer_type_id' => ['sometimes', 'nullable', 'integer', 'exists:offer_types,id'],
