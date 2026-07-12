@@ -8,6 +8,7 @@ use App\Core\Domain\Identity\Models\UserProfile;
 use App\Core\Domain\Identity\Support\ProfilePicturesSerializer;
 use App\Core\Application\Api\Support\EnumOptionPresenter;
 use App\Core\Domain\Identity\Enums\CareerIntent;
+use App\Core\Domain\Identity\Enums\Civility;
 use App\Core\Domain\Identity\Enums\ProfileType;
 
 final class ProfileResponseMapper
@@ -28,6 +29,8 @@ final class ProfileResponseMapper
             'updated_at' => $profile->updated_at?->toIso8601String(),
             'first_name' => $profile->first_name,
             'last_name' => $profile->last_name,
+            'civility' => $profile->civility,
+            'civility_label' => EnumOptionPresenter::present($profile->civility, Civility::class),
             'date_of_birth' => $profile->date_of_birth?->format('Y-m-d'),
             'age' => $profile->age(),
             'place_of_birth' => $profile->place_of_birth,

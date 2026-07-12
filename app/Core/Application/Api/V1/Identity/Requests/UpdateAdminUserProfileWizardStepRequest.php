@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Core\Application\Api\V1\Identity\Requests;
 
 use App\Core\Domain\Identity\Enums\CareerIntent;
+use App\Core\Domain\Identity\Enums\Civility;
 use App\Core\Domain\Identity\Enums\ProfileType;
 use App\Core\Domain\Identity\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
@@ -30,6 +31,7 @@ final class UpdateAdminUserProfileWizardStepRequest extends FormRequest
             'personal' => [
                 'first_name' => ['nullable', 'string', 'max:50'],
                 'last_name' => ['nullable', 'string', 'max:50'],
+                'civility' => ['nullable', 'string', Rule::in(Civility::values())],
                 'date_of_birth' => [
                     'nullable',
                     'date',

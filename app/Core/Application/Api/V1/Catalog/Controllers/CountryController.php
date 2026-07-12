@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Core\Application\Api\V1\Catalog\Controllers;
 
 use App\Core\Domain\Location\Models\Country;
+use App\Core\Domain\Shared\Support\TranslatableCatalogSearch;
 use App\Core\Infrastructure\Cache\AppCache;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
@@ -68,14 +69,12 @@ class CountryController extends Controller
      */
     private function fetchCountries(Request $request, int $page, int $perPage): array
     {
-        $search = $request->query('search');
+        $search = trim((string) $request->query('search', ''));
 
         return Country::query()
             ->where('is_active', true)
-            ->when($search, function ($query, $search) {
-                $query->where('name->fr', 'like', "%{$search}%")
-                    ->orWhere('name->en', 'like', "%{$search}%")
-                    ->orWhere('code', 'like', "%{$search}%");
+            ->when($search !== '', function ($query) use ($search): void {
+                TranslatableCatalogSearch::apply($query, 'name', $search, ['code']);
             })
             ->select(['id', 'name', 'code'])
             ->orderBy('name->fr')

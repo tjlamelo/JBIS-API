@@ -26,6 +26,7 @@ final class UpdateMyProfileWizardStepAction
         'personal' => [
             'first_name',
             'last_name',
+            'civility',
             'date_of_birth',
             'place_of_birth',
             'nationality_country_id',

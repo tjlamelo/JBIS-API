@@ -41,5 +41,35 @@ return Application::configure(basePath: dirname(__DIR__))
                 ->withoutOverlapping()
                 ->onOneServer();
         }
+
+        $schedule->command('notifications:dispatch --only=week_start')
+            ->weeklyOn(1, '08:00')
+            ->timezone('Africa/Douala')
+            ->withoutOverlapping()
+            ->onOneServer();
+
+        $schedule->command('notifications:dispatch --only=weekend')
+            ->weeklyOn(5, '18:00')
+            ->timezone('Africa/Douala')
+            ->withoutOverlapping()
+            ->onOneServer();
+
+        $schedule->command('notifications:dispatch --only=holidays')
+            ->dailyAt('08:05')
+            ->timezone('Africa/Douala')
+            ->withoutOverlapping()
+            ->onOneServer();
+
+        $schedule->command('notifications:dispatch --only=birthdays')
+            ->dailyAt('08:10')
+            ->timezone('Africa/Douala')
+            ->withoutOverlapping()
+            ->onOneServer();
+
+        $schedule->command('offers:recommend-profiles')
+            ->weeklyOn(2, '09:00')
+            ->timezone('Africa/Douala')
+            ->withoutOverlapping()
+            ->onOneServer();
     })
     ->create();

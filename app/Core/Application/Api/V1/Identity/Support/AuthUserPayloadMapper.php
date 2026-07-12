@@ -35,6 +35,7 @@ final class AuthUserPayloadMapper
             'phone_number1' => $user->phone_number1,
             'email_verified_at' => $user->email_verified_at?->toIso8601String(),
             'two_factor_confirmed_at' => $user->two_factor_confirmed_at,
+            'auth_provider' => (string) ($user->auth_provider ?? 'local'),
             'roles' => $user->getRoleNames()->values()->all(),
             'permissions' => $this->resolvePermissions->execute($user),
             'profile' => $profile ? $this->profileResponseMapper->toArray($profile) : null,

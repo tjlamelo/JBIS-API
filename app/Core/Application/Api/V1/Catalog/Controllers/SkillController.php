@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Core\Application\Api\V1\Catalog\Controllers;
 
 use App\Core\Domain\Catalog\Models\Skill;
+use App\Core\Domain\Shared\Support\TranslatableCatalogSearch;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -25,12 +26,8 @@ class SkillController extends Controller
         }
 
         $items = Skill::query()
-            ->when($search, function ($query, $search) {
-                $query->where(function ($inner) use ($search) {
-                    $inner->where('name->fr', 'like', "%{$search}%")
-                        ->orWhere('name->en', 'like', "%{$search}%")
-                        ->orWhere('slug', 'like', "%{$search}%");
-                });
+            ->when($search, function ($query, $search): void {
+                TranslatableCatalogSearch::apply($query, 'name', (string) $search, ['slug']);
             })
             ->when($skillCategoryId, fn ($query) => $query->where('skill_category_id', $skillCategoryId))
             ->when($categoryId, fn ($query) => $query->where('category_id', $categoryId))

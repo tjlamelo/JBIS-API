@@ -7,6 +7,7 @@ namespace App\Core\Domain\Shared\Support;
 use App\Core\Domain\Candidacy\States\ApplicationStatus;
 use App\Core\Domain\Candidacy\States\LanguageCourseStatus;
 use App\Core\Domain\Identity\Enums\CareerIntent;
+use App\Core\Domain\Identity\Enums\Civility;
 use App\Core\Domain\Identity\Enums\ProfileType;
 use App\Core\Domain\Shared\Support\Contracts\LocalizableBackedEnum;
 use InvalidArgumentException;
@@ -17,6 +18,7 @@ final class EnumCatalog
     public const GROUPS = [
         'profile_type' => ProfileType::class,
         'career_intent' => CareerIntent::class,
+        'civility' => Civility::class,
         'application_status' => ApplicationStatus::class,
         'language_course_status' => LanguageCourseStatus::class,
     ];

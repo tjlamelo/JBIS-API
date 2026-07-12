@@ -25,6 +25,17 @@ return [
             'description' => 'Exploring opportunities before committing.',
         ],
     ],
+    'civility' => [
+        'mr' => [
+            'label' => 'Mr',
+        ],
+        'mrs' => [
+            'label' => 'Mrs',
+        ],
+        'miss' => [
+            'label' => 'Miss',
+        ],
+    ],
     'career_intent' => [
         'work_abroad' => [
             'label' => 'Work abroad',

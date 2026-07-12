@@ -25,6 +25,17 @@ return [
             'description' => 'Explorer les opportunités avant de me projeter.',
         ],
     ],
+    'civility' => [
+        'mr' => [
+            'label' => 'M.',
+        ],
+        'mrs' => [
+            'label' => 'Mme',
+        ],
+        'miss' => [
+            'label' => 'Mlle',
+        ],
+    ],
     'career_intent' => [
         'work_abroad' => [
             'label' => 'Travailler à l\'étranger',

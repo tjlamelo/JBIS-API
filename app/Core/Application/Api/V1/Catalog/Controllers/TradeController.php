@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Core\Application\Api\V1\Catalog\Controllers;
 
 use App\Core\Domain\Catalog\Models\Trade;
+use App\Core\Domain\Shared\Support\TranslatableCatalogSearch;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -20,12 +21,8 @@ class TradeController extends Controller
             ->where('is_active', true)
             ->with('category:id,name,slug')
             ->when($categoryId, fn ($query) => $query->where('category_id', $categoryId))
-            ->when($search !== '', function ($query) use ($search) {
-                $query->where(function ($inner) use ($search) {
-                    $inner->where('name->fr', 'like', "%{$search}%")
-                        ->orWhere('name->en', 'like', "%{$search}%")
-                        ->orWhere('slug', 'like', "%{$search}%");
-                });
+            ->when($search !== '', function ($query) use ($search): void {
+                TranslatableCatalogSearch::apply($query, 'name', $search, ['slug']);
             })
             ->select(['id', 'category_id', 'name', 'slug'])
             ->orderBy('name->fr')

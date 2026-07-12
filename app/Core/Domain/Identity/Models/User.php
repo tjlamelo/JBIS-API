@@ -120,6 +120,11 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasOne(UserProfile::class);
     }
 
+    public function inAppNotifications(): HasMany
+    {
+        return $this->hasMany(\App\Core\Domain\Communication\Models\UserNotification::class);
+    }
+
     /**
      * Secteurs déduits des métiers sélectionnés (plus de pivot user_sector).
      *

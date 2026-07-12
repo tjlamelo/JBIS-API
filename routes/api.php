@@ -80,6 +80,7 @@ use App\Core\Application\Api\V1\Identity\Controllers\UserPermissionOverrideContr
 use App\Core\Application\Api\V1\Identity\Controllers\UserPreferredCountryController;
 use App\Core\Application\Api\V1\Identity\Controllers\UserVisaHistoryController;
 use App\Core\Application\Api\V1\Communication\Controllers\AdminNewsletterController;
+use App\Core\Application\Api\V1\Communication\Controllers\MyNotificationController;
 use App\Core\Application\Api\V1\Communication\Controllers\NewsletterSubscriptionController;
 use App\Core\Application\Api\V1\Mail\Controllers\CpanelMailboxController;
 use App\Core\Application\Api\V1\Mail\Controllers\MailCampaignController;
@@ -189,6 +190,10 @@ Route::prefix('v1')->group(function (): void {
         Route::get('/meta/enums', [MetaEnumController::class, 'index']);
         Route::get('/me/settings', [MySettingsController::class, 'show']);
         Route::patch('/me/settings', [MySettingsController::class, 'update']);
+        Route::get('/me/notifications', [MyNotificationController::class, 'index']);
+        Route::get('/me/notifications/unread-count', [MyNotificationController::class, 'unreadCount']);
+        Route::post('/me/notifications/read-all', [MyNotificationController::class, 'markAllRead']);
+        Route::post('/me/notifications/{notification}/read', [MyNotificationController::class, 'markRead']);
         Route::get('/me/consents/status', [MyConsentController::class, 'status']);
         Route::get('/me/consents', [MyConsentController::class, 'history']);
         Route::post('/me/consents', [MyConsentController::class, 'store']);
