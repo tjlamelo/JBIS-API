@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Core\Domain\Identity\Actions\Profile;
 
+use App\Core\Domain\Identity\Enums\Civility;
 use App\Core\Domain\Identity\Models\User;
 use App\Core\Domain\Identity\Models\UserProfile;
 use App\Core\Domain\Identity\Support\ProfilePicturesSerializer;
@@ -59,6 +60,16 @@ final class UpdateAdminUserProfileWizardStepAction
 
         $profile = $user->profile()->firstOrNew(['user_id' => $user->id]);
         $attributes = Arr::only($payload, self::STEP_FIELDS[$step]);
+
+        if ($step === 'personal') {
+            $gender = isset($attributes['gender'])
+                ? (string) $attributes['gender']
+                : ($profile->gender ?: null);
+            $civility = array_key_exists('civility', $attributes)
+                ? (is_string($attributes['civility']) ? $attributes['civility'] : null)
+                : $profile->civility;
+            $attributes['civility'] = Civility::normalize($civility, $gender);
+        }
 
         if ($step === 'documents' && isset($attributes['pictures']) && is_array($attributes['pictures'])) {
             $attributes['pictures'] = $this->picturesSerializer->normalizeForStorage($attributes['pictures']);

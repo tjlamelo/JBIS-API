@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Core\Domain\Identity\Actions\Profile;
 
 use App\Core\Domain\Identity\Actions\User\SyncUserTradesAction;
+use App\Core\Domain\Identity\Enums\Civility;
 use App\Core\Domain\Identity\Exceptions\ProfileLockedException;
 use App\Core\Domain\Identity\Models\User;
 use App\Core\Domain\Identity\Models\UserProfile;
@@ -81,6 +82,16 @@ final class UpdateMyProfileWizardStepAction
         }
 
         $attributes = Arr::only($payload, $allowedFields);
+
+        if ($step === 'personal') {
+            $gender = isset($attributes['gender'])
+                ? (string) $attributes['gender']
+                : ($profile->gender ?: null);
+            $civility = array_key_exists('civility', $attributes)
+                ? (is_string($attributes['civility']) ? $attributes['civility'] : null)
+                : $profile->civility;
+            $attributes['civility'] = Civility::normalize($civility, $gender);
+        }
 
         if ($step === 'documents' && isset($attributes['pictures']) && is_array($attributes['pictures'])) {
             $attributes['pictures'] = $this->picturesSerializer->normalizeForStorage($attributes['pictures']);

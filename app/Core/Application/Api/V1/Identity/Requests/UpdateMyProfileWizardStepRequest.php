@@ -9,6 +9,7 @@ use App\Core\Domain\Identity\Enums\Civility;
 use App\Core\Domain\Identity\Enums\ProfileType;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 final class UpdateMyProfileWizardStepRequest extends FormRequest
 {
@@ -21,12 +22,14 @@ final class UpdateMyProfileWizardStepRequest extends FormRequest
     {
         $step = (string) $this->route('step');
         $profileId = $this->user()?->profile?->id;
+        $gender = $this->input('gender') ?? $this->user()?->profile?->gender;
+        $genderValue = is_string($gender) ? $gender : null;
 
         return match ($step) {
             'personal' => [
                 'first_name' => ['nullable', 'string', 'max:50'],
                 'last_name' => ['nullable', 'string', 'max:50'],
-                'civility' => ['nullable', 'string', Rule::in(Civility::values())],
+                'civility' => ['nullable', 'string', Rule::in(Civility::valuesForGender($genderValue))],
                 'date_of_birth' => [
                     'nullable',
                     'date',
@@ -77,5 +80,28 @@ final class UpdateMyProfileWizardStepRequest extends FormRequest
             ],
             default => [],
         };
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator): void {
+            if ((string) $this->route('step') !== 'personal') {
+                return;
+            }
+
+            $gender = $this->input('gender') ?? $this->user()?->profile?->gender;
+            $civility = $this->input('civility');
+
+            if (! is_string($civility) || $civility === '') {
+                return;
+            }
+
+            if (! Civility::isAllowedForGender($civility, is_string($gender) ? $gender : null)) {
+                $validator->errors()->add(
+                    'civility',
+                    __('La civilité doit correspondre au genre sélectionné.'),
+                );
+            }
+        });
     }
 }
