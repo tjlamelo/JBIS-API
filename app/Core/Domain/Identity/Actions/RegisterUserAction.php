@@ -2,6 +2,7 @@
 
 namespace App\Core\Domain\Identity\Actions;
 
+use App\Core\Domain\Communication\Actions\SubscribeNewsletterAction;
 use App\Core\Domain\Identity\Actions\Consent\RecordMandatoryRegistrationConsentsAction;
 use App\Core\Domain\Identity\Actions\Settings\EnsureUserSettingsAction;
 use App\Core\Domain\Identity\DTOs\DeviceContextDto;
@@ -17,6 +18,7 @@ class RegisterUserAction
         private readonly UserDeviceSecurityService $userDeviceSecurityService,
         private readonly EnsureUserSettingsAction $ensureUserSettings,
         private readonly RecordMandatoryRegistrationConsentsAction $recordMandatoryRegistrationConsents,
+        private readonly SubscribeNewsletterAction $subscribeNewsletter,
     ) {}
 
     /**
@@ -39,6 +41,16 @@ class RegisterUserAction
         event(new Registered($user));
 
         $this->ensureUserSettings->execute($user);
+
+        if (filter_var($data['newsletter'] ?? false, FILTER_VALIDATE_BOOLEAN)) {
+            $this->subscribeNewsletter->execute([
+                'email' => (string) $user->email,
+                'name' => $user->name,
+                'scope' => (string) ($data['newsletter_scope'] ?? 'both'),
+                'language' => 'fr',
+                'source' => 'registration',
+            ], $user);
+        }
 
         $this->recordMandatoryRegistrationConsents->execute(
             $user,
