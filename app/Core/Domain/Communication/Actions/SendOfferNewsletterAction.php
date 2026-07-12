@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace App\Core\Domain\Communication\Actions;
 
-use App\Core\Application\Mail\Mailable\OfferNewsletterMail;
+use App\Core\Application\Mail\Jobs\SendOfferNewsletterMailJob;
 use App\Core\Domain\Communication\Enums\NewsletterSubscriptionStatus;
 use App\Core\Domain\Communication\Models\NewsletterSubscription;
 use App\Core\Domain\Communication\Services\OfferNewsletterContentBuilder;
-use Illuminate\Support\Facades\Mail;
+use App\Core\Domain\Identity\Support\UserPersonName;
+use Illuminate\Support\Carbon;
 
 final class SendOfferNewsletterAction
 {
@@ -16,9 +17,20 @@ final class SendOfferNewsletterAction
         private readonly OfferNewsletterContentBuilder $contentBuilder,
     ) {}
 
-    public function execute(NewsletterSubscription $subscription): bool
+    public function execute(NewsletterSubscription $subscription, bool $force = false): bool
     {
         if ($subscription->status !== NewsletterSubscriptionStatus::Subscribed) {
+            return false;
+        }
+
+        $tz = 'Africa/Douala';
+        $weekStart = Carbon::now($tz)->startOfWeek(Carbon::MONDAY)->startOfDay();
+        $batchKey = $weekStart->toDateString();
+
+        if (! $force
+            && $subscription->last_sent_at !== null
+            && $subscription->last_sent_at->greaterThanOrEqualTo($weekStart)
+        ) {
             return false;
         }
 
@@ -29,10 +41,22 @@ final class SendOfferNewsletterAction
             return false;
         }
 
-        Mail::to($subscription->email)->send(new OfferNewsletterMail($subscription, $content, $locale));
+        $subscription->loadMissing('user.profile');
+        if ((! $subscription->name || trim((string) $subscription->name) === '') && $subscription->user) {
+            $contact = UserPersonName::toContactArray($subscription->user);
+            $first = trim((string) ($contact['first_name'] ?? ''));
+            if ($first !== '') {
+                $subscription->name = $first;
+                $subscription->save();
+            }
+        }
 
-        $subscription->last_sent_at = now();
-        $subscription->save();
+        SendOfferNewsletterMailJob::dispatch(
+            $subscription->id,
+            $content,
+            $locale,
+            $force ? $batchKey.'-force-'.now()->format('His') : $batchKey,
+        );
 
         return true;
     }

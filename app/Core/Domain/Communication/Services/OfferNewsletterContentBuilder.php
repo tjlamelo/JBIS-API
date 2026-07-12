@@ -6,7 +6,6 @@ namespace App\Core\Domain\Communication\Services;
 
 use App\Core\Application\Api\Support\TranslatableColumnResolver;
 use App\Core\Domain\Catalog\Models\Offer;
-use App\Core\Domain\Catalog\States\OfferStatus;
 use App\Core\Domain\Communication\Enums\NewsletterScope;
 use App\Core\Domain\Location\Models\Country;
 use Illuminate\Support\Collection;
@@ -51,10 +50,8 @@ final class OfferNewsletterContentBuilder
 
         $query = Offer::query()
             ->with(['company:id,name', 'country:id,name,code', 'city:id,name', 'trade:id,name,slug'])
-            ->where('status', OfferStatus::Published)
-            ->where(function ($q): void {
-                $q->whereNull('expiration_date')->orWhere('expiration_date', '>=', now());
-            })
+            ->published()
+            ->notExpired()
             ->where('published_at', '>=', $since)
             ->latest('published_at')
             ->limit($limit);

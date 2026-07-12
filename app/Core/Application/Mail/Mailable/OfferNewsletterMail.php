@@ -12,6 +12,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
+use Illuminate\Mail\Mailables\Headers;
 use Illuminate\Queue\SerializesModels;
 
 class OfferNewsletterMail extends Mailable
@@ -40,6 +41,18 @@ class OfferNewsletterMail extends Mailable
         return JbisMailbox::transactionalEnvelope($subject);
     }
 
+    public function headers(): Headers
+    {
+        $unsubscribeUrl = app(NewsletterUnsubscribeUrlBuilder::class)->build($this->subscription);
+
+        return new Headers(
+            text: [
+                'List-Unsubscribe' => '<'.$unsubscribeUrl.'>',
+                'List-Unsubscribe-Post' => 'List-Unsubscribe=One-Click',
+            ],
+        );
+    }
+
     public function content(): Content
     {
         $frontendUrl = (string) config('app.frontend_url', 'http://localhost:3000');
@@ -47,20 +60,22 @@ class OfferNewsletterMail extends Mailable
         $brand = MailBranding::productName();
 
         $copy = $this->language === 'en' ? [
-            'greeting' => 'Hello'.($this->subscription->name ? ' '.$this->subscription->name : ''),
-            'intro' => 'Here are the latest job opportunities matching your '.$brand.' newsletter preferences.',
+            'greeting' => 'Hello'.($this->personalizedName() !== '' ? ' '.$this->personalizedName() : ''),
+            'intro' => 'Here are the latest job opportunities matching your '.$brand.' newsletter preferences (scope: '.$this->scopeLabel('en').').',
             'national_title' => 'National opportunities (Cameroon)',
             'international_title' => 'International opportunities',
             'view_all' => 'Browse all offers',
             'unsubscribe' => 'Unsubscribe',
+            'unsubscribe_help' => 'No longer want these emails? You can unsubscribe at any time.',
             'footer' => 'You receive this email because you subscribed to the '.$brand.' newsletter.',
         ] : [
-            'greeting' => 'Bonjour'.($this->subscription->name ? ' '.$this->subscription->name : ''),
-            'intro' => 'Voici les dernières offres d\'emploi correspondant à vos préférences newsletter '.$brand.'.',
+            'greeting' => 'Bonjour'.($this->personalizedName() !== '' ? ' '.$this->personalizedName() : ''),
+            'intro' => 'Voici les dernières offres d\'emploi correspondant à vos préférences newsletter '.$brand.' (périmètre : '.$this->scopeLabel('fr').').',
             'national_title' => 'Opportunités nationales (Cameroun)',
             'international_title' => 'Opportunités internationales',
             'view_all' => 'Voir toutes les offres',
             'unsubscribe' => 'Se désabonner',
+            'unsubscribe_help' => 'Vous ne souhaitez plus recevoir ces e-mails ? Vous pouvez vous désabonner à tout moment.',
             'footer' => 'Vous recevez cet e-mail car vous êtes inscrit à la newsletter '.$brand.'.',
         ];
 
@@ -76,5 +91,23 @@ class OfferNewsletterMail extends Mailable
                 ...MailBranding::viewData(),
             ],
         );
+    }
+
+    private function personalizedName(): string
+    {
+        return trim((string) ($this->subscription->name ?? ''));
+    }
+
+    private function scopeLabel(string $locale): string
+    {
+        $scope = $this->subscription->scope instanceof \BackedEnum
+            ? $this->subscription->scope->value
+            : (string) $this->subscription->scope;
+
+        return match (strtolower($scope)) {
+            'national' => $locale === 'en' ? 'national (Cameroon)' : 'national (Cameroun)',
+            'international' => $locale === 'en' ? 'international' : 'international',
+            default => $locale === 'en' ? 'national & international' : 'national et international',
+        };
     }
 }

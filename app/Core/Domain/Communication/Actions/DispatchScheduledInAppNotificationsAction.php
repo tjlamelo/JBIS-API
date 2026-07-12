@@ -10,6 +10,7 @@ use App\Core\Domain\Communication\Services\InAppNotificationService;
 use App\Core\Domain\Communication\Support\CameroonHolidayCalendar;
 use App\Core\Domain\Communication\Support\LocalizedCopy;
 use App\Core\Domain\Identity\Models\User;
+use App\Core\Domain\Identity\Support\ApplicationRole;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 
@@ -42,10 +43,9 @@ final class DispatchScheduledInAppNotificationsAction
 
         if ($only === null || $only === 'week_start') {
             if ($now->isMonday()) {
-                $stats['week_start'] = $this->broadcastLocalized(
+                $stats['week_start'] = $this->broadcastAudienceAware(
                     InAppNotificationType::WeekStart,
-                    'notifications.week_start.title',
-                    'notifications.week_start.body',
+                    'notifications.week_start',
                     "week_start:{$today}",
                     '/dashboard',
                 );
@@ -54,10 +54,9 @@ final class DispatchScheduledInAppNotificationsAction
 
         if ($only === null || $only === 'weekend') {
             if ($now->isFriday() && (int) $now->format('H') >= 17) {
-                $stats['weekend'] = $this->broadcastLocalized(
+                $stats['weekend'] = $this->broadcastAudienceAware(
                     InAppNotificationType::Weekend,
-                    'notifications.weekend.title',
-                    'notifications.weekend.body',
+                    'notifications.weekend',
                     "weekend:{$today}",
                     '/dashboard',
                 );
@@ -140,10 +139,9 @@ final class DispatchScheduledInAppNotificationsAction
         return compact('created', 'emails');
     }
 
-    private function broadcastLocalized(
+    private function broadcastAudienceAware(
         InAppNotificationType $type,
-        string $titleKey,
-        string $bodyKey,
+        string $baseKey,
         string $dedupeKey,
         ?string $actionUrl = null,
     ): int {
@@ -151,20 +149,29 @@ final class DispatchScheduledInAppNotificationsAction
 
         User::query()
             ->whereNotNull('email_verified_at')
-            ->with('settings')
+            ->with(['settings', 'roles'])
             ->orderBy('id')
-            ->chunkById(self::CHUNK, function ($users) use ($type, $titleKey, $bodyKey, $dedupeKey, $actionUrl, &$created): void {
+            ->chunkById(self::CHUNK, function ($users) use ($type, $baseKey, $dedupeKey, $actionUrl, &$created): void {
                 foreach ($users as $user) {
                     $locale = LocalizedCopy::userLocale($user);
-                    $title = LocalizedCopy::line($titleKey, $locale);
-                    $body = LocalizedCopy::line($bodyKey, $locale);
+                    $audience = $this->audienceKey($user);
+                    $title = LocalizedCopy::line("{$baseKey}.{$audience}.title", $locale);
+                    $body = LocalizedCopy::line("{$baseKey}.{$audience}.body", $locale);
 
                     $before = DB::table('user_notifications')
                         ->where('user_id', $user->id)
                         ->where('dedupe_key', $dedupeKey)
                         ->exists();
 
-                    $this->notifications->notify($user, $type, $title, $body, ['locale' => $locale], $dedupeKey, $actionUrl);
+                    $this->notifications->notify(
+                        $user,
+                        $type,
+                        $title,
+                        $body,
+                        ['locale' => $locale, 'audience' => $audience],
+                        $dedupeKey,
+                        $audience === 'staff' ? '/admin/tasks' : $actionUrl,
+                    );
 
                     if (! $before) {
                         $created++;
@@ -181,8 +188,7 @@ final class DispatchScheduledInAppNotificationsAction
         $year = $day->year;
         $type = $followUp ? InAppNotificationType::BirthdayFollowUp : InAppNotificationType::Birthday;
         $dedupePrefix = $followUp ? 'birthday_followup' : 'birthday';
-        $titleKey = $followUp ? 'notifications.birthday_followup.title' : 'notifications.birthday.title';
-        $bodyKey = $followUp ? 'notifications.birthday_followup.body' : 'notifications.birthday.body';
+        $baseKey = $followUp ? 'notifications.birthday_followup' : 'notifications.birthday';
 
         User::query()
             ->whereNotNull('email_verified_at')
@@ -191,15 +197,16 @@ final class DispatchScheduledInAppNotificationsAction
                     ->whereMonth('date_of_birth', $day->month)
                     ->whereDay('date_of_birth', $day->day);
             })
-            ->with(['profile', 'settings'])
+            ->with(['profile', 'settings', 'roles'])
             ->orderBy('id')
-            ->chunkById(self::CHUNK, function ($users) use ($type, $dedupePrefix, $year, $titleKey, $bodyKey, &$created): void {
+            ->chunkById(self::CHUNK, function ($users) use ($type, $dedupePrefix, $year, $baseKey, &$created): void {
                 foreach ($users as $user) {
                     $locale = LocalizedCopy::userLocale($user);
+                    $audience = $this->audienceKey($user);
                     $firstName = $user->profile?->first_name ?: $user->name ?: ($locale === 'en' ? 'friend' : 'ami(e)');
                     $dedupeKey = "{$dedupePrefix}:{$year}";
-                    $title = LocalizedCopy::line($titleKey, $locale);
-                    $body = LocalizedCopy::line($bodyKey, $locale, ['name' => $firstName]);
+                    $title = LocalizedCopy::line("{$baseKey}.{$audience}.title", $locale);
+                    $body = LocalizedCopy::line("{$baseKey}.{$audience}.body", $locale, ['name' => $firstName]);
 
                     $before = DB::table('user_notifications')
                         ->where('user_id', $user->id)
@@ -214,9 +221,10 @@ final class DispatchScheduledInAppNotificationsAction
                         [
                             'date_of_birth' => $user->profile?->date_of_birth?->toDateString(),
                             'locale' => $locale,
+                            'audience' => $audience,
                         ],
                         $dedupeKey,
-                        '/dashboard',
+                        $audience === 'staff' ? '/admin/tasks' : '/dashboard',
                     );
 
                     if (! $before) {
@@ -226,5 +234,10 @@ final class DispatchScheduledInAppNotificationsAction
             });
 
         return $created;
+    }
+
+    private function audienceKey(User $user): string
+    {
+        return $user->hasAnyRole(ApplicationRole::STAFF_ROLES) ? 'staff' : 'candidate';
     }
 }

@@ -6,6 +6,7 @@ namespace App\Core\Domain\Candidacy\Actions;
 
 use App\Core\Domain\Candidacy\Models\Application;
 use App\Core\Domain\Candidacy\Services\ApplicationActivityLogger;
+use App\Core\Domain\Candidacy\Services\CandidacyNotificationService;
 use App\Core\Domain\Identity\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -14,6 +15,7 @@ final class AcceptApplicationProtocolAction
 {
     public function __construct(
         private readonly ApplicationActivityLogger $activityLogger,
+        private readonly CandidacyNotificationService $candidacyNotifications,
     ) {}
 
     public function execute(Application $application, User $user, ?Request $request = null): Application
@@ -35,6 +37,9 @@ final class AcceptApplicationProtocolAction
             (int) $user->id,
         );
 
-        return $application->fresh(['steps', 'currentStep', 'offer', 'program']);
+        $application = $application->fresh(['steps', 'currentStep', 'offer', 'program', 'user:id,name,email']);
+        $this->candidacyNotifications->protocolAccepted($application);
+
+        return $application;
     }
 }

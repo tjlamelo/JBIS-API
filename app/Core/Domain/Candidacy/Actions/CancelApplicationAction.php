@@ -6,6 +6,7 @@ namespace App\Core\Domain\Candidacy\Actions;
 
 use App\Core\Domain\Candidacy\Models\Application;
 use App\Core\Domain\Candidacy\Services\ApplicationActivityLogger;
+use App\Core\Domain\Candidacy\Services\CandidacyNotificationService;
 use App\Core\Domain\Candidacy\States\ApplicationStatus;
 use App\Core\Domain\Candidacy\States\ApplicationStepStatus;
 use App\Core\Domain\Identity\Models\User;
@@ -15,6 +16,7 @@ final class CancelApplicationAction
 {
     public function __construct(
         private readonly ApplicationActivityLogger $activityLogger,
+        private readonly CandidacyNotificationService $candidacyNotifications,
     ) {}
 
     public function execute(Application $application, User $actor, ?string $reason = null): Application
@@ -27,7 +29,7 @@ final class CancelApplicationAction
             throw new \InvalidArgumentException(__('Cette candidature ne peut plus être annulée.'));
         }
 
-        return DB::transaction(function () use ($application, $actor, $reason): Application {
+        $application = DB::transaction(function () use ($application, $actor, $reason): Application {
             $application->update([
                 'status' => ApplicationStatus::Cancelled->value,
                 'current_application_step_id' => null,
@@ -45,7 +47,11 @@ final class CancelApplicationAction
                 ['reason' => $reason],
             );
 
-            return $application->fresh(['steps', 'currentStep', 'offer', 'program']);
+            return $application->fresh(['steps', 'currentStep', 'offer', 'program', 'user:id,name,email']);
         });
+
+        $this->candidacyNotifications->applicationCancelled($application, $reason);
+
+        return $application;
     }
 }

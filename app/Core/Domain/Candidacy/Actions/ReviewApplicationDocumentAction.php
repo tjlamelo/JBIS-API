@@ -6,6 +6,7 @@ namespace App\Core\Domain\Candidacy\Actions;
 
 use App\Core\Domain\Candidacy\Models\ApplicationDocument;
 use App\Core\Domain\Candidacy\Services\ApplicationActivityLogger;
+use App\Core\Domain\Candidacy\Services\CandidacyNotificationService;
 use App\Core\Domain\Identity\Support\UserPersonName;
 use Illuminate\Support\Carbon;
 
@@ -13,6 +14,7 @@ final class ReviewApplicationDocumentAction
 {
     public function __construct(
         private readonly ApplicationActivityLogger $activityLogger,
+        private readonly CandidacyNotificationService $candidacyNotifications,
     ) {}
 
     /**
@@ -42,9 +44,14 @@ final class ReviewApplicationDocumentAction
             ],
         );
 
-        return $document->fresh([
+        $document = $document->fresh([
             'userDocument.documentType',
+            'application.user:id,name,email',
             ...UserPersonName::withProfile('reviewer'),
         ]);
+
+        $this->candidacyNotifications->documentReviewed($document);
+
+        return $document;
     }
 }

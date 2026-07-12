@@ -76,6 +76,7 @@ return [
         'cameroon_country_code' => env('NEWSLETTER_CAMEROON_COUNTRY_CODE', 'CM'),
         'max_offers_per_section' => (int) env('NEWSLETTER_MAX_OFFERS_PER_SECTION', 8),
         'offer_lookback_days' => (int) env('NEWSLETTER_OFFER_LOOKBACK_DAYS', 14),
+        'min_resend_days' => (int) env('NEWSLETTER_MIN_RESEND_DAYS', 6),
         'schedule_enabled' => (bool) env('NEWSLETTER_SCHEDULE_ENABLED', true),
     ],
 

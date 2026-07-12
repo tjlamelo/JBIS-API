@@ -8,6 +8,7 @@ use App\Core\Domain\Candidacy\Exceptions\ApplicationEnrollmentException;
 use App\Core\Domain\Candidacy\Models\Application;
 use App\Core\Domain\Candidacy\Models\ApplicationStep;
 use App\Core\Domain\Candidacy\Services\ApplicationStepSnapshotBuilder;
+use App\Core\Domain\Candidacy\Services\CandidacyNotificationService;
 use App\Core\Domain\Candidacy\Services\OfferApplicationReadinessService;
 use App\Core\Domain\Candidacy\Services\PublishedProcessFlowResolver;
 use App\Core\Domain\Candidacy\States\ApplicationStatus;
@@ -16,7 +17,6 @@ use App\Core\Domain\Catalog\Models\Offer;
 use App\Core\Domain\Finance\Models\PaymentInstallment;
 use App\Core\Domain\Finance\Models\PaymentSchedule;
 use App\Core\Domain\Workflow\Models\ProcessStep;
-use App\Core\Domain\Workflow\States\ProcessStepType;
 use App\Core\Domain\Identity\Actions\Profile\AssignCandidateMatriculeAction;
 use App\Core\Domain\Identity\Models\User;
 use Illuminate\Support\Carbon;
@@ -30,6 +30,7 @@ final class CreateApplicationAction
         private readonly OfferApplicationReadinessService $offerReadiness,
         private readonly AttachOfferRequiredDocumentsAction $attachOfferDocuments,
         private readonly AssignCandidateMatriculeAction $assignMatricule,
+        private readonly CandidacyNotificationService $candidacyNotifications,
     ) {}
 
     public function execute(
@@ -79,7 +80,7 @@ final class CreateApplicationAction
         $isPrivate = $asPrivate;
         $createdById = $enrolledBy?->id;
 
-        return DB::transaction(function () use ($user, $offerId, $programId, $flow, $now, $initialStatus, $isPrivate, $createdById): Application {
+        $application = DB::transaction(function () use ($user, $offerId, $programId, $flow, $now, $initialStatus, $isPrivate, $createdById): Application {
             $this->assignMatricule->execute($user);
 
             $application = Application::query()->create([
@@ -170,8 +171,13 @@ final class CreateApplicationAction
                 'offer:id',
                 'program:id',
                 'documents.userDocument.documentType',
+                'user:id,name,email',
             ]);
         });
+
+        $this->candidacyNotifications->applicationSubmitted($application);
+
+        return $application;
     }
 
     private function temporaryNumber(): string

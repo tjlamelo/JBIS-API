@@ -56,14 +56,18 @@
                                 {{ $copy['view_all'] }}
                             </a>
                         </p>
+
+                        <p style="margin:28px 0 0; padding-top:20px; border-top:1px solid #e5e7eb; color:#6b7280; font-size:13px; line-height:1.5;">
+                            {{ $copy['unsubscribe_help'] }}
+                        </p>
+                        <p style="margin:14px 0 0; text-align:center;">
+                            <a href="{{ $unsubscribeUrl }}" style="display:inline-block; background:#ffffff; color:#0f172a; border:1px solid #cbd5e1; text-decoration:none; padding:10px 18px; border-radius:6px; font-weight:600; font-size:13px;">
+                                {{ $copy['unsubscribe'] }}
+                            </a>
+                        </p>
                     </td>
                 </tr>
                 @include('emails.partials.brand-footer', ['footerNote' => $copy['footer']])
-                <tr>
-                    <td style="padding:0 24px 16px; text-align:center;">
-                        <a href="{{ $unsubscribeUrl }}" style="color:#6b7280; font-size:12px; text-decoration:underline;">{{ $copy['unsubscribe'] }}</a>
-                    </td>
-                </tr>
             </table>
         </td>
     </tr>

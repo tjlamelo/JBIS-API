@@ -55,6 +55,7 @@ use App\Core\Application\Api\V1\Export\Controllers\ExportSchemaController;
 use App\Core\Application\Api\V1\Identity\Controllers\AdminLegalDocumentController;
 use App\Core\Application\Api\V1\Identity\Controllers\AdminUserDossierController;
 use App\Core\Application\Api\V1\Identity\Controllers\AdminUserController;
+use App\Core\Application\Api\V1\Identity\Controllers\AdminUserImportController;
 use App\Core\Application\Api\V1\Identity\Controllers\AdminUserSearchFiltersController;
 use App\Core\Application\Api\V1\Identity\Controllers\ArchiveController;
 use App\Core\Application\Api\V1\Identity\Controllers\UserSecurityEventController;
@@ -268,6 +269,8 @@ Route::prefix('v1')->group(function (): void {
         Route::prefix('identity/admin/users')->group(function (): void {
             Route::get('/search/filters', AdminUserSearchFiltersController::class);
             Route::get('/stats', [AdminUserController::class, 'stats']);
+            Route::get('/import/template', [AdminUserImportController::class, 'template']);
+            Route::post('/import', [AdminUserImportController::class, 'import']);
             Route::get('/', [AdminUserController::class, 'index']);
             Route::post('/', [AdminUserController::class, 'store']);
             Route::get('/{user}/consents', [AdminUserDossierController::class, 'consents']);

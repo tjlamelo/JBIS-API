@@ -21,4 +21,15 @@ enum InAppNotificationType: string
     case OpsTaskNotSubmitted = 'ops_task_not_submitted';
     case OpsWeeklyPersonal = 'ops_weekly_personal';
     case OpsWeeklyManagement = 'ops_weekly_management';
+    case StaffWelcome = 'staff_welcome';
+    case ApplicationSubmitted = 'application_submitted';
+    case ApplicationStatusChanged = 'application_status_changed';
+    case ApplicationStepPending = 'application_step_pending';
+    case ApplicationPaymentDue = 'application_payment_due';
+    case ApplicationPaymentDeclared = 'application_payment_declared';
+    case ApplicationPaymentConfirmed = 'application_payment_confirmed';
+    case ApplicationPaymentWaived = 'application_payment_waived';
+    case ApplicationDocumentReviewed = 'application_document_reviewed';
+    case ApplicationDocumentReminder = 'application_document_reminder';
+    case ApplicationProtocolAccepted = 'application_protocol_accepted';
 }

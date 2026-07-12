@@ -84,6 +84,12 @@ return Application::configure(basePath: dirname(__DIR__))
             ->withoutOverlapping()
             ->onOneServer();
 
+        $schedule->command('candidacy:dispatch-notifications')
+            ->dailyAt('09:00')
+            ->timezone('Africa/Douala')
+            ->withoutOverlapping()
+            ->onOneServer();
+
         $schedule->command('offers:publish-scheduled')
             ->everyMinute()
             ->timezone('Africa/Douala')

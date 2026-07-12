@@ -8,6 +8,7 @@ use App\Core\Domain\Candidacy\Services\ApplicationActivityLogger;
 use App\Core\Domain\Candidacy\Exceptions\ApplicationStepAdvanceException;
 use App\Core\Domain\Candidacy\Models\Application;
 use App\Core\Domain\Candidacy\Models\ApplicationStep;
+use App\Core\Domain\Candidacy\Services\CandidacyNotificationService;
 use App\Core\Domain\Candidacy\States\ApplicationStepPaymentStatus;
 use App\Core\Domain\Candidacy\States\ApplicationStatus;
 use App\Core\Domain\Candidacy\States\ApplicationStepStatus;
@@ -19,11 +20,12 @@ final class AdvanceApplicationStepAction
 {
     public function __construct(
         private readonly ApplicationActivityLogger $activityLogger,
+        private readonly CandidacyNotificationService $candidacyNotifications,
     ) {}
 
     public function execute(ApplicationStep $step, ?int $staffUserId = null, bool $force = false): Application
     {
-        return DB::transaction(function () use ($step, $staffUserId, $force): Application {
+        $application = DB::transaction(function () use ($step, $staffUserId, $force): Application {
             $step = ApplicationStep::query()->whereKey($step->id)->lockForUpdate()->firstOrFail();
 
             if ($step->status !== ApplicationStepStatus::Pending) {
@@ -69,8 +71,17 @@ final class AdvanceApplicationStepAction
                 ['force' => $force, 'next_step_id' => $next?->id],
             );
 
-            return $application->fresh(['currentStep', 'steps']);
+            return $application->fresh(['currentStep', 'steps', 'user:id,name,email']);
         });
+
+        if ($application->status === ApplicationStatus::Approved
+            || (string) $application->status === ApplicationStatus::Approved->value) {
+            $this->candidacyNotifications->applicationApproved($application);
+        } elseif ($application->currentStep !== null) {
+            $this->candidacyNotifications->stepPending($application, $application->currentStep);
+        }
+
+        return $application;
     }
 
     private function assertPrerequisites(ApplicationStep $step): void

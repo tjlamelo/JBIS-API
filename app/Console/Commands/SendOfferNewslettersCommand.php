@@ -9,22 +9,25 @@ use Illuminate\Console\Command;
 
 final class SendOfferNewslettersCommand extends Command
 {
-    protected $signature = 'newsletter:send-offers {--limit= : Nombre max d’abonnés}';
+    protected $signature = 'newsletter:send-offers
+                            {--limit= : Nombre max d’abonnés}
+                            {--force : Ignorer last_sent_at de la semaine}';
 
-    protected $description = 'Envoie la newsletter d’offres aux abonnés actifs';
+    protected $description = 'Enfile la newsletter d’offres pour les abonnés actifs (file mail)';
 
     public function handle(DispatchOfferNewslettersAction $action): int
     {
         $limitRaw = $this->option('limit');
         $limit = is_numeric($limitRaw) ? (int) $limitRaw : null;
 
-        $stats = $action->execute($limit);
+        $stats = $action->execute($limit, (bool) $this->option('force'));
 
         $this->info(sprintf(
-            'Newsletter offres — sent:%d skipped:%d total:%d',
-            $stats['sent'],
+            'Newsletter offres — queued:%d skipped:%d total:%d batch:%s',
+            $stats['queued'],
             $stats['skipped'],
             $stats['total'],
+            $stats['batch'],
         ));
 
         return self::SUCCESS;

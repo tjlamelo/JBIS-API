@@ -7,6 +7,7 @@ namespace App\Core\Domain\Candidacy\Actions;
 use App\Core\Domain\Candidacy\Models\Application;
 use App\Core\Domain\Candidacy\Models\ApplicationStep;
 use App\Core\Domain\Candidacy\Services\ApplicationActivityLogger;
+use App\Core\Domain\Candidacy\Services\CandidacyNotificationService;
 use App\Core\Domain\Candidacy\States\ApplicationStepPaymentStatus;
 use App\Core\Domain\Finance\Models\Payment;
 use App\Core\Domain\Finance\Models\PaymentInstallment;
@@ -18,6 +19,7 @@ final class RecordApplicationStepPaymentAction
 {
     public function __construct(
         private readonly ApplicationActivityLogger $activityLogger,
+        private readonly CandidacyNotificationService $candidacyNotifications,
     ) {}
 
     /**
@@ -34,7 +36,7 @@ final class RecordApplicationStepPaymentAction
         string $paymentMethod = 'BANK_TRANSFER',
         ?string $description = null,
     ): Payment {
-        return DB::transaction(function () use ($step, $amount, $paymentType, $status, $reference, $recordedByUserId, $paymentMethod, $description): Payment {
+        $result = DB::transaction(function () use ($step, $amount, $paymentType, $status, $reference, $recordedByUserId, $paymentMethod, $description): array {
             $step = ApplicationStep::query()->whereKey($step->id)->lockForUpdate()->firstOrFail();
             $application = Application::query()->whereKey($step->application_id)->lockForUpdate()->firstOrFail();
 
@@ -84,8 +86,27 @@ final class RecordApplicationStepPaymentAction
                 );
             }
 
-            return $payment;
+            return [
+                $payment->fresh(),
+                $application->fresh(['user:id,name,email']),
+                $step->fresh(),
+                $status,
+                $signedAmount,
+            ];
         });
+
+        /** @var Payment $payment */
+        /** @var Application $application */
+        /** @var ApplicationStep $step */
+        [$payment, $application, $step, $status, $signedAmount] = $result;
+
+        if ($status === 'PENDING') {
+            $this->candidacyNotifications->paymentDeclared($application, $step, (float) $signedAmount);
+        } elseif ($status === 'COMPLETED') {
+            $this->candidacyNotifications->paymentConfirmed($application, $step, (float) $signedAmount);
+        }
+
+        return $payment;
     }
 
     public function syncAfterPaymentChange(ApplicationStep $step): void
