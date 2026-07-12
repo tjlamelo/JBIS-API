@@ -34,7 +34,14 @@ final class MediaUrlResolver
             }
         }
 
-        return $this->localUrl($media);
+        $local = $this->localUrl($media);
+        if ($local !== null) {
+            return $local;
+        }
+
+        $stored = isset($media['public_url']) ? trim((string) $media['public_url']) : '';
+
+        return $stored !== '' ? $stored : null;
     }
 
     public function fallback(?array $media): ?string

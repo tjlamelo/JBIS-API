@@ -107,18 +107,86 @@ readonly class OfferDto
     }
 
     /**
+     * Attributs prêts pour Eloquent : `photo` est un accessor, seule `photo_media` est persistée.
+     *
+     * @return array<string, mixed>
+     */
+    public function toPersistedArray(): array
+    {
+        $attributes = $this->toArray();
+        $photoProvided = in_array('photo', $this->provided_keys, true)
+            || ($this->provided_keys === [] && array_key_exists('photo', $attributes));
+        $mediaProvided = in_array('photo_media', $this->provided_keys, true)
+            || ($this->provided_keys === [] && array_key_exists('photo_media', $attributes));
+
+        $photo = $attributes['photo'] ?? null;
+        unset($attributes['photo']);
+
+        if ($mediaProvided) {
+            return $attributes;
+        }
+
+        if (! $photoProvided) {
+            return $attributes;
+        }
+
+        if (is_string($photo) && trim($photo) !== '') {
+            $attributes['photo_media'] = self::mediaFromPublicUrl(trim($photo));
+        } else {
+            $attributes['photo_media'] = null;
+        }
+
+        return $attributes;
+    }
+
+    /**
+     * @return array{
+     *     file_name: string,
+     *     local_optimized_path: string,
+     *     local_raw_path: string,
+     *     cloudinary_id: null,
+     *     public_url: string,
+     *     is_primary: bool
+     * }
+     */
+    public static function mediaFromPublicUrl(string $url): array
+    {
+        $path = parse_url($url, PHP_URL_PATH);
+        $fileName = is_string($path) && $path !== '' ? basename($path) : 'offer-photo';
+
+        return [
+            'file_name' => $fileName !== '' ? $fileName : 'offer-photo',
+            'local_optimized_path' => '',
+            'local_raw_path' => '',
+            'cloudinary_id' => null,
+            'public_url' => $url,
+            'is_primary' => true,
+        ];
+    }
+
+    /**
      * @param  array<string,mixed>  $data
      */
     public static function fromArray(array $data): self
     {
         $providedKeys = array_keys($data);
 
+        $photo = null;
+        if (array_key_exists('photo', $data)) {
+            if (is_string($data['photo'])) {
+                $photo = $data['photo'];
+            } elseif (is_array($data['photo'])) {
+                $url = $data['photo']['url'] ?? null;
+                $photo = is_string($url) ? $url : null;
+            }
+        }
+
         return new self(
             provided_keys: $providedKeys,
             id: isset($data['id']) ? (int) $data['id'] : null,
             trade_id: isset($data['trade_id']) ? (int) $data['trade_id'] : null,
             description: isset($data['description']) && is_array($data['description']) ? $data['description'] : null,
-            photo: isset($data['photo']) ? (string) $data['photo'] : null,
+            photo: $photo,
             photo_media: array_key_exists('photo_media', $data)
                 ? (is_array($data['photo_media']) ? $data['photo_media'] : null)
                 : null,

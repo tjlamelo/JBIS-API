@@ -30,6 +30,13 @@ class StoreOfferRequest extends FormRequest
             'description.en' => ['nullable', 'string'],
             'photo' => ['nullable', 'string', 'max:2048'],
             'photo_media' => ['nullable', 'array'],
+            'photo_media.file_name' => ['nullable', 'string', 'max:255'],
+            'photo_media.local_optimized_path' => ['nullable', 'string', 'max:500'],
+            'photo_media.local_raw_path' => ['nullable', 'string', 'max:500'],
+            'photo_media.cloudinary_id' => ['nullable', 'string', 'max:255'],
+            'photo_media.public_url' => ['nullable', 'string', 'max:2048'],
+            'photo_media.is_primary' => ['nullable', 'boolean'],
+            'photo_media.uploaded_at' => ['nullable', 'string', 'max:50'],
 
             'responsibilities' => ['nullable', 'array'],
             'responsibilities.fr' => ['nullable', 'string'],

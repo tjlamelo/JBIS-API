@@ -18,7 +18,7 @@ class CreateOfferAction
 
     public function execute(OfferDto $dto): Offer
     {
-        $attributes = $dto->toArray();
+        $attributes = $dto->toPersistedArray();
         $benefitIds = $attributes['benefit_ids'] ?? [];
         $languageRequirements = $attributes['language_requirements'] ?? [];
         $skillRequirements = $attributes['skill_requirements'] ?? [];

@@ -19,7 +19,7 @@ class UpdateOfferAction
 
     public function execute(int $offerId, OfferDto $dto): Offer
     {
-        $attributes = $dto->toArray();
+        $attributes = $dto->toPersistedArray();
         $benefitIds = $attributes['benefit_ids'] ?? null;
         $languageRequirements = $attributes['language_requirements'] ?? null;
         $skillRequirements = $attributes['skill_requirements'] ?? null;
