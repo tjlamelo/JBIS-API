@@ -8,7 +8,6 @@ use App\Core\Application\Mail\Mailable\RecruiterPortalApprovedMail;
 use App\Core\Domain\Identity\Models\User;
 use App\Core\Domain\Recruiter\Enums\RecruiterOnboardingStatus;
 use App\Core\Domain\Recruiter\Enums\RecruiterOrganizationStatus;
-use App\Core\Domain\Recruiter\Jobs\ProvisionRecruiterInfrastructureJob;
 use App\Core\Domain\Recruiter\Models\RecruiterOnboardingApplication;
 use Illuminate\Support\Facades\Mail;
 
@@ -59,19 +58,15 @@ final class ReviewRecruiterOnboardingApplicationAction
             'owner_user_id' => $applicant->id,
         ]);
 
-        $organization->status = RecruiterOrganizationStatus::Pending;
+        $organization->status = RecruiterOrganizationStatus::Active;
+        $organization->portal_host = null;
+        $organization->api_host = null;
+        $organization->provisioning_error = null;
+        $organization->provisioned_at = now();
         $organization->save();
 
         $application->recruiter_organization_id = $organization->id;
         $application->save();
-
-        if (config('services.recruiter.auto_provision_on_approval', false)) {
-            ProvisionRecruiterInfrastructureJob::dispatch($organization->id);
-        } else {
-            $organization->status = RecruiterOrganizationStatus::Active;
-            $organization->provisioned_at = now();
-            $organization->save();
-        }
 
         Mail::to($applicant->email)->send(new RecruiterPortalApprovedMail($applicant, $organization));
     }

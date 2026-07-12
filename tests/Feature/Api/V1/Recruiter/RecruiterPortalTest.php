@@ -173,23 +173,9 @@ class RecruiterPortalTest extends TestCase
     }
 
     #[Test]
-    public function provisioning_job_creates_subdomains_via_cpanel_fake(): void
+    public function provisioning_activates_organization_without_custom_domains(): void
     {
-        config()->set('services.cpanel', [
-            'host' => 'light.o2switch.net',
-            'username' => 'cpanel-user',
-            'token' => 'cpanel-token',
-            'primary_domain' => 'jbis.cm',
-            'recruiter_base_domain' => 'jbis.cm',
-            'recruiter_portal_prefix' => 'recruteur',
-            'recruiter_docroot' => '/home/user/public_html',
-            'timeout' => 10,
-        ]);
-
-        Http::fake([
-            'https://light.o2switch.net:2083/execute/SubDomain/addsubdomain*' => Http::response(['status' => 1], 200),
-            'https://light.o2switch.net:2083/execute/Email/add_pop*' => Http::response(['status' => 1], 200),
-        ]);
+        Http::fake();
 
         $slug = 'acme-'.uniqid();
 
@@ -208,6 +194,9 @@ class RecruiterPortalTest extends TestCase
         $organization->refresh();
         $this->assertSame(RecruiterOrganizationStatus::Active, $organization->status);
         $this->assertNotNull($organization->provisioned_at);
+        $this->assertNull($organization->portal_host);
+        $this->assertNull($organization->api_host);
+        Http::assertNothingSent();
     }
 
     #[Test]
@@ -242,7 +231,6 @@ class RecruiterPortalTest extends TestCase
     public function staff_can_approve_onboarding_and_provision_recruiter_portal(): void
     {
         Mail::fake();
-        config()->set('services.recruiter.auto_provision_on_approval', false);
 
         $email = 'approve-'.uniqid().'@example.com';
 

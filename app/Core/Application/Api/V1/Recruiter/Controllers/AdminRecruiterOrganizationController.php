@@ -9,8 +9,8 @@ use App\Core\Application\Api\V1\Recruiter\Requests\StoreRecruiterOrganizationReq
 use App\Core\Application\Api\V1\Recruiter\Requests\UpdateRecruiterOrganizationRequest;
 use App\Core\Application\Api\V1\Recruiter\Resources\RecruiterOrganizationResource;
 use App\Core\Domain\Recruiter\Actions\CreateRecruiterOrganizationAction;
-use App\Core\Domain\Recruiter\Jobs\ProvisionRecruiterInfrastructureJob;
 use App\Core\Domain\Recruiter\Models\RecruiterOrganization;
+use App\Core\Domain\Recruiter\Services\RecruiterInfrastructureProvisioner;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -19,6 +19,7 @@ final class AdminRecruiterOrganizationController extends Controller
 {
     public function __construct(
         private readonly CreateRecruiterOrganizationAction $createOrganization,
+        private readonly RecruiterInfrastructureProvisioner $provisioner,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -79,11 +80,11 @@ final class AdminRecruiterOrganizationController extends Controller
     {
         $this->authorize('update', $recruiterOrganization);
 
-        ProvisionRecruiterInfrastructureJob::dispatch($recruiterOrganization->id);
+        $organization = $this->provisioner->provision($recruiterOrganization);
 
         return BaseResponse::ok([
-            'message' => __('Provisioning démarré.'),
-            'organization' => new RecruiterOrganizationResource($recruiterOrganization->fresh()),
+            'message' => __('Organisation recruteur activée (portail partagé).'),
+            'organization' => new RecruiterOrganizationResource($organization),
         ])->toJsonResponse();
     }
 }

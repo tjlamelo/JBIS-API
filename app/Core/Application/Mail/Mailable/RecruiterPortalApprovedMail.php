@@ -32,9 +32,7 @@ class RecruiterPortalApprovedMail extends Mailable
     {
         $appUrl = rtrim((string) config('app.url', 'http://127.0.0.1:8000'), '/');
         $frontendUrl = rtrim((string) config('services.recruiter.frontend_url', env('FRONTEND_URL', 'http://localhost:3000')), '/');
-        $portalUrl = $this->organization->portal_host
-            ? 'https://'.$this->organization->portal_host
-            : $frontendUrl.'/recruiter';
+        $portalUrl = $frontendUrl.'/recruiter';
 
         return new Content(
             view: 'emails.recruiter.portal-approved',

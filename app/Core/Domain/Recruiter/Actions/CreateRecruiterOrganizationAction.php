@@ -8,14 +8,11 @@ use App\Core\Domain\Identity\Models\User;
 use App\Core\Domain\Identity\Support\ApplicationRole;
 use App\Core\Domain\Recruiter\Enums\RecruiterOrganizationStatus;
 use App\Core\Domain\Recruiter\Models\RecruiterOrganization;
-use App\Core\Domain\Recruiter\Support\RecruiterHostBuilder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 final class CreateRecruiterOrganizationAction
 {
-    public function __construct(private readonly RecruiterHostBuilder $hosts) {}
-
     /**
      * @param  array{name: string, slug?: string|null, company_id?: int|null, owner_user_id?: int|null}  $data
      */
@@ -31,8 +28,8 @@ final class CreateRecruiterOrganizationAction
                 'slug' => $slug,
                 'company_id' => $data['company_id'] ?? null,
                 'status' => RecruiterOrganizationStatus::Pending,
-                'portal_host' => $this->hosts->portalHost($slug),
-                'api_host' => $this->hosts->apiHost($slug),
+                'portal_host' => null,
+                'api_host' => null,
                 'settings' => [],
             ]);
 

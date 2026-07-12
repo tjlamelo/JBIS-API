@@ -17,8 +17,7 @@ jobs:
           mkdir -p tmp
           echo "Build: ${{ github.sha }} - $(date)" > tmp/restart.txt
 
-      # vendor/ est exclu : pas de composer en CI ; à installer sur le serveur (Terminal cPanel).
-      # .env exclu pour ne pas écraser la prod déjà sur le serveur.
+     
       - name: Deploy via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:

@@ -7,7 +7,6 @@ namespace Database\Seeders;
 use App\Core\Domain\Identity\Models\User;
 use App\Core\Domain\Recruiter\Enums\RecruiterOrganizationStatus;
 use App\Core\Domain\Recruiter\Models\RecruiterOrganization;
-use App\Core\Domain\Recruiter\Support\RecruiterHostBuilder;
 use Illuminate\Database\Seeder;
 
 final class RecruiterOrganizationSeeder extends Seeder
@@ -21,16 +20,15 @@ final class RecruiterOrganizationSeeder extends Seeder
             return;
         }
 
-        $hosts = app(RecruiterHostBuilder::class);
-
         $organization = RecruiterOrganization::query()->updateOrCreate(
             ['slug' => self::DEMO_SLUG],
             [
                 'name' => 'Recruteur Démo JBIS',
                 'status' => RecruiterOrganizationStatus::Active,
-                'portal_host' => $hosts->portalHost(self::DEMO_SLUG),
-                'api_host' => $hosts->apiHost(self::DEMO_SLUG),
+                'portal_host' => null,
+                'api_host' => null,
                 'settings' => [],
+                'provisioning_error' => null,
                 'provisioned_at' => now(),
             ],
         );

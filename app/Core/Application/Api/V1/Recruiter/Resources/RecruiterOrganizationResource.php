@@ -27,6 +27,7 @@ final class RecruiterOrganizationResource extends JsonResource
             'provisioning_error' => $this->provisioning_error,
             'provisioned_at' => $this->provisioned_at?->toIso8601String(),
             'company_id' => $this->company_id,
+            'members_count' => $this->when(isset($this->members_count), (int) $this->members_count),
             'members' => $this->whenLoaded('members', fn () => $this->members->map(static fn ($user) => [
                 'id' => $user->id,
                 'name' => $user->name,
