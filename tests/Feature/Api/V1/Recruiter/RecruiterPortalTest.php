@@ -292,6 +292,15 @@ class RecruiterPortalTest extends TestCase
 
         $this->patchJson("/api/v1/identity/admin/recruiter-offers/{$offerSubmissionId}/review", [
             'decision' => 'approve',
+            'offer_payload' => [
+                'address' => 'Avenue de la Liberté, Douala',
+                'country_id' => \App\Core\Domain\Location\Models\Country::query()->firstOrCreate(
+                    ['code' => 'CM'],
+                    ['name' => json_encode(['fr' => 'Cameroun']), 'phone_code' => '+237'],
+                )->id,
+                'currency' => 'XAF',
+                'available_positions' => 2,
+            ],
         ])->assertOk()
             ->assertJsonPath('data.submission.status', 'approved');
 
