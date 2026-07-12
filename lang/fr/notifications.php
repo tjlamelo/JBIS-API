@@ -17,7 +17,7 @@ return [
     ],
     'birthday_followup' => [
         'title' => 'Encore un joyeux anniversaire',
-        'body' => 'Bonjour :name, toute l’équipe MyJob Best vous souhaite encore une merveilleuse année !',
+        'body' => 'Bonjour :name, toute l’équipe Job Best vous souhaite encore une merveilleuse année !',
     ],
     'holiday_mail' => [
         'closing' => 'Belle journée de fête de la part de toute l’équipe :brand.',

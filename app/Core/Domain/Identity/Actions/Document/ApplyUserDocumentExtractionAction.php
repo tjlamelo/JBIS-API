@@ -23,6 +23,7 @@ use App\Core\Domain\Identity\Support\MaritalStatusNormalizer;
 use App\Core\Domain\Identity\Support\SkillCatalogResolver;
 use App\Core\Domain\Location\Models\LanguageLevel;
 use App\Core\Domain\Shared\Ai\Enums\DocumentExtractionStatus;
+use App\Core\Domain\Shared\Ai\Support\AiScalarText;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -227,7 +228,7 @@ final class ApplyUserDocumentExtractionAction
         $existingExperiences = $this->existingExperienceFingerprints($user->id);
 
         foreach (is_array($draft['experiences'] ?? null) ? $draft['experiences'] : [] as $row) {
-            if (! is_array($row) || trim((string) ($row['job_title'] ?? '')) === '') {
+            if (! is_array($row) || trim(AiScalarText::from($row['job_title'] ?? '')) === '') {
                 continue;
             }
 
@@ -244,15 +245,15 @@ final class ApplyUserDocumentExtractionAction
             Experience::query()->create([
                 'user_id' => $user->id,
                 'document_id' => $document->id,
-                'job_title' => (string) $row['job_title'],
-                'company_name' => (string) ($row['company_name'] ?? ''),
-                'country_id' => $this->countryResolver->resolveId((string) ($row['country_name'] ?? '')),
-                'city_name' => (string) ($row['city_name'] ?? ''),
+                'job_title' => AiScalarText::from($row['job_title']),
+                'company_name' => AiScalarText::from($row['company_name'] ?? ''),
+                'country_id' => $this->countryResolver->resolveId(AiScalarText::from($row['country_name'] ?? '')),
+                'city_name' => AiScalarText::from($row['city_name'] ?? ''),
                 'start_date' => $startDate,
                 'end_date' => $this->parseDateOrNull($row['end_date'] ?? null),
                 'is_current' => (bool) ($row['is_current'] ?? false),
-                'responsibilities' => (string) ($row['responsibilities'] ?? ''),
-                'achievements' => (string) ($row['achievements'] ?? ''),
+                'responsibilities' => AiScalarText::from($row['responsibilities'] ?? ''),
+                'achievements' => AiScalarText::from($row['achievements'] ?? ''),
             ]);
             $existingExperiences[$fingerprint] = true;
         }

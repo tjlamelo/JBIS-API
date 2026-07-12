@@ -71,11 +71,27 @@ class OfferBuilder extends Builder
     }
 
     /**
-     * Filtre les offres qui sont strictement publiées.
+     * Filtre les offres strictement publiées et déjà en ligne (published_at atteint).
      */
     public function published(): self
     {
-        return $this->where('status', OfferStatus::Published);
+        return $this
+            ->where('status', OfferStatus::Published)
+            ->where(function (Builder $query): void {
+                $query->whereNull('published_at')
+                    ->orWhere('published_at', '<=', now());
+            });
+    }
+
+    /**
+     * Brouillons prêts à passer en ligne (publication planifiée atteinte).
+     */
+    public function dueForScheduledPublication(): self
+    {
+        return $this
+            ->where('status', OfferStatus::Draft)
+            ->whereNotNull('published_at')
+            ->where('published_at', '<=', now());
     }
 
     /**

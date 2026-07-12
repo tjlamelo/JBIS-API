@@ -14,6 +14,7 @@ use App\Core\Domain\Identity\Support\OrganizationNameDisambiguator;
 use App\Core\Domain\Identity\Support\PersonNameParser;
 use App\Core\Domain\Identity\Support\PhoneNumberNormalizer;
 use App\Core\Domain\Identity\Support\SkillCatalogResolver;
+use App\Core\Domain\Shared\Ai\Support\AiScalarText;
 use App\Core\Domain\Shared\Ai\Support\InterestsDraftCollector;
 use App\Core\Domain\Shared\Ai\Support\ProfileBundleDraftNormalizer;
 
@@ -61,6 +62,7 @@ final class DocumentExtractionDraftEnricher
     private function enrichCvDraft(array $draft): array
     {
         $draft = ProfileBundleDraftNormalizer::normalize($draft);
+        $draft = $this->coerceCvListScalars($draft);
         $draft = $this->enrichProfile($draft);
         $draft = $this->reclassifyExperiences($draft);
         $draft = $this->recoverInternships($draft);
@@ -75,6 +77,106 @@ final class DocumentExtractionDraftEnricher
             if (! isset($draft[$key]) || ! is_array($draft[$key])) {
                 $draft[$key] = [];
             }
+        }
+
+        return $draft;
+    }
+
+    /**
+     * Les LLM renvoient souvent responsibilities/achievements/description en listes.
+     *
+     * @param  array<string, mixed>  $draft
+     * @return array<string, mixed>
+     */
+    private function coerceCvListScalars(array $draft): array
+    {
+        $experienceKeys = [
+            'job_title', 'company_name', 'city_name', 'country_name',
+            'responsibilities', 'achievements', 'description', 'experience_type',
+        ];
+        $educationKeys = [
+            'degree', 'institution_name', 'field_of_study', 'city_name', 'country_name', 'grade',
+        ];
+        $internshipKeys = [
+            'title', 'job_title', 'organization', 'company_name', 'location', 'description', 'type',
+        ];
+        $certKeys = ['name', 'issuing_organization', 'credential_id', 'credential_url'];
+        $formationKeys = ['name', 'title', 'organization', 'provider', 'description'];
+
+        foreach (is_array($draft['experiences'] ?? null) ? $draft['experiences'] : [] as $i => $row) {
+            if (! is_array($row)) {
+                continue;
+            }
+            foreach ($experienceKeys as $key) {
+                if (array_key_exists($key, $row)) {
+                    $row[$key] = AiScalarText::from($row[$key], $key === 'responsibilities' || $key === 'achievements' ? "\n" : ' ');
+                }
+            }
+            $draft['experiences'][$i] = $row;
+        }
+
+        foreach (is_array($draft['educations'] ?? null) ? $draft['educations'] : [] as $i => $row) {
+            if (! is_array($row)) {
+                continue;
+            }
+            foreach ($educationKeys as $key) {
+                if (array_key_exists($key, $row)) {
+                    $row[$key] = AiScalarText::from($row[$key]);
+                }
+            }
+            $draft['educations'][$i] = $row;
+        }
+
+        foreach (is_array($draft['internships'] ?? null) ? $draft['internships'] : [] as $i => $row) {
+            if (! is_array($row)) {
+                continue;
+            }
+            foreach ($internshipKeys as $key) {
+                if (array_key_exists($key, $row)) {
+                    $row[$key] = AiScalarText::from($row[$key], $key === 'description' ? "\n" : ' ');
+                }
+            }
+            $draft['internships'][$i] = $row;
+        }
+
+        foreach (is_array($draft['certifications'] ?? null) ? $draft['certifications'] : [] as $i => $row) {
+            if (! is_array($row)) {
+                continue;
+            }
+            foreach ($certKeys as $key) {
+                if (array_key_exists($key, $row)) {
+                    $row[$key] = AiScalarText::from($row[$key]);
+                }
+            }
+            $draft['certifications'][$i] = $row;
+        }
+
+        foreach (is_array($draft['formations'] ?? null) ? $draft['formations'] : [] as $i => $row) {
+            if (! is_array($row)) {
+                continue;
+            }
+            foreach ($formationKeys as $key) {
+                if (array_key_exists($key, $row)) {
+                    $row[$key] = AiScalarText::from($row[$key]);
+                }
+            }
+            $draft['formations'][$i] = $row;
+        }
+
+        $profile = is_array($draft['user_profile'] ?? null) ? $draft['user_profile'] : [];
+        foreach ([
+            'first_name', 'last_name', 'full_name', 'bio', 'address', 'place_of_birth',
+            'gender', 'marital_status', 'nationality_country_name', 'residence_country_name',
+            'residence_city_name', 'phone_number2', 'phone_number3', 'email_institutional',
+        ] as $key) {
+            if (array_key_exists($key, $profile)) {
+                $profile[$key] = AiScalarText::from($profile[$key], $key === 'bio' ? ' ' : ' ');
+            }
+        }
+        $draft['user_profile'] = $profile;
+
+        if (array_key_exists('notes', $draft)) {
+            $draft['notes'] = AiScalarText::from($draft['notes']);
         }
 
         return $draft;
@@ -129,16 +231,16 @@ final class DocumentExtractionDraftEnricher
         $draft = $this->enrichIdentityProfile($draft, namesOnly: true);
 
         $work = is_array($draft['work_certificate'] ?? null) ? $draft['work_certificate'] : [];
-        if ($work !== [] && trim((string) ($work['job_title'] ?? '')) !== '') {
+        if ($work !== [] && trim(AiScalarText::from($work['job_title'] ?? '')) !== '') {
             $experience = $this->organizationDisambiguator->disambiguateExperience([
-                'job_title' => (string) ($work['job_title'] ?? ''),
-                'company_name' => (string) ($work['company_name'] ?? ''),
-                'city_name' => (string) ($work['city_name'] ?? ''),
-                'country_name' => (string) ($work['country_name'] ?? ''),
+                'job_title' => AiScalarText::from($work['job_title'] ?? ''),
+                'company_name' => AiScalarText::from($work['company_name'] ?? ''),
+                'city_name' => AiScalarText::from($work['city_name'] ?? ''),
+                'country_name' => AiScalarText::from($work['country_name'] ?? ''),
                 'start_date' => $work['start_date'] ?? null,
                 'end_date' => $work['end_date'] ?? null,
                 'is_current' => (bool) ($work['is_current'] ?? false),
-                'responsibilities' => (string) ($work['responsibilities'] ?? ''),
+                'responsibilities' => AiScalarText::from($work['responsibilities'] ?? ''),
                 'experience_type' => 'employment',
                 'is_professional' => true,
             ]);
@@ -160,15 +262,15 @@ final class DocumentExtractionDraftEnricher
         $draft = $this->enrichIdentityProfile($draft, namesOnly: true);
 
         $cert = is_array($draft['certification'] ?? null) ? $draft['certification'] : [];
-        if ($cert !== [] && trim((string) ($cert['name'] ?? '')) !== '') {
-            $name = trim((string) $cert['name']);
+        if ($cert !== [] && trim(AiScalarText::from($cert['name'] ?? '')) !== '') {
+            $name = trim(AiScalarText::from($cert['name']));
             $draft['certifications'] = [[
                 'name' => $name,
-                'issuing_organization' => (string) ($cert['issuing_organization'] ?? ''),
+                'issuing_organization' => AiScalarText::from($cert['issuing_organization'] ?? ''),
                 'issue_date' => $cert['issue_date'] ?? null,
                 'expiry_date' => $cert['expiry_date'] ?? null,
-                'credential_id' => (string) ($cert['credential_id'] ?? ''),
-                'credential_url' => (string) ($cert['credential_url'] ?? ''),
+                'credential_id' => AiScalarText::from($cert['credential_id'] ?? ''),
+                'credential_url' => AiScalarText::from($cert['credential_url'] ?? ''),
             ]];
         }
 
@@ -187,9 +289,15 @@ final class DocumentExtractionDraftEnricher
         $draft = $this->enrichIdentityProfile($draft, namesOnly: true);
 
         $education = is_array($draft['education'] ?? null) ? $draft['education'] : [];
-        if ($education !== [] && trim((string) ($education['degree'] ?? '')) !== '') {
+        if ($education !== [] && trim(AiScalarText::from($education['degree'] ?? '')) !== '') {
+            $normalized = $education;
+            foreach (['degree', 'institution_name', 'field_of_study', 'city_name', 'country_name', 'grade'] as $key) {
+                if (array_key_exists($key, $normalized)) {
+                    $normalized[$key] = AiScalarText::from($normalized[$key]);
+                }
+            }
             $draft['educations'] = [
-                $this->organizationDisambiguator->disambiguateEducation($education),
+                $this->organizationDisambiguator->disambiguateEducation($normalized),
             ];
         }
 
@@ -206,9 +314,11 @@ final class DocumentExtractionDraftEnricher
     {
         $profile = is_array($draft['user_profile'] ?? null) ? $draft['user_profile'] : [];
         $parsed = $this->nameParser->parse(
-            isset($profile['first_name']) ? (string) $profile['first_name'] : null,
-            isset($profile['last_name']) ? (string) $profile['last_name'] : null,
-            isset($profile['full_name']) ? (string) $profile['full_name'] : (isset($draft['full_name']) ? (string) $draft['full_name'] : null),
+            isset($profile['first_name']) ? AiScalarText::nullable($profile['first_name']) : null,
+            isset($profile['last_name']) ? AiScalarText::nullable($profile['last_name']) : null,
+            isset($profile['full_name'])
+                ? AiScalarText::nullable($profile['full_name'])
+                : (isset($draft['full_name']) ? AiScalarText::nullable($draft['full_name']) : null),
         );
         if ($parsed['first_name'] !== '') {
             $profile['first_name'] = $parsed['first_name'];
@@ -221,19 +331,19 @@ final class DocumentExtractionDraftEnricher
         }
 
         if (! $namesOnly) {
-            $countryHint = (string) ($profile['nationality_country_name'] ?? $profile['residence_country_name'] ?? '');
+            $countryHint = AiScalarText::from($profile['nationality_country_name'] ?? $profile['residence_country_name'] ?? '');
             foreach (['phone_number2', 'phone_number3'] as $phoneField) {
                 if (! empty($profile[$phoneField])) {
-                    $profile[$phoneField] = $this->phoneNormalizer->normalize((string) $profile[$phoneField], $countryHint) ?? $profile[$phoneField];
+                    $profile[$phoneField] = $this->phoneNormalizer->normalize(AiScalarText::from($profile[$phoneField]), $countryHint) ?? $profile[$phoneField];
                 }
             }
 
             if (! empty($profile['nationality_country_name'])) {
-                $profile['resolved_nationality_country_id'] = $this->countryResolver->resolveId((string) $profile['nationality_country_name']);
+                $profile['resolved_nationality_country_id'] = $this->countryResolver->resolveId(AiScalarText::from($profile['nationality_country_name']));
             }
 
             if (! empty($profile['marital_status'])) {
-                $normalizedMaritalStatus = $this->maritalStatusNormalizer->normalize((string) $profile['marital_status']);
+                $normalizedMaritalStatus = $this->maritalStatusNormalizer->normalize(AiScalarText::from($profile['marital_status']));
                 if ($normalizedMaritalStatus !== null) {
                     $profile['marital_status'] = $normalizedMaritalStatus;
                 }
@@ -241,7 +351,7 @@ final class DocumentExtractionDraftEnricher
         }
 
         if (! empty($profile['gender'])) {
-            $normalizedGender = $this->genderNormalizer->normalize((string) $profile['gender']);
+            $normalizedGender = $this->genderNormalizer->normalize(AiScalarText::from($profile['gender']));
             if ($normalizedGender !== null) {
                 $profile['gender'] = $normalizedGender;
             }
@@ -260,7 +370,7 @@ final class DocumentExtractionDraftEnricher
     {
         $document = is_array($draft['user_document'] ?? null) ? $draft['user_document'] : [];
         if (! empty($document['issuing_country_name'])) {
-            $document['resolved_issuing_country_id'] = $this->countryResolver->resolveId((string) $document['issuing_country_name']);
+            $document['resolved_issuing_country_id'] = $this->countryResolver->resolveId(AiScalarText::from($document['issuing_country_name']));
         }
         $draft['user_document'] = $document;
 
@@ -275,9 +385,11 @@ final class DocumentExtractionDraftEnricher
     {
         $profile = is_array($draft['user_profile'] ?? null) ? $draft['user_profile'] : [];
         $parsed = $this->nameParser->parse(
-            isset($profile['first_name']) ? (string) $profile['first_name'] : null,
-            isset($profile['last_name']) ? (string) $profile['last_name'] : null,
-            isset($profile['full_name']) ? (string) $profile['full_name'] : (isset($draft['full_name']) ? (string) $draft['full_name'] : null),
+            isset($profile['first_name']) ? AiScalarText::nullable($profile['first_name']) : null,
+            isset($profile['last_name']) ? AiScalarText::nullable($profile['last_name']) : null,
+            isset($profile['full_name'])
+                ? AiScalarText::nullable($profile['full_name'])
+                : (isset($draft['full_name']) ? AiScalarText::nullable($draft['full_name']) : null),
         );
         if ($parsed['first_name'] !== '') {
             $profile['first_name'] = $parsed['first_name'];
@@ -288,12 +400,12 @@ final class DocumentExtractionDraftEnricher
         if ($parsed['full_name'] !== '') {
             $profile['full_name'] = $parsed['full_name'];
         } elseif (($profile['first_name'] ?? '') !== '' || ($profile['last_name'] ?? '') !== '') {
-            $profile['full_name'] = trim(((string) ($profile['last_name'] ?? '')).' '.((string) ($profile['first_name'] ?? '')));
+            $profile['full_name'] = trim(AiScalarText::from($profile['last_name'] ?? '').' '.AiScalarText::from($profile['first_name'] ?? ''));
         }
 
-        $countryHint = (string) ($profile['nationality_country_name'] ?? $profile['residence_country_name'] ?? '');
+        $countryHint = AiScalarText::from($profile['nationality_country_name'] ?? $profile['residence_country_name'] ?? '');
         if ($countryHint === '' && ! empty($profile['residence_city_name'])) {
-            $inferred = $this->countryResolver->resolveNameFromCity((string) $profile['residence_city_name']);
+            $inferred = $this->countryResolver->resolveNameFromCity(AiScalarText::from($profile['residence_city_name']));
             if ($inferred !== null) {
                 $profile['residence_country_name'] = $inferred;
                 $countryHint = $inferred;
@@ -302,12 +414,12 @@ final class DocumentExtractionDraftEnricher
 
         foreach (['phone_number2', 'phone_number3'] as $phoneField) {
             if (! empty($profile[$phoneField])) {
-                $profile[$phoneField] = $this->phoneNormalizer->normalize((string) $profile[$phoneField], $countryHint) ?? $profile[$phoneField];
+                $profile[$phoneField] = $this->phoneNormalizer->normalize(AiScalarText::from($profile[$phoneField]), $countryHint) ?? $profile[$phoneField];
             }
         }
 
         if (! empty($profile['nationality_country_name'])) {
-            $profile['resolved_nationality_country_id'] = $this->countryResolver->resolveId((string) $profile['nationality_country_name']);
+            $profile['resolved_nationality_country_id'] = $this->countryResolver->resolveId(AiScalarText::from($profile['nationality_country_name']));
         }
 
         $bio = $this->resolveBio($profile, $draft);
@@ -316,7 +428,7 @@ final class DocumentExtractionDraftEnricher
         }
 
         if (! empty($profile['marital_status'])) {
-            $normalizedMaritalStatus = $this->maritalStatusNormalizer->normalize((string) $profile['marital_status']);
+            $normalizedMaritalStatus = $this->maritalStatusNormalizer->normalize(AiScalarText::from($profile['marital_status']));
             if ($normalizedMaritalStatus !== null) {
                 $profile['marital_status'] = $normalizedMaritalStatus;
             }
@@ -357,11 +469,12 @@ final class DocumentExtractionDraftEnricher
 
     private function normalizeBioText(mixed $value): string
     {
-        if (! is_string($value)) {
+        $bio = AiScalarText::from($value, ' ');
+        if ($bio === '') {
             return '';
         }
 
-        $bio = trim(preg_replace('/\s+/u', ' ', $value) ?? $value);
+        $bio = trim(preg_replace('/\s+/u', ' ', $bio) ?? $bio);
         if ($bio === '') {
             return '';
         }
@@ -388,20 +501,20 @@ final class DocumentExtractionDraftEnricher
                 continue;
             }
 
-            $type = strtolower((string) ($row['experience_type'] ?? 'employment'));
+            $type = strtolower(AiScalarText::from($row['experience_type'] ?? 'employment'));
             $isProfessional = array_key_exists('is_professional', $row)
                 ? (bool) $row['is_professional']
                 : ! in_array($type, ['internship', 'volunteer', 'academic_project', 'training', 'other'], true);
 
             if ($this->isInternshipRow($row) || ! $isProfessional || $type === 'internship') {
                 $internRow = [
-                    'title' => (string) ($row['job_title'] ?? ''),
-                    'organization' => (string) ($row['company_name'] ?? ''),
-                    'location' => trim(((string) ($row['city_name'] ?? '')).' '.((string) ($row['country_name'] ?? ''))),
+                    'title' => AiScalarText::from($row['job_title'] ?? ''),
+                    'organization' => AiScalarText::from($row['company_name'] ?? ''),
+                    'location' => trim(AiScalarText::from($row['city_name'] ?? '').' '.AiScalarText::from($row['country_name'] ?? '')),
                     'start_date' => $row['start_date'] ?? null,
                     'end_date' => $row['end_date'] ?? null,
                     'is_current' => (bool) ($row['is_current'] ?? false),
-                    'description' => trim(((string) ($row['responsibilities'] ?? '')).' '.((string) ($row['achievements'] ?? ''))),
+                    'description' => trim(AiScalarText::from($row['responsibilities'] ?? '').' '.AiScalarText::from($row['achievements'] ?? '')),
                     'type' => $type === 'internship' ? 'internship' : $type,
                 ];
                 $internships[] = $this->organizationDisambiguator->disambiguateInternship($internRow);
@@ -424,17 +537,17 @@ final class DocumentExtractionDraftEnricher
      */
     private function isInternshipRow(array $row): bool
     {
-        $type = strtolower((string) ($row['experience_type'] ?? ''));
+        $type = strtolower(AiScalarText::from($row['experience_type'] ?? ''));
         if (in_array($type, ['internship', 'stage', 'stagiaire', 'academic_project', 'volunteer', 'training'], true)) {
             return true;
         }
 
         $blob = mb_strtolower(implode(' ', array_filter([
-            (string) ($row['job_title'] ?? ''),
-            (string) ($row['company_name'] ?? ''),
-            (string) ($row['responsibilities'] ?? ''),
-            (string) ($row['achievements'] ?? ''),
-            (string) ($row['description'] ?? ''),
+            AiScalarText::from($row['job_title'] ?? ''),
+            AiScalarText::from($row['company_name'] ?? ''),
+            AiScalarText::from($row['responsibilities'] ?? ''),
+            AiScalarText::from($row['achievements'] ?? ''),
+            AiScalarText::from($row['description'] ?? ''),
         ])));
 
         if ($blob === '') {
@@ -460,8 +573,8 @@ final class DocumentExtractionDraftEnricher
                 continue;
             }
 
-            $title = trim((string) ($row['title'] ?? $row['job_title'] ?? ''));
-            $organization = trim((string) ($row['organization'] ?? $row['company_name'] ?? ''));
+            $title = trim(AiScalarText::from($row['title'] ?? $row['job_title'] ?? ''));
+            $organization = trim(AiScalarText::from($row['organization'] ?? $row['company_name'] ?? ''));
             if ($title === '' && $organization === '') {
                 continue;
             }
@@ -469,12 +582,12 @@ final class DocumentExtractionDraftEnricher
             $internships[] = [
                 'title' => $title,
                 'organization' => $organization,
-                'location' => (string) ($row['location'] ?? ''),
+                'location' => AiScalarText::from($row['location'] ?? ''),
                 'start_date' => $row['start_date'] ?? null,
                 'end_date' => $row['end_date'] ?? null,
                 'is_current' => (bool) ($row['is_current'] ?? false),
-                'description' => (string) ($row['description'] ?? ''),
-                'type' => (string) ($row['type'] ?? 'internship'),
+                'description' => AiScalarText::from($row['description'] ?? ''),
+                'type' => AiScalarText::from($row['type'] ?? 'internship') ?: 'internship',
             ];
         }
 
@@ -495,13 +608,13 @@ final class DocumentExtractionDraftEnricher
                     continue;
                 }
                 if (empty($row['country_name']) && ! empty($row['city_name'])) {
-                    $inferred = $this->countryResolver->resolveNameFromCity((string) $row['city_name']);
+                    $inferred = $this->countryResolver->resolveNameFromCity(AiScalarText::from($row['city_name']));
                     if ($inferred !== null) {
                         $row['country_name'] = $inferred;
                     }
                 }
                 if (! empty($row['country_name'])) {
-                    $row['resolved_country_id'] = $this->countryResolver->resolveId((string) $row['country_name']);
+                    $row['resolved_country_id'] = $this->countryResolver->resolveId(AiScalarText::from($row['country_name']));
                 }
                 $draft[$section][$index] = $row;
             }
@@ -563,10 +676,10 @@ final class DocumentExtractionDraftEnricher
                 continue;
             }
 
-            $name = (string) ($row['language_name'] ?? $row['language'] ?? $row['name'] ?? '');
-            $code = (string) ($row['language_code'] ?? '');
+            $name = AiScalarText::from($row['language_name'] ?? $row['language'] ?? $row['name'] ?? '');
+            $code = AiScalarText::from($row['language_code'] ?? '');
             $proficiency = $this->languageProficiencyNormalizer->normalize(
-                (string) ($row['proficiency_level'] ?? $row['level'] ?? ''),
+                AiScalarText::from($row['proficiency_level'] ?? $row['level'] ?? ''),
             );
 
             if ($name === '' && $code === '') {
@@ -620,7 +733,7 @@ final class DocumentExtractionDraftEnricher
                 continue;
             }
             if (is_array($item) && ! empty($item['name'])) {
-                $name = trim((string) $item['name']);
+                $name = trim(AiScalarText::from($item['name']));
                 $skills[] = [
                     'name' => $name,
                     'resolved_skill_id' => $this->skillResolver->resolveId($name),

@@ -6,6 +6,7 @@ namespace App\Core\Domain\Catalog\Actions\Offer;
 
 use App\Core\Domain\Catalog\DTOs\Offer\OfferDto;
 use App\Core\Domain\Catalog\Models\Offer;
+use App\Core\Domain\Catalog\Support\OfferPublicationScheduler;
 use App\Core\Domain\Location\Models\LanguageLevel;
 use App\Core\Infrastructure\Cache\CatalogCacheInvalidator;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -39,13 +40,13 @@ class UpdateOfferAction
             throw new ModelNotFoundException("Offer {$offerId} not found.");
         }
 
-        if (($attributes['status'] ?? null) === 'PUBLISHED') {
-            if (array_key_exists('published_at', $attributes) && empty($attributes['published_at'])) {
-                $attributes['published_at'] = now()->toDateTimeString();
-            } elseif (! array_key_exists('published_at', $attributes) && $offer->published_at === null) {
-                $attributes['published_at'] = now()->toDateTimeString();
-            }
+        if (! array_key_exists('status', $attributes) && $offer->status !== null) {
+            $attributes['status'] = $offer->status instanceof \BackedEnum
+                ? $offer->status->value
+                : (string) $offer->status;
         }
+
+        $attributes = OfferPublicationScheduler::normalize($attributes);
 
         $offer->fill($attributes);
         $offer->save();

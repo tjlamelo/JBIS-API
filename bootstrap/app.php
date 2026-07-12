@@ -83,5 +83,11 @@ return Application::configure(basePath: dirname(__DIR__))
             ->timezone('Africa/Douala')
             ->withoutOverlapping()
             ->onOneServer();
+
+        $schedule->command('offers:publish-scheduled')
+            ->everyMinute()
+            ->timezone('Africa/Douala')
+            ->withoutOverlapping()
+            ->onOneServer();
     })
     ->create();

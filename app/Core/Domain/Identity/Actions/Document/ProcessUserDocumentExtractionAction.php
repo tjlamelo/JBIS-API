@@ -87,9 +87,18 @@ final class ProcessUserDocumentExtractionAction
                 'exception' => $exception::class,
             ]);
 
+            $message = $exception->getMessage();
+            if (! is_string($message) || $message === '') {
+                $message = 'Erreur inconnue pendant l\'analyse du document.';
+            }
+            // Évite de stocker des messages PHP bruts trop longs / non traduits côté UI.
+            if (str_contains($message, 'Array to string conversion')) {
+                $message = 'L\'analyse IA a renvoyé un format inattendu. Merci de réessayer ou de vérifier le document.';
+            }
+
             $extraction->update([
                 'status' => DocumentExtractionStatus::Failed,
-                'error_message' => $exception->getMessage(),
+                'error_message' => mb_substr($message, 0, 500),
             ]);
         }
 

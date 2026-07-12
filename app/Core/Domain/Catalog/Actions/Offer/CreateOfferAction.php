@@ -6,6 +6,7 @@ namespace App\Core\Domain\Catalog\Actions\Offer;
 
 use App\Core\Domain\Catalog\DTOs\Offer\OfferDto;
 use App\Core\Domain\Catalog\Models\Offer;
+use App\Core\Domain\Catalog\Support\OfferPublicationScheduler;
 use App\Core\Domain\Location\Models\LanguageLevel;
 use App\Core\Infrastructure\Cache\CatalogCacheInvalidator;
 
@@ -30,10 +31,7 @@ class CreateOfferAction
             $attributes['required_documents']
         );
 
-        // Default publication time: now when published and not scheduled.
-        if (($attributes['status'] ?? null) === 'PUBLISHED' && empty($attributes['published_at'])) {
-            $attributes['published_at'] = now()->toDateTimeString();
-        }
+        $attributes = OfferPublicationScheduler::normalize($attributes);
 
         /** @var Offer $offer */
         $offer = Offer::query()->create($attributes);

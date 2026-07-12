@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Core\Domain\Identity\Support;
 
+use App\Core\Domain\Shared\Ai\Support\AiScalarText;
+
 /**
  * Corrige les inversions fréquentes poste ↔ établissement dans les brouillons IA.
  */
@@ -27,8 +29,8 @@ final class OrganizationNameDisambiguator
      */
     public function disambiguateExperience(array $row): array
     {
-        $title = trim((string) ($row['job_title'] ?? ''));
-        $company = trim((string) ($row['company_name'] ?? ''));
+        $title = trim(AiScalarText::from($row['job_title'] ?? ''));
+        $company = trim(AiScalarText::from($row['company_name'] ?? ''));
 
         if ($title === '' && $company !== '' && $this->looksLikeJobTitle($company)) {
             $row['job_title'] = $company;
@@ -58,8 +60,8 @@ final class OrganizationNameDisambiguator
      */
     public function disambiguateEducation(array $row): array
     {
-        $degree = trim((string) ($row['degree'] ?? ''));
-        $institution = trim((string) ($row['institution_name'] ?? ''));
+        $degree = trim(AiScalarText::from($row['degree'] ?? ''));
+        $institution = trim(AiScalarText::from($row['institution_name'] ?? ''));
 
         if ($institution === '' && $degree !== '' && $this->looksLikeOrganization($degree)) {
             $row['institution_name'] = $degree;
@@ -89,8 +91,8 @@ final class OrganizationNameDisambiguator
      */
     public function disambiguateInternship(array $row): array
     {
-        $title = trim((string) ($row['title'] ?? ''));
-        $organization = trim((string) ($row['organization'] ?? ''));
+        $title = trim(AiScalarText::from($row['title'] ?? ''));
+        $organization = trim(AiScalarText::from($row['organization'] ?? ''));
 
         if ($title !== '' && $organization !== '' && $this->shouldSwapRoleAndOrganization($title, $organization)) {
             $row['title'] = $organization;
