@@ -69,13 +69,21 @@ class AdminOfferController extends Controller
 
     public function uploadPhoto(Request $request): JsonResponse
     {
-        $validated = $request->validate([
-            'photo' => ['required_without_all:file,image', 'file', 'max:10240', 'mimes:jpg,jpeg,png,webp,pdf'],
-            'file' => ['required_without_all:photo,image', 'file', 'max:10240', 'mimes:jpg,jpeg,png,webp,pdf'],
-            'image' => ['required_without_all:photo,file', 'file', 'max:10240', 'mimes:jpg,jpeg,png,webp,pdf'],
+        $request->validate([
+            'photo' => ['nullable', 'file', 'max:10240', 'mimes:jpg,jpeg,png,webp,pdf'],
+            'file' => ['nullable', 'file', 'max:10240', 'mimes:jpg,jpeg,png,webp,pdf'],
+            'image' => ['nullable', 'file', 'max:10240', 'mimes:jpg,jpeg,png,webp,pdf'],
         ]);
 
-        $file = $validated['photo'] ?? $validated['file'] ?? $validated['image'];
+        $file = $request->file('photo')
+            ?? $request->file('file')
+            ?? $request->file('image');
+
+        if ($file === null) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'photo' => [__('Un fichier photo (image ou PDF) est requis.')],
+            ]);
+        }
 
         $uploaded = $this->storeMediaAction->execute(
             $file,
