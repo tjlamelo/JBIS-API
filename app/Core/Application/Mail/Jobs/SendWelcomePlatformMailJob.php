@@ -33,14 +33,13 @@ final class SendWelcomePlatformMailJob implements ShouldBeUnique, ShouldQueue
     /** @var list<int> */
     public array $backoff = [15, 60, 180, 600];
 
-    public bool $afterCommit = true;
-
     public int $uniqueFor = 3600;
 
     public function __construct(
         public readonly int $userId,
     ) {
         $this->onQueue((string) config('queue.mail_queue', 'mail'));
+        $this->afterCommit();
     }
 
     public function uniqueId(): string
