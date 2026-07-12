@@ -122,17 +122,27 @@ readonly class OfferDto
         $photo = $attributes['photo'] ?? null;
         unset($attributes['photo']);
 
-        if ($mediaProvided) {
+        $photoUrl = is_string($photo) ? trim($photo) : '';
+        $media = $attributes['photo_media'] ?? null;
+        $hasUsableMedia = is_array($media)
+            && (
+                (isset($media['public_url']) && is_string($media['public_url']) && trim($media['public_url']) !== '')
+                || (isset($media['local_optimized_path']) && trim((string) $media['local_optimized_path']) !== '')
+                || (isset($media['local_raw_path']) && trim((string) $media['local_raw_path']) !== '')
+                || (isset($media['cloudinary_id']) && trim((string) $media['cloudinary_id']) !== '')
+            );
+
+        if ($hasUsableMedia) {
             return $attributes;
         }
 
-        if (! $photoProvided) {
+        if ($photoUrl !== '') {
+            $attributes['photo_media'] = self::mediaFromPublicUrl($photoUrl);
+
             return $attributes;
         }
 
-        if (is_string($photo) && trim($photo) !== '') {
-            $attributes['photo_media'] = self::mediaFromPublicUrl(trim($photo));
-        } else {
+        if ($mediaProvided || $photoProvided) {
             $attributes['photo_media'] = null;
         }
 

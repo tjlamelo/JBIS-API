@@ -121,4 +121,45 @@ final class AdminOfferPhotoPersistenceTest extends TestCase
         $this->assertSame($media['public_url'], $offer->photo_media['public_url'] ?? null);
         $this->assertSame($media['local_optimized_path'], $offer->photo_media['local_optimized_path'] ?? null);
     }
+
+    #[Test]
+    public function create_offer_uses_photo_url_when_photo_media_is_null(): void
+    {
+        $admin = User::factory()->create();
+        $admin->assignRole(ApplicationRole::ADMIN);
+        Sanctum::actingAs($admin);
+
+        $category = Category::query()->create([
+            'name' => ['fr' => 'Tech', 'en' => 'Tech'],
+            'slug' => 'tech-'.uniqid(),
+        ]);
+        $trade = Trade::query()->create([
+            'category_id' => $category->id,
+            'name' => ['fr' => 'Dev', 'en' => 'Dev'],
+            'slug' => 'dev-'.uniqid(),
+        ]);
+        $country = Country::query()->firstOrCreate(
+            ['code' => 'CM'],
+            ['name' => ['fr' => 'Cameroun', 'en' => 'Cameroon']],
+        );
+
+        $photoUrl = 'https://cdn.example.com/offers/null-media-fallback.jpg';
+
+        $response = $this->postJson('/api/v1/catalog/admin/offers', [
+            'trade_id' => $trade->id,
+            'country_id' => $country->id,
+            'address' => 'Douala',
+            'photo' => $photoUrl,
+            'photo_media' => null,
+            'status' => 'DRAFT',
+        ]);
+
+        $response->assertCreated();
+
+        $offerId = (int) $response->json('data.offer.id');
+        $offer = Offer::query()->findOrFail($offerId);
+
+        $this->assertIsArray($offer->photo_media);
+        $this->assertSame($photoUrl, $offer->photo_media['public_url'] ?? null);
+    }
 }
