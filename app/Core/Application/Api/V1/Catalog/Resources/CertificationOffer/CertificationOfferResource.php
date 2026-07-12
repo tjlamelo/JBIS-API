@@ -14,13 +14,24 @@ final class CertificationOfferResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $isAdmin = $request->is('api/v1/catalog/admin/certification-offers*');
+        $locale = app()->getLocale();
+
         return [
             'id' => $this->id,
             'domain' => $this->domain,
-            'title' => $this->title,
-            'duration_label' => $this->duration_label,
-            'organization' => $this->organization,
-            'description' => $this->description,
+            'title' => $isAdmin
+                ? $this->getTranslations('title')
+                : ($this->getTranslation('title', $locale) ?: $this->getTranslation('title', 'fr')),
+            'duration_label' => $isAdmin
+                ? $this->getTranslations('duration_label')
+                : ($this->getTranslation('duration_label', $locale) ?: $this->getTranslation('duration_label', 'fr')),
+            'organization' => $isAdmin
+                ? $this->getTranslations('organization')
+                : ($this->getTranslation('organization', $locale) ?: $this->getTranslation('organization', 'fr')),
+            'description' => $isAdmin
+                ? $this->getTranslations('description')
+                : ($this->getTranslation('description', $locale) ?: $this->getTranslation('description', 'fr')),
             'cost' => $this->cost,
             'first_installment' => $this->first_installment,
             'second_installment' => $this->second_installment,
@@ -28,7 +39,9 @@ final class CertificationOfferResource extends JsonResource
             'currency' => $this->currency,
             'exam_mode' => $this->exam_mode,
             'validity_years' => $this->validity_years,
-            'level' => $this->level,
+            'level' => $isAdmin
+                ? $this->getTranslations('level')
+                : ($this->getTranslation('level', $locale) ?: $this->getTranslation('level', 'fr')),
             'process_flow_id' => $this->process_flow_id,
             'sort_order' => $this->sort_order,
             'is_active' => (bool) $this->is_active,

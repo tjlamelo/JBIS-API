@@ -13,20 +13,19 @@ return new class extends Migration
     {
         Schema::create('assigned_tasks', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('meeting_id')->nullable()->index();
             $table->string('title');
             $table->text('description')->nullable();
             $table->date('due_date')->nullable();
             $table->enum('priority', ['LOW', 'MEDIUM', 'HIGH', 'URGENT'])->default('MEDIUM');
 
-            // État d'avancement global
-            $table->integer('progress_percentage')->default(0); // 0 à 100
+            $table->integer('progress_percentage')->default(0);
             $table->enum('status', ['TODO', 'IN_PROGRESS', 'DONE', 'CANCELLED'])->default('TODO');
-            $table->text('final_result')->nullable(); // Résultat final une fois terminé
+            $table->text('final_result')->nullable();
 
             $table->timestamps();
         });
-
     }
 
     /**

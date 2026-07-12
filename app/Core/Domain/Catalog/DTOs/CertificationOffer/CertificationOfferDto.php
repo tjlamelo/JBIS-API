@@ -10,14 +10,19 @@ readonly class CertificationOfferDto
 {
     /**
      * @param  list<string>  $provided_keys
+     * @param  array{fr?: string, en?: string}|string  $title
+     * @param  array{fr?: string, en?: string}|string|null  $duration_label
+     * @param  array{fr?: string, en?: string}|string  $organization
+     * @param  array{fr?: string, en?: string}|string|null  $description
+     * @param  array{fr?: string, en?: string}|string|null  $level
      */
     public function __construct(
         public array $provided_keys,
         public string $domain,
-        public string $title,
-        public ?string $duration_label = null,
-        public string $organization,
-        public ?string $description = null,
+        public array|string $title,
+        public array|string|null $duration_label = null,
+        public array|string $organization = ['fr' => 'JBIS', 'en' => 'JBIS'],
+        public array|string|null $description = null,
         public string $cost = '0',
         public ?string $first_installment = null,
         public ?string $second_installment = null,
@@ -25,7 +30,7 @@ readonly class CertificationOfferDto
         public string $currency = 'XAF',
         public string $exam_mode = 'ONSITE',
         public ?int $validity_years = null,
-        public ?string $level = null,
+        public array|string|null $level = null,
         public ?int $process_flow_id = null,
         public int $sort_order = 0,
         public bool $is_active = true,
@@ -63,10 +68,14 @@ readonly class CertificationOfferDto
         return new self(
             provided_keys: array_values($providedKeys),
             domain: (string) ($data['domain'] ?? 'AMCA'),
-            title: (string) ($data['title'] ?? ''),
-            duration_label: isset($data['duration_label']) && $data['duration_label'] !== '' ? (string) $data['duration_label'] : null,
-            organization: (string) ($data['organization'] ?? 'JBIS'),
-            description: isset($data['description']) && $data['description'] !== '' ? (string) $data['description'] : null,
+            title: self::localized($data['title'] ?? ''),
+            duration_label: array_key_exists('duration_label', $data)
+                ? self::localizedNullable($data['duration_label'])
+                : null,
+            organization: self::localized($data['organization'] ?? ['fr' => 'JBIS', 'en' => 'JBIS']),
+            description: array_key_exists('description', $data)
+                ? self::localizedNullable($data['description'])
+                : null,
             cost: $cost,
             first_installment: $firstInstallment,
             second_installment: $secondInstallment,
@@ -76,7 +85,9 @@ readonly class CertificationOfferDto
             validity_years: array_key_exists('validity_years', $data) && $data['validity_years'] !== null && $data['validity_years'] !== ''
                 ? (int) $data['validity_years']
                 : null,
-            level: isset($data['level']) && $data['level'] !== '' ? (string) $data['level'] : null,
+            level: array_key_exists('level', $data)
+                ? self::localizedNullable($data['level'])
+                : null,
             process_flow_id: array_key_exists('process_flow_id', $data)
                 ? (($data['process_flow_id'] ?? null) !== null && $data['process_flow_id'] !== ''
                     ? (int) $data['process_flow_id']
@@ -92,5 +103,39 @@ readonly class CertificationOfferDto
     public function has(string $key): bool
     {
         return in_array($key, $this->provided_keys, true);
+    }
+
+    /**
+     * @return array{fr: string, en: string}
+     */
+    private static function localized(mixed $value): array
+    {
+        if (is_array($value)) {
+            return [
+                'fr' => trim((string) ($value['fr'] ?? '')),
+                'en' => trim((string) ($value['en'] ?? '')),
+            ];
+        }
+
+        $text = trim((string) $value);
+
+        return ['fr' => $text, 'en' => $text];
+    }
+
+    /**
+     * @return array{fr: string, en: string}|null
+     */
+    private static function localizedNullable(mixed $value): ?array
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        $localized = self::localized($value);
+        if ($localized['fr'] === '' && $localized['en'] === '') {
+            return null;
+        }
+
+        return $localized;
     }
 }

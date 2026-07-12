@@ -20,7 +20,7 @@ final class CertificationOfferController extends Controller
         $items = CertificationOffer::query()
             ->where('is_active', true)
             ->orderBy('sort_order')
-            ->orderBy('title')
+            ->orderBy('title_fr')
             ->get();
 
         $registrationFee = $items->first()?->registration_fee;

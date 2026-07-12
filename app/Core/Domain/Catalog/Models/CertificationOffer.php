@@ -8,10 +8,21 @@ use App\Core\Domain\Workflow\Models\ProcessFlow;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Spatie\Translatable\HasTranslations;
 
 class CertificationOffer extends Model
 {
+    use HasTranslations;
+
     protected $table = 'certification_offers';
+
+    public array $translatable = [
+        'title',
+        'duration_label',
+        'organization',
+        'description',
+        'level',
+    ];
 
     protected $fillable = [
         'domain',

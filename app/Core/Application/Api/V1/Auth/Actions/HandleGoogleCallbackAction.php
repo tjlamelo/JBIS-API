@@ -7,6 +7,7 @@ use App\Core\Domain\Identity\Models\User;
 use App\Core\Domain\Identity\Models\UserProfile;
 use App\Core\Domain\Identity\Support\ApplicationRole;
 use Exception;
+use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -69,6 +70,8 @@ class HandleGoogleCallbackAction
             $user->assignRole(ApplicationRole::CANDIDATE);
 
             $this->recordMandatoryRegistrationConsents->execute($user);
+
+            event(new Registered($user));
         }
 
         if (! $user->hasVerifiedEmail()) {

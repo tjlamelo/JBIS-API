@@ -34,15 +34,16 @@ final class AdminCertificationOfferController extends Controller
         $offers = CertificationOffer::query()
             ->when($search !== '', function ($query) use ($search): void {
                 $query->where(function ($q) use ($search): void {
-                    $q->where('title', 'like', "%{$search}%")
-                        ->orWhere('domain', 'like', "%{$search}%")
-                        ->orWhere('organization', 'like', "%{$search}%");
+                    $like = "%{$search}%";
+                    $q->where('title_fr', 'like', $like)
+                        ->orWhere('title_en', 'like', $like)
+                        ->orWhere('domain', 'like', $like);
                 });
             })
             ->when($active === '1' || $active === 'true', fn ($q) => $q->where('is_active', true))
             ->when($active === '0' || $active === 'false', fn ($q) => $q->where('is_active', false))
             ->orderBy('sort_order')
-            ->orderBy('title')
+            ->orderBy('title_fr')
             ->paginate(min(100, max(1, (int) $request->query('per_page', 20))));
 
         return BaseResponse::ok([
