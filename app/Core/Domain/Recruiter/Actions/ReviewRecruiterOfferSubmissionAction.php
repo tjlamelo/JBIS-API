@@ -51,6 +51,7 @@ final class ReviewRecruiterOfferSubmissionAction
 
         if ($status === RecruiterOfferSubmissionStatus::Approved) {
             $offerPayload = is_array($submission->payload) ? $submission->payload : [];
+            $offerPayload = RecruiterOfferPayloadFields::forOfferCreation($offerPayload);
             $offerPayload['status'] = 'PUBLISHED';
             $offerPayload['user_id'] = $submission->submitted_by_user_id;
             $offerPayload['company_id'] = $offerPayload['company_id'] ?? $submission->organization?->company_id;

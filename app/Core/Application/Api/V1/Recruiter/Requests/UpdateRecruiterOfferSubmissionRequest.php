@@ -31,6 +31,12 @@ final class UpdateRecruiterOfferSubmissionRequest extends FormRequest
             'salary_min' => ['nullable', 'numeric'],
             'salary_max' => ['nullable', 'numeric'],
             'work_mode' => ['nullable', 'string', Rule::in(['on-site', 'hybrid', 'remote'])],
+            'skill_requirements' => ['sometimes', 'nullable', 'array'],
+            'skill_requirements.*.skill_id' => ['required', 'integer', 'exists:skills,id'],
+            'skill_requirements.*.level' => ['nullable', 'string', 'max:32'],
+            'proposed_skills' => ['sometimes', 'nullable', 'array', 'max:20'],
+            'proposed_skills.*.label' => ['required', 'string', 'max:120'],
+            'proposed_skills.*.level' => ['nullable', 'string', 'max:32'],
         ];
     }
 

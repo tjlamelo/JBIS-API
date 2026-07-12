@@ -17,8 +17,8 @@ class DatabaseSeeder extends Seeder
             PermissionSeeder::class,
             RoleSeeder::class,
             UserSeeder::class,
-            RecruiterOrganizationSeeder::class,
-            PartnerOrganizationSeeder::class,
+            // RecruiterOrganizationSeeder::class,
+            // PartnerOrganizationSeeder::class,
             LegalDocumentSeeder::class,
         ]);
 
@@ -48,7 +48,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             CountrySeeder::class,        // Liste des pays
             LocationSeeder::class,       // Régions et Villes liées aux pays
-            CompanySeeder::class,        // Partenaires (Aman Taxi, etc.)
+            // CompanySeeder::class,        // Partenaires (Aman Taxi, etc.)
             AgencySeeder::class,         // Agences JBIS
         ]);
 
@@ -62,13 +62,13 @@ class DatabaseSeeder extends Seeder
         // Les offres sont le point final car elles dépendent de :
         // Program, Category, ContractType, City, Country, Company et User.
         $this->call([
-            OfferSeeder::class,
-            RequiredDocumentSeeder::class,
+            // OfferSeeder::class,
+            // RequiredDocumentSeeder::class,
         ]);
 
         // --- 6. PARCOURS PROCÉDURAUX (templates abstraits, sans FK programme/offre/pays) ---
         $this->call([
-            ProcessFlowSeeder::class,
+            // ProcessFlowSeeder::class,
         ]);
     }
 }

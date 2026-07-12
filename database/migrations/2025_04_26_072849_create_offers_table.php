@@ -46,6 +46,7 @@ return new class extends Migration
             $table->string('currency', 3)->default('XAF');
             $table->boolean('is_salary_public')->default(false);
             $table->boolean('is_company_public')->default(false);
+            $table->boolean('allows_public_applications')->default(true);
 
             // --- CONDITIONS ---
             $table->enum('work_mode', ['on-site', 'hybrid', 'remote'])->default('on-site')->index();

@@ -265,15 +265,16 @@ class RecruiterPortalTest extends TestCase
         [$recruiter, $organization] = $this->makeRecruiterWithOrganization();
         Sanctum::actingAs($recruiter);
 
+        $suffix = uniqid();
         $category = Category::query()->create([
             'name' => ['fr' => 'Informatique', 'en' => 'IT'],
-            'slug' => 'it-recruiter-test',
+            'slug' => 'it-recruiter-test-'.$suffix,
             'description' => ['fr' => 'IT', 'en' => 'IT'],
         ]);
         $trade = Trade::query()->create([
             'category_id' => $category->id,
             'name' => ['fr' => 'Développeur Laravel', 'en' => 'Laravel Developer'],
-            'slug' => 'laravel-developer-test',
+            'slug' => 'laravel-developer-test-'.$suffix,
             'is_active' => true,
         ]);
 

@@ -18,11 +18,18 @@ return new class extends Migration
             $table->string('title');
             $table->text('description')->nullable();
             $table->date('due_date')->nullable();
+            $table->unsignedInteger('estimated_minutes')->nullable();
+            $table->unsignedInteger('minutes_spent')->default(0);
+            $table->date('week_start_date')->nullable()->index();
             $table->enum('priority', ['LOW', 'MEDIUM', 'HIGH', 'URGENT'])->default('MEDIUM');
 
             $table->integer('progress_percentage')->default(0);
             $table->enum('status', ['TODO', 'IN_PROGRESS', 'DONE', 'CANCELLED'])->default('TODO');
             $table->text('final_result')->nullable();
+            $table->timestamp('started_at')->nullable();
+            $table->timestamp('completed_at')->nullable();
+            $table->foreignId('renewed_from_id')->nullable()->constrained('assigned_tasks')->nullOnDelete();
+            $table->text('notes')->nullable();
 
             $table->timestamps();
         });

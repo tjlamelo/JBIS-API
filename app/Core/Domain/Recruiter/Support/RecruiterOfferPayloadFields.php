@@ -22,6 +22,8 @@ final class RecruiterOfferPayloadFields
         'salary_min',
         'salary_max',
         'work_mode',
+        'skill_requirements',
+        'proposed_skills',
     ];
 
     /**
@@ -87,5 +89,18 @@ final class RecruiterOfferPayloadFields
         }
 
         return $merged;
+    }
+
+    /**
+     * Retire les clés non persistables sur une offre catalogue.
+     *
+     * @param  array<string, mixed>  $payload
+     * @return array<string, mixed>
+     */
+    public static function forOfferCreation(array $payload): array
+    {
+        unset($payload['proposed_skills']);
+
+        return $payload;
     }
 }

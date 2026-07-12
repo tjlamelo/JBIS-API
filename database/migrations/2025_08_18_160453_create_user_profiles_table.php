@@ -25,6 +25,7 @@ return new class extends Migration {
 
             $table->string('first_name', 50)->nullable();
             $table->string('last_name', 50)->nullable();
+            $table->string('civility', 16)->nullable();
             $table->date('date_of_birth')->nullable();
             $table->string('place_of_birth', 25)->nullable();
             $table->foreignId('nationality_country_id')->nullable()->constrained('countries');

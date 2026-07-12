@@ -39,6 +39,8 @@ return new class extends Migration
                 'REJECTED',
                 'CANCELLED',
             ])->default('PENDING')->index();
+            $table->boolean('is_private')->default(false);
+            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
 
             // Pointeur rapide vers l'étape courante (FK ajoutée après création de application_steps)
             $table->unsignedBigInteger('current_application_step_id')->nullable()->index();

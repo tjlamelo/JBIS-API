@@ -17,12 +17,14 @@ return new class extends Migration
 
             // LIEN OPTIONNEL : Si la tâche du jour découle d'une réunion
             $table->foreignId('assigned_task_id')->nullable()->constrained()->nullOnDelete();
+            $table->boolean('is_outside_meeting')->default(true);
 
             $table->string('title'); // Ce que la personne a fait concrètement aujourd'hui
             $table->text('description')->nullable();
             $table->date('task_date');
 
             $table->integer('hours_spent')->nullable();
+            $table->unsignedInteger('minutes_spent')->nullable();
             $table->enum('status', ['COMPLETED', 'PARTIAL', 'BLOCKED'])->default('COMPLETED');
             $table->text('blockers_notes')->nullable(); // Si bloqué, pourquoi ?
 
