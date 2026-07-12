@@ -28,14 +28,18 @@ return Application::configure(basePath: dirname(__DIR__))
         //
     })
     ->withSchedule(function (Schedule $schedule): void {
-        if (! config('services.newsletter.schedule_enabled', true)) {
-            return;
-        }
+        // o2switch : traite la file chaque minute (cron schedule:run requis)
+        $schedule->command('queue:work --queue=mail,default --stop-when-empty --max-time=50 --tries=5 --sleep=1')
+            ->everyMinute()
+            ->withoutOverlapping(4)
+            ->name('queue-worker-tick');
 
-        $schedule->command('newsletter:send-offers')
-            ->weeklyOn(1, '08:00')
-            ->timezone('Africa/Douala')
-            ->withoutOverlapping()
-            ->onOneServer();
+        if (config('services.newsletter.schedule_enabled', true)) {
+            $schedule->command('newsletter:send-offers')
+                ->weeklyOn(1, '08:00')
+                ->timezone('Africa/Douala')
+                ->withoutOverlapping()
+                ->onOneServer();
+        }
     })
     ->create();

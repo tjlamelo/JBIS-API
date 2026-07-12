@@ -22,15 +22,29 @@ Artisan::command('analytics:sync-ga4 {--date= : Date to sync (YYYY-MM-DD). Defau
     $this->info('GA4 sync dispatched for date: '.$date);
 })->purpose('Sync GA4 analytics and persist daily metrics to the database');
 
-Artisan::command('newsletter:send-offers {--limit= : Max subscribers to process}', function () {
-    $limit = $this->option('limit');
-    $stats = app(\App\Core\Domain\Communication\Actions\DispatchOfferNewslettersAction::class)
-        ->execute($limit !== null && $limit !== '' ? (int) $limit : null);
+Artisan::command('mail:welcome {user : Email ou ID utilisateur} {--sync : Envoi immédiat (sans queue)}', function () {
+    $raw = (string) $this->argument('user');
+    $user = is_numeric($raw)
+        ? \App\Core\Domain\Identity\Models\User::query()->find((int) $raw)
+        : \App\Core\Domain\Identity\Models\User::query()->where('email', $raw)->first();
 
-    $this->info(sprintf(
-        'Newsletter offres : %d envoyée(s), %d ignorée(s), sur %d abonné(s).',
-        $stats['sent'],
-        $stats['skipped'],
-        $stats['total'],
-    ));
-})->purpose('Envoyer la newsletter offres national/international aux abonnés actifs');
+    if ($user === null) {
+        $this->error('Utilisateur introuvable.');
+
+        return 1;
+    }
+
+    if ($this->option('sync')) {
+        \Illuminate\Support\Facades\Mail::to($user->email)->send(
+            new \App\Core\Application\Mail\Mailable\WelcomePlatformMail($user)
+        );
+        $this->info("Welcome envoyé en sync à {$user->email}");
+
+        return 0;
+    }
+
+    \App\Core\Application\Mail\Jobs\SendWelcomePlatformMailJob::dispatch($user->id);
+    $this->info("Welcome job dispatché pour {$user->email} (queue=".config('queue.mail_queue', 'default').')');
+
+    return 0;
+})->purpose('Renvoyer / tester le mail de bienvenue JBIS');
