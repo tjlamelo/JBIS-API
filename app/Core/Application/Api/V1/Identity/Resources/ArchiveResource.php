@@ -19,6 +19,8 @@ final class ArchiveResource extends JsonResource
         return [
             'id' => $this->id,
             'user_id' => $this->user_id,
+            'uploaded_by' => $this->uploaded_by,
+            'related_user_id' => $this->related_user_id,
             'original_name' => $this->original_name,
             'file_type' => $this->file_type,
             'extension' => $this->extension,
@@ -27,9 +29,21 @@ final class ArchiveResource extends JsonResource
             'readable_size' => $this->readable_size,
             'category' => $this->category,
             'description' => $this->description,
+            'disk' => $this->disk,
             'is_public' => $this->is_public,
             'url' => $this->url,
+            'uploader' => $this->whenLoaded('uploader', fn () => $this->uploader ? [
+                'id' => $this->uploader->id,
+                'name' => $this->uploader->name,
+                'email' => $this->uploader->email,
+            ] : null),
+            'related_user' => $this->whenLoaded('relatedUser', fn () => $this->relatedUser ? [
+                'id' => $this->relatedUser->id,
+                'name' => $this->relatedUser->name,
+                'email' => $this->relatedUser->email,
+            ] : null),
             'created_at' => $this->created_at?->toIso8601String(),
+            'updated_at' => $this->updated_at?->toIso8601String(),
         ];
     }
 }

@@ -25,6 +25,7 @@ use App\Core\Domain\Identity\Models\UserDocument;
 use App\Core\Domain\Identity\Models\UserInternship;
 use App\Core\Domain\Identity\Models\UserNote;
 use App\Core\Domain\Identity\Models\UserPreferredCountry;
+use App\Core\Domain\Identity\Models\UserSecurityEvent;
 use App\Core\Domain\Identity\Models\UserSkill;
 use App\Core\Domain\Identity\Models\UserTraining;
 use App\Core\Domain\Identity\Models\UserVisaHistory;
@@ -40,9 +41,16 @@ use App\Core\Domain\Identity\Policies\UserLanguagePolicy;
 use App\Core\Domain\Identity\Policies\UserNotePolicy;
 use App\Core\Domain\Identity\Policies\UserPolicy;
 use App\Core\Domain\Identity\Policies\UserPreferredCountryPolicy;
+use App\Core\Domain\Identity\Policies\UserSecurityEventPolicy;
 use App\Core\Domain\Identity\Policies\UserSkillPolicy;
 use App\Core\Domain\Identity\Policies\UserTrainingPolicy;
 use App\Core\Domain\Identity\Policies\UserVisaHistoryPolicy;
+use App\Core\Domain\Operations\Models\AssignedTask;
+use App\Core\Domain\Operations\Models\DailyTask;
+use App\Core\Domain\Operations\Models\Meeting;
+use App\Core\Domain\Operations\Policies\AssignedTaskPolicy;
+use App\Core\Domain\Operations\Policies\DailyTaskPolicy;
+use App\Core\Domain\Operations\Policies\MeetingPolicy;
 use App\Core\Domain\Identity\Support\ApplicationRole;
 use App\Core\Domain\Identity\Support\PermissionManagement;
 use App\Core\Domain\Partner\Models\PartnerCohort;
@@ -94,6 +102,10 @@ final class AuthServiceProvider extends ServiceProvider
         UserPreferredCountry::class => UserPreferredCountryPolicy::class,
         Archive::class => ArchivePolicy::class,
         UserDocument::class => UserDocumentPolicy::class,
+        UserSecurityEvent::class => UserSecurityEventPolicy::class,
+        Meeting::class => MeetingPolicy::class,
+        AssignedTask::class => AssignedTaskPolicy::class,
+        DailyTask::class => DailyTaskPolicy::class,
         User::class => UserPolicy::class,
         PermissionManagement::class => PermissionManagementPolicy::class,
         RecruiterOrganization::class => RecruiterOrganizationPolicy::class,

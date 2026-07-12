@@ -57,6 +57,10 @@ use App\Core\Application\Api\V1\Identity\Controllers\AdminUserDossierController;
 use App\Core\Application\Api\V1\Identity\Controllers\AdminUserController;
 use App\Core\Application\Api\V1\Identity\Controllers\AdminUserSearchFiltersController;
 use App\Core\Application\Api\V1\Identity\Controllers\ArchiveController;
+use App\Core\Application\Api\V1\Identity\Controllers\UserSecurityEventController;
+use App\Core\Application\Api\V1\Operations\Controllers\AssignedTaskController;
+use App\Core\Application\Api\V1\Operations\Controllers\DailyTaskController;
+use App\Core\Application\Api\V1\Operations\Controllers\MeetingController;
 use App\Core\Application\Api\V1\Identity\Controllers\CertificationController;
 use App\Core\Application\Api\V1\Identity\Controllers\EducationController;
 use App\Core\Application\Api\V1\Identity\Controllers\ExperienceController;
@@ -555,8 +559,32 @@ Route::prefix('v1')->group(function (): void {
 
             Route::get('archives', [ArchiveController::class, 'index']);
             Route::post('archives', [ArchiveController::class, 'store']);
+            Route::match(['put', 'patch'], 'archives/{archive}', [ArchiveController::class, 'update']);
             Route::get('archives/{archive}/download', [ArchiveController::class, 'download']);
             Route::delete('archives/{archive}', [ArchiveController::class, 'destroy']);
+
+            Route::get('security-events', [UserSecurityEventController::class, 'index']);
+            Route::get('security-events/{userSecurityEvent}', [UserSecurityEventController::class, 'show']);
+        });
+
+        Route::prefix('operations')->group(function (): void {
+            Route::get('meetings', [MeetingController::class, 'index']);
+            Route::post('meetings', [MeetingController::class, 'store']);
+            Route::get('meetings/{meeting}', [MeetingController::class, 'show']);
+            Route::match(['put', 'patch'], 'meetings/{meeting}', [MeetingController::class, 'update']);
+            Route::delete('meetings/{meeting}', [MeetingController::class, 'destroy']);
+
+            Route::get('assigned-tasks', [AssignedTaskController::class, 'index']);
+            Route::post('assigned-tasks', [AssignedTaskController::class, 'store']);
+            Route::get('assigned-tasks/{assignedTask}', [AssignedTaskController::class, 'show']);
+            Route::match(['put', 'patch'], 'assigned-tasks/{assignedTask}', [AssignedTaskController::class, 'update']);
+            Route::delete('assigned-tasks/{assignedTask}', [AssignedTaskController::class, 'destroy']);
+
+            Route::get('daily-tasks', [DailyTaskController::class, 'index']);
+            Route::post('daily-tasks', [DailyTaskController::class, 'store']);
+            Route::get('daily-tasks/{dailyTask}', [DailyTaskController::class, 'show']);
+            Route::match(['put', 'patch'], 'daily-tasks/{dailyTask}', [DailyTaskController::class, 'update']);
+            Route::delete('daily-tasks/{dailyTask}', [DailyTaskController::class, 'destroy']);
         });
 
         Route::prefix('catalog')->group(function (): void {
