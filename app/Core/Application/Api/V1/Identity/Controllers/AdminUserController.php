@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Core\Application\Api\V1\Identity\Controllers;
 
 use App\Core\Application\Api\Responses\BaseResponse;
+use App\Core\Application\Api\V1\Identity\Requests\AssignUserMatriculeRequest;
 use App\Core\Application\Api\V1\Identity\Requests\StoreAdminUserRequest;
 use App\Core\Application\Api\V1\Identity\Requests\UpdateAdminUserActiveRequest;
 use App\Core\Application\Api\V1\Identity\Requests\UpdateAdminUserProfileApprovalRequest;
@@ -12,12 +13,14 @@ use App\Core\Application\Api\V1\Identity\Requests\UpdateAdminUserProfileWizardSt
 use App\Core\Application\Api\V1\Identity\Requests\UpdateAdminUserRequest;
 use App\Core\Application\Api\V1\Identity\Resources\AdminUserResource;
 use App\Core\Application\Api\V1\Identity\Support\ProfileResponseMapper;
+use App\Core\Domain\Identity\Actions\Profile\AssignUserMatriculeAction;
 use App\Core\Domain\Identity\Actions\Profile\ModerateUserProfileAction;
 use App\Core\Domain\Identity\Actions\Profile\UpdateAdminUserProfileWizardStepAction;
 use App\Core\Domain\Identity\Actions\User\CreateAdminUserAction;
 use App\Core\Domain\Identity\Actions\User\SendAdminUserPasswordResetAction;
 use App\Core\Domain\Identity\Actions\User\UpdateAdminUserAction;
 use App\Core\Domain\Identity\DTOs\AdminUserWriteDto;
+use App\Core\Domain\Identity\Enums\MatriculeService;
 use App\Core\Domain\Identity\Models\User;
 use App\Core\Domain\Identity\Queries\AdminUserIndexQuery;
 use App\Http\Controllers\Controller;
@@ -108,16 +111,18 @@ final class AdminUserController extends Controller
 
         $this->authorize('create', User::class);
 
-        $user = $this->createUser->execute(AdminUserWriteDto::fromArray($request->validated()));
+        $result = $this->createUser->execute(AdminUserWriteDto::fromArray($request->validated()));
+        $user = $result['user'];
 
         return BaseResponse::created([
-
             'message' => __('Utilisateur cree avec succes.'),
-
             'user' => new AdminUserResource($user),
-
+            'account_notice' => [
+                'email' => $user->email,
+                'password' => $result['plain_password'],
+                'email_is_placeholder' => $result['email_is_placeholder'],
+            ],
         ])->toJsonResponse();
-
     }
 
     public function update(UpdateAdminUserRequest $request, User $user): JsonResponse
@@ -251,6 +256,46 @@ final class AdminUserController extends Controller
         return BaseResponse::ok([
             'message' => __('Profil mis a jour.'),
             'profile' => $profileResponseMapper->toArray($profile),
+            'user' => new AdminUserResource($user),
+        ])->toJsonResponse();
+    }
+
+    public function matriculeServices(): JsonResponse
+    {
+        $this->authorize('viewAny', User::class);
+
+        return BaseResponse::ok([
+            'services' => MatriculeService::options(),
+        ])->toJsonResponse();
+    }
+
+    public function assignMatricule(
+        AssignUserMatriculeRequest $request,
+        User $user,
+        AssignUserMatriculeAction $assignMatricule,
+    ): JsonResponse {
+        $this->authorize('update', $user);
+
+        try {
+            $result = $assignMatricule->execute(
+                $user,
+                (string) $request->validated('service'),
+                $request->validated('custom_tag'),
+                $request->boolean('force'),
+            );
+        } catch (\InvalidArgumentException $exception) {
+            return BaseResponse::unprocessableEntity([
+                'message' => $exception->getMessage(),
+            ])->toJsonResponse();
+        }
+
+        $user->load(['roles:id,name', 'profile.approver:id,name', 'trades:id,name,slug,category_id', 'trades.category:id,name,slug']);
+
+        return BaseResponse::ok([
+            'message' => $result['regenerated']
+                ? __('Matricule régénéré avec succès.')
+                : __('Matricule attribué avec succès.'),
+            'assignment' => $result,
             'user' => new AdminUserResource($user),
         ])->toJsonResponse();
     }

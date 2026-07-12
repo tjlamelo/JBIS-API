@@ -32,6 +32,7 @@ readonly class AdminUserWriteDto
         public ?string $gender = null,
         public ?string $maritalStatus = null,
         public ?int $numberOfChildren = null,
+        public bool $emailIsPlaceholder = false,
     ) {}
 
     /**
@@ -48,7 +49,9 @@ readonly class AdminUserWriteDto
 
         return new self(
             name: isset($data['name']) && $data['name'] !== '' ? (string) $data['name'] : null,
-            email: isset($data['email']) ? (string) $data['email'] : null,
+            email: isset($data['email']) && is_string($data['email']) && trim($data['email']) !== ''
+                ? trim($data['email'])
+                : null,
             phoneNumber1: array_key_exists('phone_number1', $data)
                 ? ($data['phone_number1'] !== null && $data['phone_number1'] !== '' ? (string) $data['phone_number1'] : null)
                 : null,
@@ -88,6 +91,7 @@ readonly class AdminUserWriteDto
             numberOfChildren: array_key_exists('number_of_children', $data) && $data['number_of_children'] !== null && $data['number_of_children'] !== ''
                 ? (int) $data['number_of_children']
                 : null,
+            emailIsPlaceholder: (bool) ($data['email_is_placeholder'] ?? false),
         );
     }
 
@@ -142,6 +146,7 @@ readonly class AdminUserWriteDto
         if ($this->email !== null) {
             $attributes['email'] = $this->email;
         }
+        $attributes['email_is_placeholder'] = $this->emailIsPlaceholder;
         if ($this->phoneNumber1 !== null) {
             $attributes['phone_number1'] = $this->phoneNumber1;
         }

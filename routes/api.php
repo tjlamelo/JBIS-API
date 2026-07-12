@@ -271,6 +271,7 @@ Route::prefix('v1')->group(function (): void {
             Route::get('/stats', [AdminUserController::class, 'stats']);
             Route::get('/import/template', [AdminUserImportController::class, 'template']);
             Route::post('/import', [AdminUserImportController::class, 'import']);
+            Route::get('/matricule-services', [AdminUserController::class, 'matriculeServices']);
             Route::get('/', [AdminUserController::class, 'index']);
             Route::post('/', [AdminUserController::class, 'store']);
             Route::get('/{user}/consents', [AdminUserDossierController::class, 'consents']);
@@ -282,6 +283,7 @@ Route::prefix('v1')->group(function (): void {
             Route::patch('/{user}/profile/steps/{step}', [AdminUserController::class, 'updateProfileStep'])
                 ->whereIn('step', ['personal', 'contact', 'professional', 'documents']);
             Route::post('/{user}/reset-password', [AdminUserController::class, 'sendPasswordReset']);
+            Route::post('/{user}/matricule', [AdminUserController::class, 'assignMatricule']);
         });
         Route::post('/logout', [AuthTokenController::class, 'logout']);
         Route::post('/logout-all', [AuthTokenController::class, 'logoutAll']);

@@ -78,6 +78,7 @@ class User extends Authenticatable implements MustVerifyEmail
     protected $fillable = [
         'name',
         'email',
+        'email_is_placeholder',
         'phone_number1',
         'password',
         'active',
@@ -107,7 +108,13 @@ class User extends Authenticatable implements MustVerifyEmail
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'active' => 'boolean',
+            'email_is_placeholder' => 'boolean',
         ];
+    }
+
+    public function canReceiveEmail(): bool
+    {
+        return filled($this->email) && ! (bool) $this->email_is_placeholder;
     }
 
     public function newEloquentBuilder($query): UserBuilder

@@ -43,7 +43,7 @@ final class NotifyStaffWelcomeAction
             '/admin/tasks',
         );
 
-        if (filled($user->email)) {
+        if ($user->canReceiveEmail()) {
             SendStaffWelcomeMailJob::dispatch($user->id)->onQueue('mail');
         }
     }

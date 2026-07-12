@@ -32,7 +32,7 @@ final class SendCandidacyAlertMailJob implements ShouldQueue
     public function handle(): void
     {
         $user = User::query()->find($this->userId);
-        if ($user === null || ! $user->email) {
+        if ($user === null || ! $user->canReceiveEmail()) {
             return;
         }
 

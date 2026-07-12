@@ -52,7 +52,7 @@ final class SendCameroonHolidayMailJob implements ShouldBeUnique, ShouldQueue
     public function handle(): void
     {
         $user = User::query()->with(['profile', 'settings'])->find($this->userId);
-        if ($user === null || ! $user->email) {
+        if ($user === null || ! $user->canReceiveEmail()) {
             return;
         }
 

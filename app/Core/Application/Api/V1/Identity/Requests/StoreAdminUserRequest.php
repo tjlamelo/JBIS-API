@@ -31,6 +31,13 @@ final class StoreAdminUserRequest extends FormRequest
             ]);
         }
 
+        $email = $this->input('email');
+        if (! is_string($email) || trim($email) === '') {
+            $this->merge(['email' => null]);
+        } else {
+            $this->merge(['email' => trim($email)]);
+        }
+
         $gender = $this->input('gender');
         $civility = $this->input('civility');
         if (is_string($gender) && $gender !== '') {
@@ -51,7 +58,7 @@ final class StoreAdminUserRequest extends FormRequest
 
         return [
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')],
+            'email' => ['nullable', 'email', 'max:255', Rule::unique('users', 'email')],
             'phone_number1' => ['nullable', 'string', 'max:20', Rule::unique('users', 'phone_number1')],
             'password' => $passwordProvided
                 ? ['required', 'confirmed', Password::defaults()]
@@ -60,8 +67,8 @@ final class StoreAdminUserRequest extends FormRequest
             'active' => ['sometimes', 'boolean'],
             'roles' => ['sometimes', 'array', 'min:1'],
             'roles.*' => ['string', Rule::exists('roles', 'name')],
-            'first_name' => ['nullable', 'string', 'max:50'],
-            'last_name' => ['nullable', 'string', 'max:50'],
+            'first_name' => ['required', 'string', 'max:50'],
+            'last_name' => ['required', 'string', 'max:50'],
             'civility' => ['nullable', 'string', Rule::in(Civility::valuesForGender($genderValue))],
             'date_of_birth' => [
                 'nullable',

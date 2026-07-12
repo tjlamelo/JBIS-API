@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('email')->unique();
+            $table->boolean('email_is_placeholder')->default(false);
             $table->string('phone_number1', 20)->nullable()->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->boolean('active')->default(1);

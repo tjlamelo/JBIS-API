@@ -120,9 +120,10 @@ final class AdminUserImportService
                     $countryId = $countryIdsByCode[strtoupper($row->nationalityCountryCode)] ?? null;
                 }
 
-                $user = $this->createAdminUser->execute(
-                    AdminUserWriteDto::fromArray($row->toWriteArray($countryId)),
-                );
+                    $created = $this->createAdminUser->execute(
+                        AdminUserWriteDto::fromArray($row->toWriteArray($countryId)),
+                    );
+                    $user = $created['user'];
                 $createdIds[] = (int) $user->id;
             }
         });

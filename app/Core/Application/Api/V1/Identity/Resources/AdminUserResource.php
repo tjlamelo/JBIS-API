@@ -24,6 +24,7 @@ final class AdminUserResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'email' => $this->email,
+            'email_is_placeholder' => (bool) $this->email_is_placeholder,
             'phone_number1' => $this->phone_number1,
             'active' => (bool) $this->active,
             'email_verified_at' => $this->email_verified_at?->toIso8601String(),
