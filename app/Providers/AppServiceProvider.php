@@ -14,11 +14,13 @@ use App\Core\Domain\Communication\Services\CpanelMailboxProvisionerService;
 use App\Core\Domain\Communication\Services\CpanelSubdomainProvisionerService;
 use App\Core\Domain\Workflow\Services\ProcessFlow\Contracts\ProcessFlowPdfRenderer;
 use App\Core\Domain\Workflow\Services\ProcessFlow\ProcessFlowScreenshotPdfRenderer;
+use App\Core\Domain\Communication\Support\JbisMailbox;
 use App\Core\Domain\Identity\Models\User;
 use App\Listeners\SendWelcomeEmailListener;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Auth\Notifications\VerifyEmail;
+use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\URL;
@@ -69,6 +71,31 @@ class AppServiceProvider extends ServiceProvider
             ]);
 
             return $frontUrl.'/reset-password?'.$query;
+        });
+
+        ResetPassword::toMailUsing(function (object $notifiable, string $token): MailMessage {
+            $frontUrl = (string) config('app.frontend_url', 'http://localhost:3000');
+            $email = method_exists($notifiable, 'getEmailForPasswordReset')
+                ? (string) $notifiable->getEmailForPasswordReset()
+                : (string) ($notifiable->email ?? '');
+            $url = $frontUrl.'/reset-password?'.http_build_query([
+                'token' => $token,
+                'email' => $email,
+            ]);
+
+            $expire = (int) config(
+                'auth.passwords.'.config('auth.defaults.passwords').'.expire',
+                60,
+            );
+
+            return (new MailMessage)
+                ->from(JbisMailbox::address('noreply'), JbisMailbox::name('noreply'))
+                ->replyTo(JbisMailbox::address('contact'), JbisMailbox::name('contact'))
+                ->subject(__('Réinitialisation de votre mot de passe JBIS'))
+                ->line(__('Vous recevez cet e-mail car nous avons reçu une demande de réinitialisation de mot de passe pour votre compte.'))
+                ->action(__('Réinitialiser le mot de passe'), $url)
+                ->line(__('Ce lien expirera dans :count minutes.', ['count' => $expire]))
+                ->line(__('Si vous n\'avez pas demandé de réinitialisation, aucune action n\'est requise.'));
         });
 
         VerifyEmail::createUrlUsing(function (User $user): string {
