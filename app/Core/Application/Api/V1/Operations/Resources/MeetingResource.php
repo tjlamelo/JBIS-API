@@ -59,6 +59,24 @@ final class MeetingResource extends JsonResource
                     return $attendee !== null && (bool) $attendee->pivot?->is_present;
                 }
             ),
+            'can_assign_to_others' => $this->when(
+                $request->user() !== null,
+                function () use ($request) {
+                    $user = $request->user();
+                    if ($user === null) {
+                        return false;
+                    }
+
+                    if ($user->hasAnyRole([
+                        \App\Core\Domain\Identity\Support\ApplicationRole::SUPERADMIN,
+                        \App\Core\Domain\Identity\Support\ApplicationRole::ADMIN,
+                    ])) {
+                        return true;
+                    }
+
+                    return (int) $this->organizer_id === (int) $user->id;
+                }
+            ),
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
         ];
