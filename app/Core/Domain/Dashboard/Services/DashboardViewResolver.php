@@ -9,6 +9,7 @@ use App\Core\Domain\Candidacy\Queries\ApplicationProgressQuery;
 use App\Core\Domain\Candidacy\States\ApplicationStatus;
 use App\Core\Domain\Dashboard\Queries\AdminDashboardStatsQuery;
 use App\Core\Domain\Dashboard\Queries\CandidateProfileCompletionQuery;
+use App\Core\Domain\Dashboard\Queries\DashboardChartsQuery;
 use App\Core\Domain\Dashboard\Queries\RecruiterDashboardStatsQuery;
 use App\Core\Domain\Dashboard\Queries\StaffActivityFeedQuery;
 use App\Core\Domain\Dashboard\Queries\StaffDashboardStatsQuery;
@@ -23,6 +24,7 @@ final class DashboardViewResolver
         private readonly StaffActivityFeedQuery $staffActivity,
         private readonly StaffDashboardStatsQuery $staffStats,
         private readonly RecruiterDashboardStatsQuery $recruiterStats,
+        private readonly DashboardChartsQuery $charts,
         private readonly ApplicationProgressQuery $applicationProgress,
         private readonly CandidateProfileCompletionQuery $profileCompletion,
         private readonly AppCache $cache,
@@ -68,6 +70,7 @@ final class DashboardViewResolver
         return [
             'variant' => 'admin',
             'stats' => $this->adminStats->execute(),
+            'charts' => $this->charts->forAdmin(),
             'my_activity' => $this->staffActivity->forActor((int) $user->id, 30, $locale),
             'global_activity' => $this->hasRole($user, ApplicationRole::SUPERADMIN)
                 ? $this->staffActivity->globalRecent(40, $locale)
@@ -83,6 +86,7 @@ final class DashboardViewResolver
         return [
             'variant' => 'staff',
             'stats' => $this->staffStats->execute((int) $user->id),
+            'charts' => $this->charts->forStaff((int) $user->id),
             'my_activity' => $this->staffActivity->forActor((int) $user->id, 50, $locale),
         ];
     }
@@ -93,10 +97,17 @@ final class DashboardViewResolver
     private function recruiterPayload(User $user): array
     {
         $data = $this->recruiterStats->forUser($user);
+        $orgId = isset($data['organization']['id']) ? (int) $data['organization']['id'] : 0;
 
         return [
             'variant' => 'recruiter',
             ...$data,
+            'charts' => $orgId > 0
+                ? $this->charts->forRecruiter($orgId)
+                : [
+                    'offers_by_status' => [],
+                    'assignments_by_month' => [],
+                ],
         ];
     }
 
