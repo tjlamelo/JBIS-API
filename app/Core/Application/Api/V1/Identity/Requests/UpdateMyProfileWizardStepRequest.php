@@ -48,6 +48,15 @@ final class UpdateMyProfileWizardStepRequest extends FormRequest
                 'gender' => ['nullable', Rule::in(['M', 'F'])],
                 'marital_status' => ['nullable', Rule::in(['SINGLE', 'MARRIED', 'DIVORCED', 'WIDOWED'])],
                 'number_of_children' => ['nullable', 'integer', 'min:0', 'max:20'],
+                'phone_number1' => [
+                    Rule::requiredIf(
+                        fn () => blank($this->user()?->phone_number1) && $this->filled('first_name'),
+                    ),
+                    'nullable',
+                    'string',
+                    'max:20',
+                    Rule::unique('users', 'phone_number1')->ignore($this->user()?->id),
+                ],
             ],
             'contact' => [
                 'address' => ['nullable', 'string', 'max:50'],

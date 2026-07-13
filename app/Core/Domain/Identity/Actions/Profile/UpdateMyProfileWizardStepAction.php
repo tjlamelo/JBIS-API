@@ -107,6 +107,14 @@ final class UpdateMyProfileWizardStepAction
                 ? (is_string($attributes['civility']) ? $attributes['civility'] : null)
                 : $profile->civility;
             $attributes['civility'] = Civility::normalize($civility, $gender);
+
+            if (array_key_exists('phone_number1', $payload)) {
+                $phone = $payload['phone_number1'];
+                $normalizedPhone = is_string($phone) ? trim($phone) : null;
+                $user->forceFill([
+                    'phone_number1' => $normalizedPhone !== '' ? $normalizedPhone : null,
+                ])->save();
+            }
         }
 
         if ($step === 'documents' && isset($attributes['pictures']) && is_array($attributes['pictures'])) {
