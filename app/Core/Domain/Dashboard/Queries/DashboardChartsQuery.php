@@ -11,7 +11,6 @@ use App\Core\Domain\Catalog\Models\Offer;
 use App\Core\Domain\Catalog\Models\Trade;
 use App\Core\Domain\Communication\Models\DiscoverySource;
 use App\Core\Domain\Identity\Models\User;
-use App\Core\Domain\Identity\Models\UserProfile;
 use App\Core\Domain\Identity\Support\ApplicationRole;
 use App\Core\Domain\Recruiter\Models\RecruiterOfferSubmission;
 use App\Core\Domain\Recruiter\Models\RecruiterProfileAssignment;
@@ -291,31 +290,52 @@ final class DashboardChartsQuery
     }
 
     /**
-     * Répartition des profils candidats par canal de découverte.
+     * Répartition des canaux de découverte (profils + rendez-vous).
      *
      * @return list<array{key: string, label: string, value: int, share: float}>
      */
     private function discoverySourcesDistribution(): array
     {
-        $rows = UserProfile::query()
+        $sources = DiscoverySource::query()
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->get(['id', 'key', 'label']);
+
+        if ($sources->isEmpty()) {
+            return [];
+        }
+
+        $profileRows = DB::table('user_profiles')
+            ->select('discovery_source_id', DB::raw('COUNT(*) as aggregate'))
+            ->groupBy('discovery_source_id')
+            ->get();
+
+        $appointmentRows = DB::table('appointments')
+            ->whereNull('deleted_at')
             ->select('discovery_source_id', DB::raw('COUNT(*) as aggregate'))
             ->groupBy('discovery_source_id')
             ->get();
 
         $bySourceId = [];
         $unspecified = 0;
-        foreach ($rows as $row) {
-            if ($row->discovery_source_id === null) {
-                $unspecified = (int) $row->aggregate;
+
+        foreach ($profileRows as $row) {
+            if ($row->discovery_source_id === null || $row->discovery_source_id === '') {
+                $unspecified += (int) $row->aggregate;
                 continue;
             }
-            $bySourceId[(int) $row->discovery_source_id] = (int) $row->aggregate;
+            $id = (int) $row->discovery_source_id;
+            $bySourceId[$id] = ($bySourceId[$id] ?? 0) + (int) $row->aggregate;
         }
 
-        $sources = DiscoverySource::query()
-            ->orderBy('sort_order')
-            ->orderBy('id')
-            ->get(['id', 'key', 'label']);
+        // Les RDV public collectent aussi la provenance : on les ajoute pour refléter la réalité.
+        foreach ($appointmentRows as $row) {
+            if ($row->discovery_source_id === null || $row->discovery_source_id === '') {
+                continue;
+            }
+            $id = (int) $row->discovery_source_id;
+            $bySourceId[$id] = ($bySourceId[$id] ?? 0) + (int) $row->aggregate;
+        }
 
         $out = [];
         foreach ($sources as $source) {
@@ -326,6 +346,22 @@ final class DashboardChartsQuery
             $out[] = [
                 'key' => (string) $source->key,
                 'label' => (string) $source->label,
+                'value' => $value,
+                'share' => 0.0,
+            ];
+        }
+
+        // Sources orphelines (id présent mais plus dans le catalogue)
+        foreach ($bySourceId as $sourceId => $value) {
+            if ($sources->contains(static fn ($s) => (int) $s->id === (int) $sourceId)) {
+                continue;
+            }
+            if ($value <= 0) {
+                continue;
+            }
+            $out[] = [
+                'key' => "source_{$sourceId}",
+                'label' => "Source #{$sourceId}",
                 'value' => $value,
                 'share' => 0.0,
             ];

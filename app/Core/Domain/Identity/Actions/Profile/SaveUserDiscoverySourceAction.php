@@ -49,10 +49,10 @@ final class SaveUserDiscoverySourceAction
             ],
         );
 
-        $profile->update([
+        $profile->forceFill([
             'discovery_source_id' => $source->id,
             'discovery_source_other' => $other,
-        ]);
+        ])->save();
 
         return ['profile' => $profile->fresh(['discoverySource:id,key,label'])];
     }

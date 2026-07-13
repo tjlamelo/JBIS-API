@@ -42,6 +42,8 @@ class UserProfile extends AuditedModel
         'approved_by',
         'agency_id',
         'recruiter_organization_id',
+        'discovery_source_id',
+        'discovery_source_other',
     ];
 
     protected $casts = [
@@ -52,6 +54,7 @@ class UserProfile extends AuditedModel
         'is_approved' => 'boolean',
         'agency_id' => 'integer',
         'highest_education_level_id' => 'integer',
+        'discovery_source_id' => 'integer',
     ];
 
     /**
