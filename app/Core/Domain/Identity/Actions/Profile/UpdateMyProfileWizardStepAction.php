@@ -66,10 +66,6 @@ final class UpdateMyProfileWizardStepAction
 
         $profile = $user->profile()->firstOrNew(['user_id' => $user->id]);
 
-        if ($profile->exists && $profile->is_approved && ! $user->hasAnyRole(self::STAFF_ROLES)) {
-            throw new ProfileLockedException;
-        }
-
         $allowedFields = self::STEP_FIELDS[$step];
 
         if (! $user->hasAnyRole(self::STAFF_ROLES)) {
@@ -82,6 +78,26 @@ final class UpdateMyProfileWizardStepAction
         }
 
         $attributes = Arr::only($payload, $allowedFields);
+        $tradesPayload = ($step === 'personal' && isset($payload['trades']) && is_array($payload['trades']))
+            ? $payload['trades']
+            : null;
+
+        $isLocked = $profile->exists && $profile->is_approved && ! $user->hasAnyRole(self::STAFF_ROLES);
+
+        // Les métiers restent modifiables après approbation ; le reste du profil reste verrouillé.
+        if ($isLocked) {
+            if ($attributes !== []) {
+                throw new ProfileLockedException;
+            }
+            if ($tradesPayload === null) {
+                throw new ProfileLockedException;
+            }
+
+            $this->syncUserTrades->execute($user, $tradesPayload);
+            $profile->loadMissing(['approver:id,name', 'highestEducationLevel:id,name,slug']);
+
+            return $profile;
+        }
 
         if ($step === 'personal') {
             $gender = isset($attributes['gender'])
@@ -99,8 +115,8 @@ final class UpdateMyProfileWizardStepAction
 
         $profile->fill($attributes);
 
-        if ($step === 'personal' && isset($payload['trades']) && is_array($payload['trades'])) {
-            $this->syncUserTrades->execute($user, $payload['trades']);
+        if ($tradesPayload !== null) {
+            $this->syncUserTrades->execute($user, $tradesPayload);
         }
 
         if ($user->hasAnyRole(self::STAFF_ROLES)) {

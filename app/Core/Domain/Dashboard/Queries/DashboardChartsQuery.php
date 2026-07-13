@@ -8,7 +8,10 @@ use App\Core\Domain\Candidacy\Models\Application;
 use App\Core\Domain\Candidacy\Models\ApplicationStepEvent;
 use App\Core\Domain\Candidacy\States\ApplicationStatus;
 use App\Core\Domain\Catalog\Models\Offer;
+use App\Core\Domain\Catalog\Models\Trade;
+use App\Core\Domain\Communication\Models\DiscoverySource;
 use App\Core\Domain\Identity\Models\User;
+use App\Core\Domain\Identity\Models\UserProfile;
 use App\Core\Domain\Identity\Support\ApplicationRole;
 use App\Core\Domain\Recruiter\Models\RecruiterOfferSubmission;
 use App\Core\Domain\Recruiter\Models\RecruiterProfileAssignment;
@@ -26,7 +29,9 @@ final class DashboardChartsQuery
      *   applications_by_status: list<array{key: string, label: string, value: int}>,
      *   users_by_role: list<array{key: string, label: string, value: int}>,
      *   offers_by_month: list<array{month: string, label: string, count: int}>,
-     *   opened_comparison: list<array{key: string, label: string, value: int}>
+     *   opened_comparison: list<array{key: string, label: string, value: int}>,
+     *   discovery_sources: list<array{key: string, label: string, value: int, share: float}>,
+     *   profiles_by_trade: list<array{key: string, label: string, value: int}>
      * }
      */
     public function forAdmin(): array
@@ -55,6 +60,8 @@ final class DashboardChartsQuery
                     'value' => $this->applicationsCreatedSince($now->copy()->startOfYear()),
                 ],
             ],
+            'discovery_sources' => $this->discoverySourcesDistribution(),
+            'profiles_by_trade' => $this->profilesByTrade(15),
         ];
     }
 
@@ -281,5 +288,107 @@ final class DashboardChartsQuery
         return Application::query()
             ->where('created_at', '>=', $since)
             ->count();
+    }
+
+    /**
+     * Répartition des profils candidats par canal de découverte.
+     *
+     * @return list<array{key: string, label: string, value: int, share: float}>
+     */
+    private function discoverySourcesDistribution(): array
+    {
+        $rows = UserProfile::query()
+            ->select('discovery_source_id', DB::raw('COUNT(*) as aggregate'))
+            ->groupBy('discovery_source_id')
+            ->get();
+
+        $bySourceId = [];
+        $unspecified = 0;
+        foreach ($rows as $row) {
+            if ($row->discovery_source_id === null) {
+                $unspecified = (int) $row->aggregate;
+                continue;
+            }
+            $bySourceId[(int) $row->discovery_source_id] = (int) $row->aggregate;
+        }
+
+        $sources = DiscoverySource::query()
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->get(['id', 'key', 'label']);
+
+        $out = [];
+        foreach ($sources as $source) {
+            $value = $bySourceId[(int) $source->id] ?? 0;
+            if ($value === 0) {
+                continue;
+            }
+            $out[] = [
+                'key' => (string) $source->key,
+                'label' => (string) $source->label,
+                'value' => $value,
+                'share' => 0.0,
+            ];
+        }
+
+        if ($unspecified > 0) {
+            $out[] = [
+                'key' => 'unspecified',
+                'label' => 'Non renseigné',
+                'value' => $unspecified,
+                'share' => 0.0,
+            ];
+        }
+
+        $grandTotal = array_sum(array_column($out, 'value'));
+        foreach ($out as &$item) {
+            $item['share'] = $grandTotal > 0
+                ? round(($item['value'] / $grandTotal) * 100, 1)
+                : 0.0;
+        }
+        unset($item);
+
+        usort($out, static fn (array $a, array $b): int => $b['value'] <=> $a['value']);
+
+        return $out;
+    }
+
+    /**
+     * Métiers les plus représentés parmi les profils (pivot user_trade).
+     *
+     * @return list<array{key: string, label: string, value: int}>
+     */
+    private function profilesByTrade(int $limit = 15): array
+    {
+        $rows = DB::table('user_trade')
+            ->select('trade_id', DB::raw('COUNT(DISTINCT user_id) as aggregate'))
+            ->groupBy('trade_id')
+            ->orderByDesc('aggregate')
+            ->limit($limit)
+            ->get();
+
+        if ($rows->isEmpty()) {
+            return [];
+        }
+
+        $trades = Trade::query()
+            ->whereIn('id', $rows->pluck('trade_id')->all())
+            ->get(['id', 'name', 'slug'])
+            ->keyBy('id');
+
+        return $rows->map(static function ($row) use ($trades): array {
+            $trade = $trades->get((int) $row->trade_id);
+            $label = $trade
+                ? ((string) $trade->getTranslation('name', 'fr', false)
+                    ?: (string) $trade->getTranslation('name', 'en', false)
+                    ?: (string) ($trade->slug ?? "Métier #{$trade->id}"))
+                : "Métier #{$row->trade_id}";
+
+            return [
+                'key' => (string) $row->trade_id,
+                'label' => $label,
+                'value' => (int) $row->aggregate,
+            ];
+        })->values()->all();
     }
 }

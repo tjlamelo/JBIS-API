@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Core\Domain\Identity\Actions\Profile;
 
+use App\Core\Domain\Identity\Actions\User\SyncUserTradesAction;
 use App\Core\Domain\Identity\Enums\Civility;
 use App\Core\Domain\Identity\Models\User;
 use App\Core\Domain\Identity\Models\UserProfile;
@@ -14,6 +15,7 @@ final class UpdateAdminUserProfileWizardStepAction
 {
     public function __construct(
         private readonly ProfilePicturesSerializer $picturesSerializer,
+        private readonly SyncUserTradesAction $syncUserTrades,
     ) {}
 
     /** @var array<string, list<string>> */
@@ -75,6 +77,11 @@ final class UpdateAdminUserProfileWizardStepAction
         }
 
         $profile->fill($attributes);
+
+        if ($step === 'personal' && isset($payload['trades']) && is_array($payload['trades'])) {
+            $this->syncUserTrades->execute($user, $payload['trades']);
+        }
+
         $profile->save();
         $profile->loadMissing('approver:id,name');
 

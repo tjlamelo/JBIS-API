@@ -50,6 +50,9 @@ final class UpdateAdminUserProfileWizardStepRequest extends FormRequest
                 'gender' => ['nullable', Rule::in(['M', 'F'])],
                 'marital_status' => ['nullable', Rule::in(['SINGLE', 'MARRIED', 'DIVORCED', 'WIDOWED'])],
                 'number_of_children' => ['nullable', 'integer', 'min:0', 'max:20'],
+                'trades' => ['sometimes', 'array', 'min:1'],
+                'trades.*.trade_id' => ['required', 'integer', 'exists:trades,id'],
+                'trades.*.years_of_experience' => ['nullable', 'integer', 'min:0', 'max:80'],
             ],
             'contact' => [
                 'address' => ['nullable', 'string', 'max:50'],

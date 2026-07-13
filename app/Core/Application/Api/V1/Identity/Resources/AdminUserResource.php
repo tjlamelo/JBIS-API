@@ -51,6 +51,14 @@ final class AdminUserResource extends JsonResource
                     'id' => $trade->id,
                     'slug' => $trade->slug,
                     'name' => $trade->getTranslations('name'),
+                    'category_id' => $trade->category_id,
+                    'category' => $trade->relationLoaded('category') && $trade->category !== null
+                        ? [
+                            'id' => $trade->category->id,
+                            'slug' => $trade->category->slug,
+                            'name' => $trade->category->getTranslations('name'),
+                        ]
+                        : null,
                     'years_of_experience' => $trade->pivot?->years_of_experience,
                 ])->values()->all(),
             ),

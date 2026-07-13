@@ -60,6 +60,7 @@ class TradeSeeder extends Seeder
                 ['fr' => 'Peintre en bâtiment', 'en' => 'Building painter'],
                 ['fr' => 'Carreleur', 'en' => 'Tiler'],
                 ['fr' => 'Plâtrier', 'en' => 'Plasterer'],
+                ['fr' => 'Staffeur-ornemaniste', 'en' => 'Ornamental plasterer (staff)'],
                 ['fr' => 'Menuisier', 'en' => 'Carpenter'],
                 ['fr' => 'Électricien de chantier', 'en' => 'Construction electrician'],
                 ['fr' => 'Fabricant d’agencements', 'en' => 'Fit-out joiner'],

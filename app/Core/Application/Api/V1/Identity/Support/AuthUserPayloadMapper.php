@@ -24,7 +24,13 @@ final class AuthUserPayloadMapper
      */
     public function toArray(User $user): array
     {
-        $user->loadMissing(['profile.approver:id,name', 'profile.highestEducationLevel:id,name,slug', 'roles:id,name']);
+        $user->loadMissing([
+            'profile.approver:id,name',
+            'profile.highestEducationLevel:id,name,slug',
+            'roles:id,name',
+            'trades:id,name,slug,category_id',
+            'trades.category:id,name,slug',
+        ]);
 
         $profile = $user->profile;
 
@@ -39,6 +45,25 @@ final class AuthUserPayloadMapper
             'roles' => $user->getRoleNames()->values()->all(),
             'permissions' => $this->resolvePermissions->execute($user),
             'profile' => $profile ? $this->profileResponseMapper->toArray($profile) : null,
+            'trades' => $user->trades->map(static fn ($trade) => [
+                'id' => $trade->id,
+                'slug' => $trade->slug,
+                'name' => $trade->getTranslations('name'),
+                'category_id' => $trade->category_id,
+                'category' => $trade->relationLoaded('category') && $trade->category !== null
+                    ? [
+                        'id' => $trade->category->id,
+                        'slug' => $trade->category->slug,
+                        'name' => $trade->category->getTranslations('name'),
+                    ]
+                    : null,
+                'years_of_experience' => $trade->pivot?->years_of_experience,
+            ])->values()->all(),
+            'sectors' => $user->sectorsFromTrades()->map(static fn ($sector) => [
+                'id' => $sector->id,
+                'slug' => $sector->slug,
+                'name' => $sector->getTranslations('name'),
+            ])->values()->all(),
             'settings' => $this->settingsMapper->toArray($this->ensureUserSettings->execute($user)),
             'consents' => $this->resolveConsentStatus->execute($user),
         ];
