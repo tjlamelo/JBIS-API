@@ -16,6 +16,8 @@ final class AdminUserImportRowData
         public readonly ?string $lastName,
         public readonly ?string $name,
         public readonly ?string $phoneNumber1,
+        public readonly ?string $phoneNumber2,
+        public readonly ?string $phoneNumber3,
         public readonly ?string $gender,
         public readonly ?string $civility,
         public readonly ?string $dateOfBirth,
@@ -36,12 +38,20 @@ final class AdminUserImportRowData
      */
     public function toWriteArray(?int $nationalityCountryId = null): array
     {
+        $name = $this->name;
+        if (($name === null || trim($name) === '') && ($this->firstName !== null || $this->lastName !== null)) {
+            $name = trim(implode(' ', array_filter([$this->firstName, $this->lastName])));
+            $name = $name !== '' ? $name : null;
+        }
+
         return array_filter([
             'email' => $this->email,
             'first_name' => $this->firstName,
             'last_name' => $this->lastName,
-            'name' => $this->name,
+            'name' => $name,
             'phone_number1' => $this->phoneNumber1,
+            'phone_number2' => $this->phoneNumber2,
+            'phone_number3' => $this->phoneNumber3,
             'gender' => $this->gender,
             'civility' => $this->civility,
             'date_of_birth' => $this->dateOfBirth,

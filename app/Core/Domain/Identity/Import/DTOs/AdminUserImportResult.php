@@ -20,6 +20,7 @@ final class AdminUserImportResult
         public readonly array $rows = [],
         public readonly array $createdUserIds = [],
         public readonly int $emailsQueued = 0,
+        public readonly int $skippedCount = 0,
     ) {}
 
     /**
@@ -32,6 +33,7 @@ final class AdminUserImportResult
             'committed' => $this->committed,
             'valid_rows' => $this->validRows,
             'created_count' => $this->createdCount,
+            'skipped_count' => $this->skippedCount,
             'created_user_ids' => $this->createdUserIds,
             'emails_queued' => $this->emailsQueued,
             'rows' => $this->rows,

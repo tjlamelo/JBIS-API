@@ -16,6 +16,8 @@ readonly class AdminUserWriteDto
         public ?string $name = null,
         public ?string $email = null,
         public ?string $phoneNumber1 = null,
+        public ?string $phoneNumber2 = null,
+        public ?string $phoneNumber3 = null,
         public ?string $password = null,
         public ?bool $active = null,
         public ?array $roles = null,
@@ -55,6 +57,12 @@ readonly class AdminUserWriteDto
                 : null,
             phoneNumber1: array_key_exists('phone_number1', $data)
                 ? ($data['phone_number1'] !== null && $data['phone_number1'] !== '' ? (string) $data['phone_number1'] : null)
+                : null,
+            phoneNumber2: array_key_exists('phone_number2', $data)
+                ? ($data['phone_number2'] !== null && $data['phone_number2'] !== '' ? (string) $data['phone_number2'] : null)
+                : null,
+            phoneNumber3: array_key_exists('phone_number3', $data)
+                ? ($data['phone_number3'] !== null && $data['phone_number3'] !== '' ? (string) $data['phone_number3'] : null)
                 : null,
             password: isset($data['password']) && $data['password'] !== '' ? (string) $data['password'] : null,
             active: array_key_exists('active', $data) ? (bool) $data['active'] : null,
@@ -131,7 +139,9 @@ readonly class AdminUserWriteDto
             || $this->highestEducationLevelId !== null
             || $this->gender !== null
             || $this->maritalStatus !== null
-            || $this->numberOfChildren !== null;
+            || $this->numberOfChildren !== null
+            || $this->phoneNumber2 !== null
+            || $this->phoneNumber3 !== null;
     }
 
     /**
@@ -214,6 +224,12 @@ readonly class AdminUserWriteDto
         }
         if ($this->numberOfChildren !== null) {
             $attributes['number_of_children'] = $this->numberOfChildren;
+        }
+        if ($this->phoneNumber2 !== null) {
+            $attributes['phone_number2'] = $this->phoneNumber2;
+        }
+        if ($this->phoneNumber3 !== null) {
+            $attributes['phone_number3'] = $this->phoneNumber3;
         }
 
         return $attributes;

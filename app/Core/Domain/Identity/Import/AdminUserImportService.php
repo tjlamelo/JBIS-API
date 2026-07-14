@@ -15,6 +15,7 @@ use App\Core\Domain\Identity\Import\DTOs\AdminUserImportResult;
 use App\Core\Domain\Identity\Import\DTOs\AdminUserImportRowData;
 use App\Core\Domain\Identity\Import\Support\AdminUserImportRowParser;
 use App\Core\Domain\Identity\Models\User;
+use App\Core\Domain\Identity\Models\UserProfile;
 use App\Core\Domain\Identity\Support\ApplicationRole;
 use App\Core\Domain\Location\Models\Country;
 use Carbon\Carbon;
@@ -64,43 +65,70 @@ final class AdminUserImportService
                 ->all();
         }
 
-        $existingPhoneFingerprints = User::query()
-            ->whereNotNull('phone_number1')
-            ->where('phone_number1', '!=', '')
-            ->pluck('phone_number1')
-            ->map(static fn ($phone): ?string => AdminUserImportRowParser::phoneFingerprint((string) $phone, 'CM'))
-            ->filter()
-            ->values()
-            ->all();
+        $existingPhoneFingerprints = $this->loadExistingPhoneFingerprints();
 
         $emailsInFile = [];
         $phoneFingerprintsInFile = [];
         $validRows = [];
+        $skippedRows = [];
 
         foreach ($rows as $row) {
             $path = "Users!A{$row->line}";
-            $rowIssues = $this->validateRow(
-                $row,
-                $path,
-                $countryIdsByCode,
-                $existingEmails,
-                $existingPhoneFingerprints,
-                $emailsInFile,
-                $phoneFingerprintsInFile,
-            );
+            $email = strtolower($row->email);
 
-            if ($rowIssues !== []) {
-                $issues = array_merge($issues, $rowIssues);
+            // Email déjà en base → signalé, ignoré à l'import confirmé (pas bloquant).
+            if (in_array($email, $existingEmails, true)) {
+                $issues[] = new AdminUserImportIssue(
+                    $path,
+                    'email',
+                    __('Email déjà existant — ligne ignorée à l\'import.'),
+                    'skip',
+                );
+                $skippedRows[] = $row;
 
                 continue;
             }
 
-            $emailsInFile[] = strtolower($row->email);
-            $fingerprint = $row->phoneNumber1 !== null
-                ? AdminUserImportRowParser::phoneFingerprint($row->phoneNumber1, $row->nationalityCountryCode ?? 'CM')
-                : null;
-            if ($fingerprint !== null) {
-                $phoneFingerprintsInFile[] = $fingerprint;
+            $rowIssues = $this->validateRow(
+                $row,
+                $path,
+                $countryIdsByCode,
+                $emailsInFile,
+                $phoneFingerprintsInFile,
+                $existingPhoneFingerprints,
+            );
+
+            $blocking = array_values(array_filter(
+                $rowIssues,
+                static fn (AdminUserImportIssue $issue): bool => $issue->severity === 'error',
+            ));
+            $nonBlocking = array_values(array_filter(
+                $rowIssues,
+                static fn (AdminUserImportIssue $issue): bool => $issue->severity !== 'error',
+            ));
+
+            if ($nonBlocking !== []) {
+                $issues = array_merge($issues, $nonBlocking);
+            }
+
+            if ($blocking !== []) {
+                $issues = array_merge($issues, $blocking);
+
+                continue;
+            }
+
+            $emailsInFile[] = $email;
+            foreach ([$row->phoneNumber1, $row->phoneNumber2, $row->phoneNumber3] as $phone) {
+                if ($phone === null) {
+                    continue;
+                }
+                $fingerprint = AdminUserImportRowParser::phoneFingerprint(
+                    $phone,
+                    $row->nationalityCountryCode ?? 'CM',
+                );
+                if ($fingerprint !== null) {
+                    $phoneFingerprintsInFile[] = $fingerprint;
+                }
             }
 
             $validRows[] = $row;
@@ -121,6 +149,7 @@ final class AdminUserImportService
                     ],
                     $validRows,
                 ),
+                skippedCount: count($skippedRows),
             );
         }
 
@@ -135,7 +164,6 @@ final class AdminUserImportService
                     $countryId = $countryIdsByCode[strtoupper($row->nationalityCountryCode)] ?? null;
                 }
 
-                // Email différé : file batch après commit (scalable).
                 $payload = $row->toWriteArray($countryId);
                 $payload['send_account_email'] = false;
 
@@ -176,25 +204,61 @@ final class AdminUserImportService
             ),
             createdUserIds: $createdIds,
             emailsQueued: count($pendingMails),
+            skippedCount: count($skippedRows),
         );
     }
 
     /**
+     * @return list<string>
+     */
+    private function loadExistingPhoneFingerprints(): array
+    {
+        $phones = User::query()
+            ->whereNotNull('phone_number1')
+            ->where('phone_number1', '!=', '')
+            ->pluck('phone_number1')
+            ->all();
+
+        $profilePhones = UserProfile::query()
+            ->where(function ($query): void {
+                $query->whereNotNull('phone_number2')->where('phone_number2', '!=', '')
+                    ->orWhere(function ($q): void {
+                        $q->whereNotNull('phone_number3')->where('phone_number3', '!=', '');
+                    });
+            })
+            ->get(['phone_number2', 'phone_number3']);
+
+        foreach ($profilePhones as $profile) {
+            if (filled($profile->phone_number2)) {
+                $phones[] = (string) $profile->phone_number2;
+            }
+            if (filled($profile->phone_number3)) {
+                $phones[] = (string) $profile->phone_number3;
+            }
+        }
+
+        return collect($phones)
+            ->map(static fn ($phone): ?string => AdminUserImportRowParser::phoneFingerprint((string) $phone, 'CM'))
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    /**
      * @param  array<string, int>  $countryIdsByCode
-     * @param  list<string>  $existingEmails
-     * @param  list<string>  $existingPhoneFingerprints
      * @param  list<string>  $emailsInFile
      * @param  list<string>  $phoneFingerprintsInFile
+     * @param  list<string>  $existingPhoneFingerprints
      * @return list<AdminUserImportIssue>
      */
     private function validateRow(
         AdminUserImportRowData $row,
         string $path,
         array $countryIdsByCode,
-        array $existingEmails,
-        array $existingPhoneFingerprints,
         array $emailsInFile,
         array $phoneFingerprintsInFile,
+        array $existingPhoneFingerprints,
     ): array {
         $issues = [];
         $email = strtolower($row->email);
@@ -212,29 +276,45 @@ final class AdminUserImportService
             $issues[] = new AdminUserImportIssue($path, 'email', __('Email invalide.'));
         }
 
-        if (in_array($email, $existingEmails, true)) {
-            $issues[] = new AdminUserImportIssue($path, 'email', __('Cet email existe déjà.'));
-        }
-
         if (in_array($email, $emailsInFile, true)) {
             $issues[] = new AdminUserImportIssue($path, 'email', __('Email en doublon dans le fichier.'));
         }
 
-        if ($row->phoneNumber1 !== null) {
+        $rowPhones = [
+            'phone_number1' => $row->phoneNumber1,
+            'phone_number2' => $row->phoneNumber2,
+            'phone_number3' => $row->phoneNumber3,
+        ];
+        $seenInRow = [];
+
+        foreach ($rowPhones as $field => $phone) {
+            if ($phone === null) {
+                continue;
+            }
+
             $fingerprint = AdminUserImportRowParser::phoneFingerprint(
-                $row->phoneNumber1,
+                $phone,
                 $row->nationalityCountryCode ?? 'CM',
             );
 
             if ($fingerprint === null) {
-                $issues[] = new AdminUserImportIssue($path, 'phone_number1', __('Téléphone invalide.'));
-            } else {
-                if (in_array($fingerprint, $existingPhoneFingerprints, true)) {
-                    $issues[] = new AdminUserImportIssue($path, 'phone_number1', __('Ce téléphone existe déjà.'));
-                }
-                if (in_array($fingerprint, $phoneFingerprintsInFile, true)) {
-                    $issues[] = new AdminUserImportIssue($path, 'phone_number1', __('Téléphone en doublon dans le fichier.'));
-                }
+                $issues[] = new AdminUserImportIssue($path, $field, __('Téléphone invalide.'));
+
+                continue;
+            }
+
+            if (isset($seenInRow[$fingerprint])) {
+                $issues[] = new AdminUserImportIssue($path, $field, __('Téléphone en doublon sur la même ligne.'));
+
+                continue;
+            }
+            $seenInRow[$fingerprint] = true;
+
+            if (in_array($fingerprint, $existingPhoneFingerprints, true)) {
+                $issues[] = new AdminUserImportIssue($path, $field, __('Ce téléphone existe déjà.'));
+            }
+            if (in_array($fingerprint, $phoneFingerprintsInFile, true)) {
+                $issues[] = new AdminUserImportIssue($path, $field, __('Téléphone en doublon dans le fichier.'));
             }
         }
 
@@ -313,6 +393,8 @@ final class AdminUserImportService
             'first_name' => ['required', 'string', 'max:50'],
             'last_name' => ['required', 'string', 'max:50'],
             'phone_number1' => ['nullable', 'string', 'max:20'],
+            'phone_number2' => ['nullable', 'string', 'max:20'],
+            'phone_number3' => ['nullable', 'string', 'max:20'],
             'password' => ['nullable', 'string', 'min:8'],
             'roles.*' => ['string', Rule::exists('roles', 'name')],
         ]);

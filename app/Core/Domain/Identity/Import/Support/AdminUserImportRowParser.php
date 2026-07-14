@@ -140,6 +140,53 @@ final class AdminUserImportRowParser
         return (new PhoneNumberNormalizer)->fingerprint($value, $countryHint);
     }
 
+    /**
+     * Découpe « 6xxxx/6yyyy » (ou ; | ,) vers phone1 / phone2 / phone3.
+     *
+     * @return array{0: ?string, 1: ?string, 2: ?string}
+     */
+    public static function splitAndNormalizePhones(?string $value, ?string $countryHint = null): array
+    {
+        $value = self::nullableString($value);
+        if ($value === null) {
+            return [null, null, null];
+        }
+
+        $parts = preg_split('/[\/|;,]+/', $value) ?: [];
+        $normalized = [];
+        $seen = [];
+
+        foreach ($parts as $part) {
+            $part = trim((string) $part);
+            if ($part === '') {
+                continue;
+            }
+
+            $phone = self::normalizePhone($part, $countryHint);
+            if ($phone === null || strlen($phone) > 20) {
+                continue;
+            }
+
+            $fp = self::phoneFingerprint($phone, $countryHint);
+            if ($fp === null || isset($seen[$fp])) {
+                continue;
+            }
+
+            $seen[$fp] = true;
+            $normalized[] = $phone;
+
+            if (count($normalized) >= 3) {
+                break;
+            }
+        }
+
+        return [
+            $normalized[0] ?? null,
+            $normalized[1] ?? null,
+            $normalized[2] ?? null,
+        ];
+    }
+
     public static function normalizeGender(?string $value): ?string
     {
         if ($value === null || $value === '') {

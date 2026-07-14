@@ -132,10 +132,14 @@ final class AdminUserExcelReader
                 );
             }
 
-            $rawPhone = AdminUserImportRowParser::nullableString($row['phone_number1'] ?? null);
-            $phoneNumber1 = $rawPhone !== null
-                ? AdminUserImportRowParser::normalizePhone($rawPhone, $countryCode ?? 'CM')
-                : null;
+            $rawPhone = AdminUserImportRowParser::nullableString($row['phone_number1'] ?? null)
+                ?? AdminUserImportRowParser::nullableString($row['phone'] ?? null)
+                ?? AdminUserImportRowParser::nullableString($row['telephone'] ?? null);
+
+            [$phoneNumber1, $phoneNumber2, $phoneNumber3] = AdminUserImportRowParser::splitAndNormalizePhones(
+                $rawPhone,
+                $countryCode ?? 'CM',
+            );
 
             if ($rawPhone !== null && $phoneNumber1 === null) {
                 $issues[] = new AdminUserImportIssue(
@@ -147,14 +151,13 @@ final class AdminUserExcelReader
                 continue;
             }
 
-            if ($phoneNumber1 !== null && strlen($phoneNumber1) > 20) {
+            if ($phoneNumber2 !== null || $phoneNumber3 !== null) {
                 $issues[] = new AdminUserImportIssue(
                     $path,
                     'phone_number1',
-                    __('Téléphone trop long après normalisation.'),
+                    __('Plusieurs numéros détectés : le 1er va dans phone_number1, les suivants dans phone_number2/3.'),
+                    'warning',
                 );
-
-                continue;
             }
 
             $rawActive = $row['active'] ?? null;
@@ -168,6 +171,12 @@ final class AdminUserExcelReader
                 );
             }
 
+            // Nom affiché : colonne name, sinon first + last.
+            if ($name === null && ($firstName !== null || $lastName !== null)) {
+                $composed = trim(implode(' ', array_filter([$firstName, $lastName])));
+                $name = $composed !== '' ? $composed : null;
+            }
+
             $rows[] = new AdminUserImportRowData(
                 line: $line,
                 email: $email,
@@ -175,6 +184,8 @@ final class AdminUserExcelReader
                 lastName: $lastName,
                 name: $name,
                 phoneNumber1: $phoneNumber1,
+                phoneNumber2: $phoneNumber2,
+                phoneNumber3: $phoneNumber3,
                 gender: $gender,
                 civility: $civility,
                 dateOfBirth: $dateOfBirth,
@@ -233,7 +244,7 @@ final class AdminUserExcelReader
 
             foreach ($headers as $index => $header) {
                 $value = $values[$index] ?? null;
-                if ($value !== null && trim((string) $value) !== '') {
+                if ($value !== null && preg_replace('/\s+/u', '', trim((string) $value)) !== '') {
                     $isEmpty = false;
                 }
                 $assoc[$header] = $value;
@@ -258,7 +269,7 @@ final class AdminUserExcelReader
     private function rowIsEmpty(array $row): bool
     {
         foreach ($row as $value) {
-            if (AdminUserImportRowParser::string($value) !== '') {
+            if (preg_replace('/\s+/u', '', AdminUserImportRowParser::string($value)) !== '') {
                 return false;
             }
         }
