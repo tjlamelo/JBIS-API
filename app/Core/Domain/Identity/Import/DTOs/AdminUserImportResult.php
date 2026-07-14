@@ -19,6 +19,7 @@ final class AdminUserImportResult
         public readonly array $issues,
         public readonly array $rows = [],
         public readonly array $createdUserIds = [],
+        public readonly int $emailsQueued = 0,
     ) {}
 
     /**
@@ -32,6 +33,7 @@ final class AdminUserImportResult
             'valid_rows' => $this->validRows,
             'created_count' => $this->createdCount,
             'created_user_ids' => $this->createdUserIds,
+            'emails_queued' => $this->emailsQueued,
             'rows' => $this->rows,
             'issues' => array_map(
                 static fn (AdminUserImportIssue $issue): array => $issue->toArray(),

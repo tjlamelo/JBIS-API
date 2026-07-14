@@ -24,11 +24,30 @@ final class PhoneNumberNormalizer
             if ($prefix !== null) {
                 $digits = $prefix.$digits;
             } else {
+                // Défaut Cameroun pour les numéros locaux courts (import / saisie locale).
+                if (strlen($digits) <= 9) {
+                    $digits = '237'.$digits;
+                }
                 $digits = '+'.$digits;
             }
         }
 
         return $digits;
+    }
+
+    /**
+     * Empreinte chiffres seuls pour comparer l'unicité indépendamment du format.
+     */
+    public function fingerprint(?string $phone, ?string $countryHint = null): ?string
+    {
+        $normalized = $this->normalize($phone, $countryHint);
+        if ($normalized === null) {
+            return null;
+        }
+
+        $digits = preg_replace('/\D+/', '', $normalized) ?? '';
+
+        return $digits !== '' ? $digits : null;
     }
 
     private function defaultPrefixForCountry(?string $countryHint): ?string
@@ -39,12 +58,19 @@ final class PhoneNumberNormalizer
         }
 
         return match (true) {
-            str_contains($hint, 'cameroun') || str_contains($hint, 'cameroon') => '+237',
-            str_contains($hint, 'france') => '+33',
-            str_contains($hint, 'côte') || str_contains($hint, 'ivoire') || str_contains($hint, 'ivory') => '+225',
-            str_contains($hint, 'sénégal') || str_contains($hint, 'senegal') => '+221',
-            str_contains($hint, 'gabon') => '+241',
-            str_contains($hint, 'congo') => '+242',
+            $hint === 'cm'
+            || str_contains($hint, 'cameroun')
+            || str_contains($hint, 'cameroon') => '+237',
+            $hint === 'fr' || str_contains($hint, 'france') => '+33',
+            $hint === 'ci'
+            || str_contains($hint, 'côte')
+            || str_contains($hint, 'ivoire')
+            || str_contains($hint, 'ivory') => '+225',
+            $hint === 'sn'
+            || str_contains($hint, 'sénégal')
+            || str_contains($hint, 'senegal') => '+221',
+            $hint === 'ga' || str_contains($hint, 'gabon') => '+241',
+            $hint === 'cg' || str_contains($hint, 'congo') => '+242',
             default => null,
         };
     }

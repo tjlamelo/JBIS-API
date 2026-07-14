@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Core\Domain\Identity\Import;
 
+use App\Core\Application\Mail\Jobs\DispatchImportedAccountWelcomeMailsJob;
 use App\Core\Domain\Identity\Actions\User\CreateAdminUserAction;
 use App\Core\Domain\Identity\DTOs\AdminUserWriteDto;
 use App\Core\Domain\Identity\Enums\CareerIntent;
@@ -12,6 +13,7 @@ use App\Core\Domain\Identity\Enums\ProfileType;
 use App\Core\Domain\Identity\Import\DTOs\AdminUserImportIssue;
 use App\Core\Domain\Identity\Import\DTOs\AdminUserImportResult;
 use App\Core\Domain\Identity\Import\DTOs\AdminUserImportRowData;
+use App\Core\Domain\Identity\Import\Support\AdminUserImportRowParser;
 use App\Core\Domain\Identity\Models\User;
 use App\Core\Domain\Identity\Support\ApplicationRole;
 use App\Core\Domain\Location\Models\Country;
@@ -44,27 +46,35 @@ final class AdminUserImportService
             ->mapWithKeys(static fn ($id, $code): array => [strtoupper((string) $code) => (int) $id])
             ->all();
 
-        $existingEmails = User::query()
-            ->whereIn('email', array_map(static fn (AdminUserImportRowData $row): string => $row->email, $rows))
-            ->pluck('email')
-            ->map(static fn ($email): string => strtolower((string) $email))
-            ->all();
+        $emails = array_values(array_unique(array_map(
+            static fn (AdminUserImportRowData $row): string => strtolower($row->email),
+            $rows,
+        )));
 
-        $existingPhones = User::query()
+        $existingEmails = [];
+        if ($emails !== []) {
+            $existingEmails = User::query()
+                ->where(function ($query) use ($emails): void {
+                    foreach ($emails as $email) {
+                        $query->orWhereRaw('LOWER(email) = ?', [$email]);
+                    }
+                })
+                ->pluck('email')
+                ->map(static fn ($email): string => strtolower((string) $email))
+                ->all();
+        }
+
+        $existingPhoneFingerprints = User::query()
             ->whereNotNull('phone_number1')
-            ->whereIn(
-                'phone_number1',
-                array_values(array_filter(array_map(
-                    static fn (AdminUserImportRowData $row): ?string => $row->phoneNumber1,
-                    $rows,
-                ))),
-            )
+            ->where('phone_number1', '!=', '')
             ->pluck('phone_number1')
-            ->map(static fn ($phone): string => (string) $phone)
+            ->map(static fn ($phone): ?string => AdminUserImportRowParser::phoneFingerprint((string) $phone, 'CM'))
+            ->filter()
+            ->values()
             ->all();
 
         $emailsInFile = [];
-        $phonesInFile = [];
+        $phoneFingerprintsInFile = [];
         $validRows = [];
 
         foreach ($rows as $row) {
@@ -74,9 +84,9 @@ final class AdminUserImportService
                 $path,
                 $countryIdsByCode,
                 $existingEmails,
-                $existingPhones,
+                $existingPhoneFingerprints,
                 $emailsInFile,
-                $phonesInFile,
+                $phoneFingerprintsInFile,
             );
 
             if ($rowIssues !== []) {
@@ -85,9 +95,12 @@ final class AdminUserImportService
                 continue;
             }
 
-            $emailsInFile[] = $row->email;
-            if ($row->phoneNumber1 !== null) {
-                $phonesInFile[] = $row->phoneNumber1;
+            $emailsInFile[] = strtolower($row->email);
+            $fingerprint = $row->phoneNumber1 !== null
+                ? AdminUserImportRowParser::phoneFingerprint($row->phoneNumber1, $row->nationalityCountryCode ?? 'CM')
+                : null;
+            if ($fingerprint !== null) {
+                $phoneFingerprintsInFile[] = $fingerprint;
             }
 
             $validRows[] = $row;
@@ -112,21 +125,41 @@ final class AdminUserImportService
         }
 
         $createdIds = [];
+        /** @var list<array{user_id: int, plain_password: string}> $pendingMails */
+        $pendingMails = [];
 
-        DB::transaction(function () use ($validRows, $countryIdsByCode, &$createdIds): void {
+        DB::transaction(function () use ($validRows, $countryIdsByCode, &$createdIds, &$pendingMails): void {
             foreach ($validRows as $row) {
                 $countryId = null;
                 if ($row->nationalityCountryCode !== null) {
                     $countryId = $countryIdsByCode[strtoupper($row->nationalityCountryCode)] ?? null;
                 }
 
-                    $created = $this->createAdminUser->execute(
-                        AdminUserWriteDto::fromArray($row->toWriteArray($countryId)),
-                    );
-                    $user = $created['user'];
+                // Email différé : file batch après commit (scalable).
+                $payload = $row->toWriteArray($countryId);
+                $payload['send_account_email'] = false;
+
+                $created = $this->createAdminUser->execute(AdminUserWriteDto::fromArray($payload));
+                $user = $created['user'];
                 $createdIds[] = (int) $user->id;
+
+                if ($user->canReceiveEmail()) {
+                    $user->forceFill([
+                        'must_change_password' => true,
+                        'email_verified_at' => $user->email_verified_at ?? now(),
+                    ])->save();
+
+                    $pendingMails[] = [
+                        'user_id' => (int) $user->id,
+                        'plain_password' => $created['plain_password'],
+                    ];
+                }
             }
         });
+
+        if ($pendingMails !== []) {
+            DispatchImportedAccountWelcomeMailsJob::dispatch($pendingMails);
+        }
 
         return new AdminUserImportResult(
             success: true,
@@ -142,15 +175,16 @@ final class AdminUserImportService
                 $validRows,
             ),
             createdUserIds: $createdIds,
+            emailsQueued: count($pendingMails),
         );
     }
 
     /**
      * @param  array<string, int>  $countryIdsByCode
      * @param  list<string>  $existingEmails
-     * @param  list<string>  $existingPhones
+     * @param  list<string>  $existingPhoneFingerprints
      * @param  list<string>  $emailsInFile
-     * @param  list<string>  $phonesInFile
+     * @param  list<string>  $phoneFingerprintsInFile
      * @return list<AdminUserImportIssue>
      */
     private function validateRow(
@@ -158,11 +192,12 @@ final class AdminUserImportService
         string $path,
         array $countryIdsByCode,
         array $existingEmails,
-        array $existingPhones,
+        array $existingPhoneFingerprints,
         array $emailsInFile,
-        array $phonesInFile,
+        array $phoneFingerprintsInFile,
     ): array {
         $issues = [];
+        $email = strtolower($row->email);
 
         if ($row->firstName === null || $row->lastName === null) {
             if ($row->firstName === null) {
@@ -173,24 +208,33 @@ final class AdminUserImportService
             }
         }
 
-        if (! filter_var($row->email, FILTER_VALIDATE_EMAIL)) {
+        if (! filter_var($email, FILTER_VALIDATE_EMAIL)) {
             $issues[] = new AdminUserImportIssue($path, 'email', __('Email invalide.'));
         }
 
-        if (in_array($row->email, $existingEmails, true)) {
+        if (in_array($email, $existingEmails, true)) {
             $issues[] = new AdminUserImportIssue($path, 'email', __('Cet email existe déjà.'));
         }
 
-        if (in_array($row->email, $emailsInFile, true)) {
+        if (in_array($email, $emailsInFile, true)) {
             $issues[] = new AdminUserImportIssue($path, 'email', __('Email en doublon dans le fichier.'));
         }
 
         if ($row->phoneNumber1 !== null) {
-            if (in_array($row->phoneNumber1, $existingPhones, true)) {
-                $issues[] = new AdminUserImportIssue($path, 'phone_number1', __('Ce téléphone existe déjà.'));
-            }
-            if (in_array($row->phoneNumber1, $phonesInFile, true)) {
-                $issues[] = new AdminUserImportIssue($path, 'phone_number1', __('Téléphone en doublon dans le fichier.'));
+            $fingerprint = AdminUserImportRowParser::phoneFingerprint(
+                $row->phoneNumber1,
+                $row->nationalityCountryCode ?? 'CM',
+            );
+
+            if ($fingerprint === null) {
+                $issues[] = new AdminUserImportIssue($path, 'phone_number1', __('Téléphone invalide.'));
+            } else {
+                if (in_array($fingerprint, $existingPhoneFingerprints, true)) {
+                    $issues[] = new AdminUserImportIssue($path, 'phone_number1', __('Ce téléphone existe déjà.'));
+                }
+                if (in_array($fingerprint, $phoneFingerprintsInFile, true)) {
+                    $issues[] = new AdminUserImportIssue($path, 'phone_number1', __('Téléphone en doublon dans le fichier.'));
+                }
             }
         }
 
