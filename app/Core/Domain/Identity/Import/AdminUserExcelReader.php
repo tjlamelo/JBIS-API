@@ -53,14 +53,16 @@ final class AdminUserExcelReader
 
             $firstName = AdminUserImportRowParser::nullableString($row['first_name'] ?? null);
             $lastName = AdminUserImportRowParser::nullableString($row['last_name'] ?? null);
-            $name = AdminUserImportRowParser::nullableString($row['name'] ?? null);
+            $name = AdminUserImportRowParser::nullableString($row['name'] ?? null)
+                ?? AdminUserImportRowParser::nullableString($row['full_name'] ?? null)
+                ?? AdminUserImportRowParser::nullableString($row['nom_complet'] ?? null);
 
-            // Si prénom/nom vides mais « name » rempli → découpage.
-            if (($firstName === null || $lastName === null) && $name !== null) {
-                $parts = AdminUserImportRowParser::splitFullName($name);
-                $firstName ??= $parts['first_name'];
-                $lastName ??= $parts['last_name'];
-            }
+            // Complète first/last depuis name, puis depuis un prénom/nom multi-mots.
+            [$firstName, $lastName] = AdminUserImportRowParser::resolveFirstAndLastName(
+                $firstName,
+                $lastName,
+                $name,
+            );
 
             $countryCode = AdminUserImportRowParser::nullableString($row['nationality_country_code'] ?? null);
             if ($countryCode !== null) {
@@ -231,9 +233,18 @@ final class AdminUserExcelReader
         $headers = [];
         foreach ($headerRow as $cell) {
             $key = strtolower(trim((string) $cell));
-            if ($key !== '') {
-                $headers[] = str_replace(' ', '_', $key);
+            if ($key === '') {
+                continue;
             }
+            $key = str_replace([' ', '-'], '_', $key);
+            $headers[] = match ($key) {
+                'prenom', 'prénom', 'firstname', 'given_name' => 'first_name',
+                'nom', 'nom_de_famille', 'lastname', 'family_name', 'surname' => 'last_name',
+                'nom_complet', 'fullname_name', 'fullname' => 'name',
+                'telephone', 'tel', 'phone', 'mobile' => 'phone_number1',
+                'courriel', 'mail', 'e_mail' => 'email',
+                default => $key,
+            };
         }
 
         $parsed = [];

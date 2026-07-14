@@ -388,19 +388,48 @@ final class AdminUserImportService
         );
         $payload['roles'] = $roles;
 
-        $validator = Validator::make($payload, [
+        // Évite les doublons FR custom + messages Laravel EN sur les mêmes champs.
+        $alreadyFlagged = [];
+        foreach ($issues as $issue) {
+            if ($issue->severity === 'error') {
+                $alreadyFlagged[$issue->field] = true;
+            }
+        }
+
+        $rules = [
             'email' => ['required', 'email', 'max:255'],
-            'first_name' => ['required', 'string', 'max:50'],
-            'last_name' => ['required', 'string', 'max:50'],
             'phone_number1' => ['nullable', 'string', 'max:20'],
             'phone_number2' => ['nullable', 'string', 'max:20'],
             'phone_number3' => ['nullable', 'string', 'max:20'],
             'password' => ['nullable', 'string', 'min:8'],
             'roles.*' => ['string', Rule::exists('roles', 'name')],
+        ];
+
+        if (! isset($alreadyFlagged['first_name'])) {
+            $rules['first_name'] = ['required', 'string', 'max:50'];
+        }
+        if (! isset($alreadyFlagged['last_name'])) {
+            $rules['last_name'] = ['required', 'string', 'max:50'];
+        }
+        if (isset($alreadyFlagged['email'])) {
+            unset($rules['email']);
+        }
+
+        $validator = Validator::make($payload, $rules, [], [
+            'first_name' => 'prénom',
+            'last_name' => 'nom',
+            'email' => 'email',
+            'phone_number1' => 'téléphone',
+            'phone_number2' => 'téléphone 2',
+            'phone_number3' => 'téléphone 3',
+            'password' => 'mot de passe',
         ]);
 
         if ($validator->fails()) {
             foreach ($validator->errors()->messages() as $field => $messages) {
+                if (isset($alreadyFlagged[(string) $field])) {
+                    continue;
+                }
                 foreach ($messages as $message) {
                     $issues[] = new AdminUserImportIssue($path, (string) $field, (string) $message);
                 }

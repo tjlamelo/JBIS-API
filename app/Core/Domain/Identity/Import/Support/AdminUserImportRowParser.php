@@ -121,13 +121,55 @@ final class AdminUserImportRowParser
         }
 
         if (count($parts) === 1) {
-            return ['first_name' => $parts[0], 'last_name' => null];
+            return ['first_name' => $parts[0], 'last_name' => $parts[0]];
         }
 
         return [
             'first_name' => $parts[0],
             'last_name' => implode(' ', array_slice($parts, 1)),
         ];
+    }
+
+    /**
+     * Remplit first/last à partir des colonnes disponibles (Excel souvent incomplet).
+     *
+     * @return array{0: ?string, 1: ?string}
+     */
+    public static function resolveFirstAndLastName(?string $firstName, ?string $lastName, ?string $fullName): array
+    {
+        $firstName = self::nullableString($firstName);
+        $lastName = self::nullableString($lastName);
+        $fullName = self::nullableString($fullName);
+
+        if (($firstName === null || $lastName === null) && $fullName !== null) {
+            $parts = self::splitFullName($fullName);
+            $firstName ??= $parts['first_name'];
+            $lastName ??= $parts['last_name'];
+        }
+
+        // Tout collé dans first_name (cas fréquent Excel).
+        if ($lastName === null && $firstName !== null && preg_match('/\s+/', $firstName) === 1) {
+            $parts = self::splitFullName($firstName);
+            $firstName = $parts['first_name'];
+            $lastName = $parts['last_name'];
+        }
+
+        // Tout collé dans last_name.
+        if ($firstName === null && $lastName !== null && preg_match('/\s+/', $lastName) === 1) {
+            $parts = self::splitFullName($lastName);
+            $firstName = $parts['first_name'];
+            $lastName = $parts['last_name'];
+        }
+
+        // Un seul mot : réutiliser pour les deux (évite blocage d'import).
+        if ($firstName !== null && $lastName === null) {
+            $lastName = $firstName;
+        }
+        if ($lastName !== null && $firstName === null) {
+            $firstName = $lastName;
+        }
+
+        return [$firstName, $lastName];
     }
 
     public static function normalizePhone(?string $value, ?string $countryHint = null): ?string
