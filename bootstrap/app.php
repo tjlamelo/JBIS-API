@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsurePasswordIsChanged;
 use App\Http\Middleware\ResolveRecruiterTenant;
 use App\Http\Middleware\SetApiLocale;
 use Illuminate\Console\Scheduling\Schedule;
@@ -22,6 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'recruiter.tenant' => ResolveRecruiterTenant::class,
+            'password.changed' => EnsurePasswordIsChanged::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

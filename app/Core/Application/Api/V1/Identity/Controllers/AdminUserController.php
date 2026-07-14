@@ -121,6 +121,7 @@ final class AdminUserController extends Controller
                 'email' => $user->email,
                 'password' => $result['plain_password'],
                 'email_is_placeholder' => $result['email_is_placeholder'],
+                'account_email_sent' => $result['account_email_sent'],
             ],
         ])->toJsonResponse();
     }

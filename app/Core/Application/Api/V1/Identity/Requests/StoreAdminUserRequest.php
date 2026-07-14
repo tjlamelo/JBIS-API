@@ -85,6 +85,7 @@ final class StoreAdminUserRequest extends FormRequest
             'gender' => ['nullable', Rule::in(['M', 'F'])],
             'marital_status' => ['nullable', Rule::in(['SINGLE', 'MARRIED', 'DIVORCED', 'WIDOWED'])],
             'number_of_children' => ['nullable', 'integer', 'min:0', 'max:20'],
+            'send_account_email' => ['sometimes', 'boolean'],
         ];
     }
 

@@ -81,6 +81,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'email_is_placeholder',
         'phone_number1',
         'password',
+        'must_change_password',
         'active',
         'auth_provider',
     ];
@@ -107,6 +108,7 @@ class User extends Authenticatable implements MustVerifyEmail
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'must_change_password' => 'boolean',
             'active' => 'boolean',
             'email_is_placeholder' => 'boolean',
         ];

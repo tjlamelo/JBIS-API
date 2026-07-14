@@ -7,6 +7,7 @@ use App\Core\Application\Api\V1\Auth\Actions\CompleteTwoFactorLoginAction;
 use App\Core\Application\Api\V1\Auth\Actions\HandleGoogleCallbackAction;
 use App\Core\Application\Api\V1\Auth\Actions\PrepareTwoFactorLoginChallengeAction;
 use App\Core\Application\Api\V1\Auth\Requests\CompleteTwoFactorLoginRequest;
+use App\Core\Application\Api\V1\Auth\Requests\CompleteRequiredPasswordChangeRequest;
 use App\Core\Application\Api\V1\Auth\Requests\ConfirmTwoFactorRequest;
 use App\Core\Application\Api\V1\Auth\Requests\ForgotPasswordRequest;
 use App\Core\Application\Api\V1\Auth\Requests\LoginRequest;
@@ -14,12 +15,14 @@ use App\Core\Application\Api\V1\Auth\Requests\RegisterRequest;
 use App\Core\Application\Api\V1\Auth\Requests\ResetPasswordRequest;
 use App\Core\Application\Api\V1\Identity\Support\AuthUserPayloadMapper;
 use App\Core\Application\Api\V1\Identity\Support\ProfileResponseMapper;
+use App\Core\Domain\Identity\Actions\CompleteRequiredPasswordChangeAction;
 use App\Core\Domain\Identity\Actions\ForgotPasswordAction;
 use App\Core\Domain\Identity\Actions\LoginUserAction;
 use App\Core\Domain\Identity\Actions\RegisterUserAction;
 use App\Core\Domain\Identity\Actions\ResendEmailVerificationAction;
 use App\Core\Domain\Identity\Actions\ResetPasswordAction;
 use App\Core\Domain\Identity\Actions\VerifyEmailAction;
+use App\Core\Domain\Identity\DTOs\AuthenticationResultDto;
 use App\Core\Domain\Identity\DTOs\DeviceContextDto;
 use App\Core\Domain\Identity\DTOs\LoginCredentialsDto;
 use App\Http\Controllers\Controller;
@@ -79,7 +82,26 @@ class AuthTokenController extends Controller
             )->toJsonResponse();
         }
 
-        return BaseResponse::ok($payload->toArray())->toJsonResponse();
+        return BaseResponse::ok($this->authPayload($payload))->toJsonResponse();
+    }
+
+    public function completeRequiredPasswordChange(
+        CompleteRequiredPasswordChangeRequest $request,
+        CompleteRequiredPasswordChangeAction $completeRequiredPasswordChange,
+    ): JsonResponse {
+        $user = $request->user();
+        if ($user === null) {
+            return BaseResponse::unauthorized([
+                'message' => __('Utilisateur non authentifie.'),
+            ])->toJsonResponse();
+        }
+
+        $completeRequiredPasswordChange->execute($user, $request->validated());
+
+        return BaseResponse::ok([
+            'message' => __('Mot de passe mis a jour. Veuillez vous reconnecter avec votre nouveau mot de passe.'),
+            'must_relogin' => true,
+        ])->toJsonResponse();
     }
 
     public function completeTwoFactorLogin(
@@ -92,7 +114,12 @@ class AuthTokenController extends Controller
             return BaseResponse::unprocessableEntity($result['data'])->toJsonResponse();
         }
 
-        return BaseResponse::ok($result['data'])->toJsonResponse();
+        $data = $result['data'];
+        if (isset($data['user']) && $data['user'] instanceof \App\Core\Domain\Identity\Models\User) {
+            $data['user'] = $this->authUserPayloadMapper->toArray($data['user']);
+        }
+
+        return BaseResponse::ok($data)->toJsonResponse();
     }
 
     public function me(Request $request): JsonResponse
@@ -288,6 +315,18 @@ class AuthTokenController extends Controller
         return BaseResponse::ok([
             'recovery_codes' => $user->fresh()->recoveryCodes(),
         ])->toJsonResponse();
+    }
+
+    /**
+     * @return array{user: array<string, mixed>, access_token: string, token_type: string}
+     */
+    private function authPayload(AuthenticationResultDto $payload): array
+    {
+        return [
+            'user' => $this->authUserPayloadMapper->toArray($payload->user),
+            'access_token' => $payload->accessToken,
+            'token_type' => $payload->tokenType,
+        ];
     }
 
     private function deviceContextFromRequest(Request $request): DeviceContextDto

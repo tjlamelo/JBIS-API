@@ -33,6 +33,7 @@ readonly class AdminUserWriteDto
         public ?string $maritalStatus = null,
         public ?int $numberOfChildren = null,
         public bool $emailIsPlaceholder = false,
+        public bool $sendAccountEmail = false,
     ) {}
 
     /**
@@ -92,6 +93,7 @@ readonly class AdminUserWriteDto
                 ? (int) $data['number_of_children']
                 : null,
             emailIsPlaceholder: (bool) ($data['email_is_placeholder'] ?? false),
+            sendAccountEmail: (bool) ($data['send_account_email'] ?? false),
         );
     }
 
@@ -152,6 +154,11 @@ readonly class AdminUserWriteDto
         }
 
         $attributes['password'] = $this->resolvedPassword();
+
+        if (! $this->emailIsPlaceholder && $this->sendAccountEmail) {
+            $attributes['must_change_password'] = true;
+            $attributes['email_verified_at'] = now();
+        }
 
         if ($this->active !== null) {
             $attributes['active'] = $this->active;

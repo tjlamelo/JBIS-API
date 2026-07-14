@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Core\Domain\Identity\Actions\User;
 
+use App\Core\Domain\Communication\Actions\NotifyAdminCreatedAccountAction;
 use App\Core\Domain\Communication\Actions\NotifyStaffWelcomeAction;
 use App\Core\Domain\Identity\Actions\Settings\EnsureUserSettingsAction;
 use App\Core\Domain\Identity\DTOs\AdminUserWriteDto;
@@ -17,11 +18,12 @@ final class CreateAdminUserAction
 {
     public function __construct(
         private readonly NotifyStaffWelcomeAction $notifyStaffWelcome,
+        private readonly NotifyAdminCreatedAccountAction $notifyAdminCreatedAccount,
         private readonly EnsureUserSettingsAction $ensureUserSettings,
     ) {}
 
     /**
-     * @return array{user: User, plain_password: string, email_is_placeholder: bool}
+     * @return array{user: User, plain_password: string, email_is_placeholder: bool, account_email_sent: bool}
      */
     public function execute(AdminUserWriteDto $dto): array
     {
@@ -39,11 +41,19 @@ final class CreateAdminUserAction
             'email' => $email,
             'password' => $plainPassword,
             'email_is_placeholder' => $emailIsPlaceholder,
+            'send_account_email' => $dto->sendAccountEmail,
         ]);
 
-        $user = DB::transaction(function () use ($resolvedDto): User {
+        $sendAccountEmail = $resolvedDto->sendAccountEmail === true && ! $emailIsPlaceholder;
+
+        $user = DB::transaction(function () use ($resolvedDto, $emailIsPlaceholder, $sendAccountEmail): User {
             $attributes = $resolvedDto->toUserAttributes();
             $attributes['active'] = $resolvedDto->active ?? true;
+            $attributes['must_change_password'] = $sendAccountEmail;
+
+            if (! $emailIsPlaceholder) {
+                $attributes['email_verified_at'] = now();
+            }
 
             /** @var User $user */
             $user = User::query()->create($attributes);
@@ -67,10 +77,15 @@ final class CreateAdminUserAction
 
         $this->notifyStaffWelcome->ifBecameStaff($user, [], $resolvedDto->roles ?? [ApplicationRole::CANDIDATE]);
 
+        if ($sendAccountEmail) {
+            $this->notifyAdminCreatedAccount->execute($user, $plainPassword);
+        }
+
         return [
             'user' => $user,
             'plain_password' => $plainPassword,
             'email_is_placeholder' => $emailIsPlaceholder,
+            'account_email_sent' => $sendAccountEmail && $user->canReceiveEmail(),
         ];
     }
 
@@ -100,6 +115,7 @@ final class CreateAdminUserAction
             'marital_status' => $dto->maritalStatus,
             'number_of_children' => $dto->numberOfChildren,
             'email_is_placeholder' => $dto->emailIsPlaceholder,
+            'send_account_email' => $dto->sendAccountEmail,
         ];
     }
 }

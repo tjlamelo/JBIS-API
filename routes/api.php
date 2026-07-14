@@ -182,10 +182,13 @@ Route::prefix('v1')->group(function (): void {
     | ROUTES PRIVÃ‰ES (Authentification Requise)
     |--------------------------------------------------------------------------
     */
-    Route::middleware('auth:sanctum')->group(function (): void {
+    Route::middleware(['auth:sanctum', 'password.changed'])->group(function (): void {
 
         // Mon Compte & SÃ©curitÃ©
-        Route::get('/me', [AuthTokenController::class, 'me']);
+        Route::get('/me', [AuthTokenController::class, 'me'])->name('api.me');
+        Route::post('/me/required-password-change', [AuthTokenController::class, 'completeRequiredPasswordChange'])
+            ->name('api.required-password-change');
+        Route::post('/logout', [AuthTokenController::class, 'logout'])->name('api.logout');
         Route::post('/me/discovery-source', [MyDiscoverySourceController::class, 'store']);
         Route::get('/dashboard', DashboardController::class);
         Route::get('/meta/enums', [MetaEnumController::class, 'index']);
@@ -285,7 +288,6 @@ Route::prefix('v1')->group(function (): void {
             Route::post('/{user}/reset-password', [AdminUserController::class, 'sendPasswordReset']);
             Route::post('/{user}/matricule', [AdminUserController::class, 'assignMatricule']);
         });
-        Route::post('/logout', [AuthTokenController::class, 'logout']);
         Route::post('/logout-all', [AuthTokenController::class, 'logoutAll']);
         Route::post('/email/verification-notification', [AuthTokenController::class, 'resendEmailVerification']);
 
