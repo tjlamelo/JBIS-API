@@ -6,6 +6,7 @@ namespace App\Core\Domain\Catalog\DTOs\Program;
 
 use App\Core\Domain\Catalog\States\ProgramStatus;
 use App\Core\Domain\Shared\Interfaces\IDto;
+use Illuminate\Http\Request;
 
 readonly class ProgramDto implements IDto
 {
@@ -39,6 +40,15 @@ readonly class ProgramDto implements IDto
         public array $required_documents = [],
         public array $language_requirements = [],
     ) {}
+
+    public static function fromRequest(Request $request): self
+    {
+        $data = $request->all();
+        $data['provided_keys'] = array_keys($data);
+        $data['user_id'] = $request->user()?->id;
+
+        return self::fromArray($data);
+    }
 
     /**
      * @param  array<string, mixed>  $data
@@ -79,6 +89,18 @@ readonly class ProgramDto implements IDto
             required_documents: is_array($data['required_documents'] ?? null) ? $data['required_documents'] : [],
             language_requirements: is_array($data['language_requirements'] ?? null) ? $data['language_requirements'] : [],
         );
+    }
+
+    public function toArray(): array
+    {
+        $vars = get_object_vars($this);
+        unset($vars['provided_keys']);
+
+        if ($this->provided_keys === []) {
+            return array_filter($vars, static fn ($value) => $value !== null);
+        }
+
+        return array_intersect_key($vars, array_flip($this->provided_keys));
     }
 
     public function has(string $key): bool
