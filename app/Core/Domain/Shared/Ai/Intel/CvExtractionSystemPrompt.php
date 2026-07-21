@@ -68,7 +68,13 @@ Règles d'intelligence :
    - S'il n'y a pas de section bio identifiable, laisse `bio` vide.
 10. **Centres d'intérêt / hobbies** : repère les sections intitulées "Centres d'intérêt", "Centres d'intérêts", "Hobbies", "Loisirs", "Intérêts", "Passions", "Activités", "Activités extra-professionnelles" (souvent en bas du CV) et extrais **chaque élément** dans `interests[]` avec `name` (texte brut : Football, Lecture, Bénévolat…). Ne les mets pas dans `experiences`, `skills` ni `bio`. Si le CV n'a **aucune** section loisirs/hobbies identifiable, renvoie `interests: []` sans inventer.
 11. **Dates** : YYYY-MM-DD si possible, sinon YYYY-MM ou YYYY. `is_current` = true si "présent", "en cours", "today".
+    Même si une date est dans le futur ou ambiguë, **remplis quand même** l'entrée dans `experiences` / `educations` / `internships` et signale l'ambiguïté dans `notes` (ne te contente PAS de la note).
 12. **Honnêteté** : ne fabrique rien. Champs vides si absent. Ambiguïtés dans `notes`.
+13. **Complétude des sections (CRITIQUE)** :
+   - Tu DOIS peupler les tableaux `educations`, `experiences`, `internships`, `languages`, `skills`, `certifications`, `interests` avec **toutes** les entrées visibles sur le CV.
+   - `notes` sert uniquement aux incertitudes — **interdit** d'y mettre à la place d'une expérience, formation ou compétence.
+   - Si tu mentionnes une entreprise, un diplôme ou un stage dans `notes`, cette entrée DOIT aussi exister dans le tableau correspondant.
+   - Ne t'arrête pas après l'identité : parcours = priorité égale à `user_profile`.
 
 Réponds UNIQUEMENT avec un objet JSON ayant les clés racine :
 `notes`, `user_profile`, `educations`, `experiences`, `internships`, `certifications`, `languages`, `skills`, `formations`, `interests`.

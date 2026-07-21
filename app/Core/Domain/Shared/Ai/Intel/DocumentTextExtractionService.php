@@ -28,10 +28,17 @@ final class DocumentTextExtractionService
     {
         $profile = DocumentExtractionProfileRegistry::resolve($documentTypeCode);
 
+        $userPrompt = $documentTypeCode === 'CV'
+            ? "Texte extrait du CV (toutes les pages fournies).\n\n"
+                ."Extrais TOUTES les sections dans le JSON : identité, formations, expériences, stages, langues, compétences, certifications, centres d'intérêt.\n"
+                ."Ne te limite pas à l'identité. Si une entreprise ou un diplôme apparaît dans le texte, il DOIT figurer dans le tableau correspondant.\n\n"
+                .$documentText
+            : $documentText;
+
         $request = new GenerateContentRequest(
             messages: [
                 new ChatMessage(ChatRole::System, $profile['system']),
-                new ChatMessage(ChatRole::User, $documentText),
+                new ChatMessage(ChatRole::User, $userPrompt),
             ],
             options: new GenerationOptions(
                 temperature: 0.1,

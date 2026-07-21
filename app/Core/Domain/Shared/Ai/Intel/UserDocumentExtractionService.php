@@ -55,21 +55,47 @@ final class UserDocumentExtractionService
         $minTextChars = max(1, (int) config('ai.document_extraction.pdf.min_text_chars', 200));
 
         $text = $this->pdfTextExtractor->extractFirstPages($document, $maxPages);
-        if (mb_strlen(trim($text)) >= $minTextChars) {
+        $textChars = mb_strlen(trim($text));
+
+        if ($textChars >= $minTextChars) {
             Log::info('[document_extraction] Pipeline PDF texte', [
                 'user_document_id' => $document->id,
-                'char_count' => mb_strlen($text),
+                'document_type' => $typeCode,
+                'char_count' => $textChars,
                 'max_pages' => $maxPages,
             ]);
 
-            return $this->textExtraction->extractDraft($typeCode, $text);
+            $draft = $this->textExtraction->extractDraft($typeCode, $text);
+
+            // CV : le texte natif peut contenir l'en-tête (identité) mais pas le corps
+            // (PDF Canva/Word → texte partiel). Si le parcours est vide, on repasse en vision.
+            if ($typeCode === 'CV' && $this->isCvDraftIncomplete($draft)) {
+                Log::info('[document_extraction] CV texte incomplet → repli vision', [
+                    'user_document_id' => $document->id,
+                    'section_counts' => $this->sectionCounts($draft),
+                ]);
+
+                return $this->extractPdfViaVision($document, $maxPages);
+            }
+
+            return $draft;
         }
 
         Log::info('[document_extraction] Pipeline PDF vision (scan)', [
             'user_document_id' => $document->id,
+            'document_type' => $typeCode,
             'max_pages' => $maxPages,
+            'text_chars' => $textChars,
         ]);
 
+        return $this->extractPdfViaVision($document, $maxPages);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function extractPdfViaVision(UserDocument $document, int $maxPages): array
+    {
         $renderedPages = $this->pdfPageImageExtractor->renderFirstPages($document, $maxPages);
 
         try {
@@ -82,5 +108,48 @@ final class UserDocumentExtractionService
         } finally {
             $this->pdfPageImageExtractor->cleanupRenderedPages($renderedPages);
         }
+    }
+
+    /**
+     * @param  array<string, mixed>  $draft
+     */
+    private function isCvDraftIncomplete(array $draft): bool
+    {
+        return $this->nonEmptyCount($draft['experiences'] ?? null) === 0
+            && $this->nonEmptyCount($draft['educations'] ?? null) === 0
+            && $this->nonEmptyCount($draft['internships'] ?? null) === 0
+            && $this->nonEmptyCount($draft['skills'] ?? null) === 0
+            && $this->nonEmptyCount($draft['languages'] ?? null) === 0;
+    }
+
+    /**
+     * @param  array<string, mixed>  $draft
+     * @return array<string, int>
+     */
+    private function sectionCounts(array $draft): array
+    {
+        return [
+            'experiences' => $this->nonEmptyCount($draft['experiences'] ?? null),
+            'educations' => $this->nonEmptyCount($draft['educations'] ?? null),
+            'internships' => $this->nonEmptyCount($draft['internships'] ?? null),
+            'skills' => $this->nonEmptyCount($draft['skills'] ?? null),
+            'languages' => $this->nonEmptyCount($draft['languages'] ?? null),
+        ];
+    }
+
+    private function nonEmptyCount(mixed $value): int
+    {
+        if (! is_array($value)) {
+            return 0;
+        }
+
+        $count = 0;
+        foreach ($value as $row) {
+            if (is_array($row) && $row !== []) {
+                $count++;
+            }
+        }
+
+        return $count;
     }
 }

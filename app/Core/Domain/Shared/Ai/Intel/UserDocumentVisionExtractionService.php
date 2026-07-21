@@ -76,10 +76,12 @@ final class UserDocumentVisionExtractionService
         $profile = DocumentExtractionProfileRegistry::resolve($typeCode);
         $userPrompt = count($imageInputs) > 1
             ? sprintf(
-                'Analyse ce document (%d pages maximum) et renvoie un seul JSON structuré fusionné.',
+                'Analyse ces %d pages de document et renvoie un seul JSON fusionné. '
+                .'Pour un CV : remplis obligatoirement experiences, educations, internships, languages, skills quand ils sont visibles — pas seulement user_profile.',
                 count($imageInputs),
             )
-            : 'Analyse ce document et renvoie uniquement le JSON structuré demandé.';
+            : 'Analyse ce document et renvoie uniquement le JSON structuré demandé. '
+                .'Pour un CV : extrais toutes les sections (pas seulement l\'identité).';
 
         $request = new GenerateContentRequest(
             messages: [
