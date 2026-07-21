@@ -44,7 +44,7 @@ class DocumentType extends Model
     /** @return list<string> */
     public static function defaultAllowedExtensions(): array
     {
-        return ['pdf', 'jpg', 'jpeg', 'png', 'webp'];
+        return ['pdf', 'jpg', 'jpeg', 'png', 'webp', 'doc', 'docx'];
     }
 
     /** @return list<string> */
@@ -55,6 +55,8 @@ class DocumentType extends Model
             'image/jpeg',
             'image/png',
             'image/webp',
+            'application/msword',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
         ];
     }
 

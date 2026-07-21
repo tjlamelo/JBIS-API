@@ -43,12 +43,20 @@ class DocumentTypeSeeder extends Seeder
             ],
             [
                 'code' => 'BIRTH_CERTIFICATE',
-                'label' => ['fr' => 'Extrait d’acte de naissance', 'en' => 'Birth certificate'],
+                'label' => ['fr' => 'Acte de naissance', 'en' => 'Birth certificate'],
                 'storage_slug' => 'acte-naissance',
                 'unique_per_user' => true,
                 'requires_document_number' => true,
                 'max_file_size_kb' => 10240,
                 'sort_order' => 30,
+            ],
+            [
+                'code' => 'MARRIAGE_CERTIFICATE',
+                'label' => ['fr' => 'Acte de mariage', 'en' => 'Marriage certificate'],
+                'storage_slug' => 'acte-mariage',
+                'unique_per_user' => true,
+                'max_file_size_kb' => 10240,
+                'sort_order' => 35,
             ],
             [
                 'code' => 'DRIVING_LICENSE',
@@ -215,6 +223,21 @@ class DocumentTypeSeeder extends Seeder
                 'max_file_size_kb' => 5120,
                 'sort_order' => 230,
             ],
+            [
+                'code' => 'RECEIPT',
+                'label' => ['fr' => 'Reçu', 'en' => 'Receipt'],
+                'storage_slug' => 'recu',
+                'max_file_size_kb' => 5120,
+                'sort_order' => 235,
+            ],
+            [
+                'code' => 'AGREEMENT_PROTOCOL',
+                'label' => ['fr' => "Protocole d'accord", 'en' => 'Agreement protocol'],
+                'storage_slug' => 'protocole-accord',
+                'unique_per_user' => true,
+                'max_file_size_kb' => 10240,
+                'sort_order' => 240,
+            ],
 
             // === PHOTOS & MULTIMÉDIA ===
             [
@@ -223,7 +246,7 @@ class DocumentTypeSeeder extends Seeder
                 'storage_slug' => 'photo-identite',
                 'unique_per_user' => true,
                 'max_file_size_kb' => 5120,
-                'sort_order' => 240,
+                'sort_order' => 250,
                 'visible_to_candidates' => false,
             ],
 
@@ -233,14 +256,14 @@ class DocumentTypeSeeder extends Seeder
                 'label' => ['fr' => 'Convention de stage', 'en' => 'Internship agreement'],
                 'storage_slug' => 'convention-stage',
                 'max_file_size_kb' => 10240,
-                'sort_order' => 250,
+                'sort_order' => 260,
             ],
             [
                 'code' => 'TRAINING_CERTIFICATE',
                 'label' => ['fr' => 'Attestation de formation', 'en' => 'Training certificate'],
                 'storage_slug' => 'attestation-formation',
                 'max_file_size_kb' => 10240,
-                'sort_order' => 260,
+                'sort_order' => 270,
             ],
 
             // === AUTRES ===

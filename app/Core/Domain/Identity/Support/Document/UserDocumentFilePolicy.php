@@ -8,7 +8,7 @@ use App\Core\Domain\Identity\Models\DocumentType;
 use Illuminate\Http\UploadedFile;
 
 /**
- * Politique commune : PDF et images uniquement (extension + MIME réel).
+ * Politique commune : PDF, images et documents Word (extension + MIME réel).
  */
 final class UserDocumentFilePolicy
 {
@@ -17,7 +17,7 @@ final class UserDocumentFilePolicy
     public const MAX_SIZE_KB_PHOTO = 5120;
 
     /** @var list<string> */
-    public const ALLOWED_EXTENSIONS = ['pdf', 'jpg', 'jpeg', 'png', 'webp'];
+    public const ALLOWED_EXTENSIONS = ['pdf', 'jpg', 'jpeg', 'png', 'webp', 'doc', 'docx'];
 
     /** @var list<string> */
     public const ALLOWED_MIMES = [
@@ -25,6 +25,8 @@ final class UserDocumentFilePolicy
         'image/jpeg',
         'image/png',
         'image/webp',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     ];
 
     /** @var array<string, list<string>> */
@@ -33,6 +35,8 @@ final class UserDocumentFilePolicy
         'image/jpeg' => ['jpg', 'jpeg'],
         'image/png' => ['png'],
         'image/webp' => ['webp'],
+        'application/msword' => ['doc'],
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document' => ['docx'],
     ];
 
     public static function maxSizeKbFor(DocumentType $type): int
