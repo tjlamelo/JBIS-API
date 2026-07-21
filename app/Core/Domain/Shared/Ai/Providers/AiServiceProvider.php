@@ -54,7 +54,7 @@ final class AiServiceProvider extends ServiceProvider
             return new GroqLanguageModelClient(
                 apiKey: (string) ($groq['api_key'] ?? ''),
                 model: (string) ($groq['model'] ?? 'llama-3.3-70b-versatile'),
-                visionModel: (string) ($groq['vision_model'] ?? 'meta-llama/llama-4-scout-17b-16e-instruct'),
+                visionModel: (string) ($groq['vision_model'] ?? 'qwen/qwen3.6-27b'),
                 baseUrl: (string) ($groq['base_url'] ?? 'https://api.groq.com/openai/v1'),
                 timeout: (int) ($groq['timeout'] ?? 60),
             );

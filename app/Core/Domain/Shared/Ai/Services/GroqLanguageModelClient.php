@@ -172,6 +172,7 @@ final class GroqLanguageModelClient implements LanguageModelClientInterface
             'openai/gpt-oss-120b',
             'openai/gpt-oss-safeguard-20b',
             'meta-llama/llama-4-scout-17b-16e-instruct',
+            'qwen/qwen3.6-27b',
         ], true);
     }
 

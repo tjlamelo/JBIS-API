@@ -20,7 +20,7 @@ final class GroqLanguageModelClientTest extends TestCase
         Config::set('ai.driver', 'groq');
         Config::set('ai.groq.api_key', 'test-key');
         Config::set('ai.groq.model', 'llama-3.3-70b-versatile');
-        Config::set('ai.groq.vision_model', 'meta-llama/llama-4-scout-17b-16e-instruct');
+        Config::set('ai.groq.vision_model', 'qwen/qwen3.6-27b');
         Config::set('ai.groq.base_url', 'https://api.groq.com/openai/v1');
         Config::set('ai.groq.timeout', 30);
 
@@ -59,7 +59,7 @@ final class GroqLanguageModelClientTest extends TestCase
     {
         Config::set('ai.groq.api_key', 'test-key');
         Config::set('ai.groq.model', 'llama-3.3-70b-versatile');
-        Config::set('ai.groq.vision_model', 'meta-llama/llama-4-scout-17b-16e-instruct');
+        Config::set('ai.groq.vision_model', 'qwen/qwen3.6-27b');
         Config::set('ai.groq.base_url', 'https://api.groq.com/openai/v1');
         Config::set('ai.groq.timeout', 30);
 
@@ -80,7 +80,7 @@ final class GroqLanguageModelClientTest extends TestCase
         $client = new GroqLanguageModelClient(
             apiKey: 'test-key',
             model: 'llama-3.3-70b-versatile',
-            visionModel: 'meta-llama/llama-4-scout-17b-16e-instruct',
+            visionModel: 'qwen/qwen3.6-27b',
             baseUrl: 'https://api.groq.com/openai/v1',
             timeout: 30,
         );
@@ -98,7 +98,7 @@ final class GroqLanguageModelClientTest extends TestCase
         Http::assertSent(function ($request): bool {
             $body = $request->data();
 
-            return ($body['model'] ?? null) === 'meta-llama/llama-4-scout-17b-16e-instruct'
+            return ($body['model'] ?? null) === 'qwen/qwen3.6-27b'
                 && ($body['response_format']['type'] ?? null) === 'json_object'
                 && ! isset($body['response_format']['json_schema']);
         });
@@ -120,7 +120,7 @@ final class GroqLanguageModelClientTest extends TestCase
         $client = new GroqLanguageModelClient(
             apiKey: 'test-key',
             model: 'llama-3.3-70b-versatile',
-            visionModel: 'meta-llama/llama-4-scout-17b-16e-instruct',
+            visionModel: 'qwen/qwen3.6-27b',
             baseUrl: 'https://api.groq.com/openai/v1',
             timeout: 30,
         );

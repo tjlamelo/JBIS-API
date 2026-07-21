@@ -30,7 +30,7 @@ return [
     'groq' => [
         'api_key' => env('AI_GROQ_API_KEY', env('AI_GROK_API_KEY', '')),
         'model' => env('AI_GROQ_MODEL', env('AI_GROK_MODEL', 'llama-3.3-70b-versatile')),
-        'vision_model' => env('AI_GROQ_VISION_MODEL', 'meta-llama/llama-4-scout-17b-16e-instruct'),
+        'vision_model' => env('AI_GROQ_VISION_MODEL', 'qwen/qwen3.6-27b'),
         'base_url' => rtrim((string) env('AI_GROQ_BASE_URL', env('AI_GROK_BASE_URL', 'https://api.groq.com/openai/v1')), '/'),
         'timeout' => (int) env('AI_GROQ_TIMEOUT', env('AI_GROK_TIMEOUT', 60)),
     ],
