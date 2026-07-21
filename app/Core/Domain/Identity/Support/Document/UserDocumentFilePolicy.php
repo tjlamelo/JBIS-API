@@ -48,7 +48,7 @@ final class UserDocumentFilePolicy
 
     public static function allowedExtensionsLabel(): string
     {
-        return 'pdf, jpg, jpeg, png, webp';
+        return 'pdf, jpg, jpeg, png, webp, doc, docx';
     }
 
     public static function validate(UploadedFile $file, DocumentType $type): ?string
@@ -66,14 +66,14 @@ final class UserDocumentFilePolicy
         $extension = self::normalizeExtension($file->getClientOriginalExtension() ?: '');
 
         if ($extension === '' || ! in_array($extension, $allowedExtensions, true)) {
-            return __('Le fichier doit être un PDF ou une image (JPG, PNG, WEBP).');
+            return __('Le fichier doit être un PDF, une image (JPG, PNG, WEBP) ou un document Word (DOC, DOCX).');
         }
 
-        $detectedMime = self::detectMimeType($file);
+        $detectedMime = self::detectMimeType($file, $extension);
         $allowedMimes = $type->allowedMimeTypesList();
 
         if ($detectedMime === null || ! in_array($detectedMime, $allowedMimes, true)) {
-            return __('Le fichier doit être un PDF ou une image (JPG, PNG, WEBP).');
+            return __('Le fichier doit être un PDF, une image (JPG, PNG, WEBP) ou un document Word (DOC, DOCX).');
         }
 
         $allowedForMime = self::MIME_TO_EXTENSIONS[$detectedMime] ?? [];
@@ -88,7 +88,7 @@ final class UserDocumentFilePolicy
     public static function resolveExtension(UploadedFile $file): string
     {
         $extension = self::normalizeExtension($file->getClientOriginalExtension() ?: '');
-        $mime = self::detectMimeType($file);
+        $mime = self::detectMimeType($file, $extension);
 
         if ($mime !== null && isset(self::MIME_TO_EXTENSIONS[$mime])) {
             $allowed = self::MIME_TO_EXTENSIONS[$mime];
@@ -108,7 +108,7 @@ final class UserDocumentFilePolicy
         return strtolower(trim($extension));
     }
 
-    private static function detectMimeType(UploadedFile $file): ?string
+    private static function detectMimeType(UploadedFile $file, string $extension = ''): ?string
     {
         $path = $file->getRealPath();
 
@@ -120,7 +120,7 @@ final class UserDocumentFilePolicy
                 finfo_close($finfo);
 
                 if (is_string($fromFile) && $fromFile !== '') {
-                    return self::normalizeMime($fromFile);
+                    return self::normalizeMime($fromFile, $extension);
                 }
             }
         }
@@ -128,12 +128,22 @@ final class UserDocumentFilePolicy
         $guessed = $file->getMimeType();
 
         return is_string($guessed) && $guessed !== ''
-            ? self::normalizeMime($guessed)
+            ? self::normalizeMime($guessed, $extension)
             : null;
     }
 
-    private static function normalizeMime(string $mime): string
+    private static function normalizeMime(string $mime, string $extension = ''): string
     {
-        return strtolower(trim(explode(';', $mime)[0]));
+        $normalized = strtolower(trim(explode(';', $mime)[0]));
+
+        if ($extension === 'docx' && $normalized === 'application/zip') {
+            return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+        }
+
+        if ($extension === 'doc' && in_array($normalized, ['application/CDFV2', 'application/x-cfb'], true)) {
+            return 'application/msword';
+        }
+
+        return $normalized;
     }
 }
