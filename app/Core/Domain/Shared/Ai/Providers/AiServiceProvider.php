@@ -119,6 +119,7 @@ final class AiServiceProvider extends ServiceProvider
 
         $this->app->when([
             UserDocumentVisionExtractionService::class,
+            DocumentTextExtractionService::class,
             CvProfileFromDocumentsTextService::class,
         ])
             ->needs(LanguageModelClientInterface::class)

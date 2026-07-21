@@ -7,6 +7,7 @@ namespace App\Core\Domain\Identity\Actions\Document;
 use App\Core\Domain\Identity\Models\UserDocument;
 use App\Core\Domain\Identity\Models\UserDocumentExtraction;
 use App\Core\Domain\Shared\Ai\Enums\DocumentExtractionStatus;
+use App\Core\Domain\Shared\Ai\Exceptions\LanguageModelRateLimitedException;
 use App\Core\Domain\Shared\Ai\Intel\DocumentExtractionProfileRegistry;
 use App\Core\Domain\Shared\Ai\Intel\UserDocumentExtractionService;
 use Illuminate\Support\Facades\Log;
@@ -52,12 +53,21 @@ final class ProcessUserDocumentExtractionAction
             return null;
         }
 
-        $extraction = UserDocumentExtraction::query()->create([
-            'user_document_id' => $document->id,
-            'user_id' => $document->user_id,
-            'document_type_code' => $typeCode,
-            'status' => DocumentExtractionStatus::Processing,
-        ]);
+        // Réutilise une extraction "processing" récente si le job a été relancé.
+        $extraction = UserDocumentExtraction::query()
+            ->where('user_document_id', $document->id)
+            ->where('status', DocumentExtractionStatus::Processing)
+            ->latest('id')
+            ->first();
+
+        if ($extraction === null) {
+            $extraction = UserDocumentExtraction::query()->create([
+                'user_document_id' => $document->id,
+                'user_id' => $document->user_id,
+                'document_type_code' => $typeCode,
+                'status' => DocumentExtractionStatus::Processing,
+            ]);
+        }
 
         Log::info('[document_extraction] Enregistrement extraction créé', [
             'user_document_id' => $document->id,
@@ -79,8 +89,22 @@ final class ProcessUserDocumentExtractionAction
                 'extraction_id' => $extraction->id,
                 'draft_keys' => array_keys($draft),
             ]);
+        } catch (LanguageModelRateLimitedException $exception) {
+            $extraction->update([
+                'status' => DocumentExtractionStatus::Processing,
+                'error_message' => mb_substr($exception->getMessage(), 0, 500),
+            ]);
+
+            Log::warning('[document_extraction] Rate limit — retry job', [
+                'user_document_id' => $document->id,
+                'extraction_id' => $extraction->id,
+                'retry_after' => $exception->retryAfterSeconds,
+                'message' => $exception->getMessage(),
+            ]);
+
+            throw $exception;
         } catch (\Throwable $exception) {
-            Log::warning('[document_extraction] Extraction vision échouée', [
+            Log::warning('[document_extraction] Extraction échouée', [
                 'user_document_id' => $document->id,
                 'extraction_id' => $extraction->id,
                 'message' => $exception->getMessage(),
@@ -91,7 +115,6 @@ final class ProcessUserDocumentExtractionAction
             if (! is_string($message) || $message === '') {
                 $message = 'Erreur inconnue pendant l\'analyse du document.';
             }
-            // Évite de stocker des messages PHP bruts trop longs / non traduits côté UI.
             if (str_contains($message, 'Array to string conversion')) {
                 $message = 'L\'analyse IA a renvoyé un format inattendu. Merci de réessayer ou de vérifier le document.';
             }

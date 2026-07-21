@@ -47,6 +47,14 @@ return [
             'max_pages' => (int) env('AI_DOCUMENT_EXTRACTION_PDF_MAX_PAGES', 2),
             'min_text_chars' => (int) env('AI_DOCUMENT_EXTRACTION_PDF_MIN_TEXT_CHARS', 200),
         ],
+        /** File d'attente dédiée (optionnel). */
+        'queue' => env('AI_DOCUMENT_EXTRACTION_QUEUE', 'default'),
+    ],
+
+    /** Retries HTTP partagés (Gemini / Groq) pour RPM / 429 / 503. */
+    'http' => [
+        'max_attempts' => (int) env('AI_HTTP_MAX_ATTEMPTS', 4),
+        'base_delay_ms' => (int) env('AI_HTTP_BASE_DELAY_MS', 1000),
     ],
 
     'fake' => [

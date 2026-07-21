@@ -510,6 +510,7 @@ Route::prefix('v1')->group(function (): void {
             Route::delete('/{userDocument}', [UserDocumentController::class, 'destroy']);
             Route::post('/{userDocument}/validate', [UserDocumentController::class, 'validateDocument']);
             Route::get('/{userDocument}/extraction', [UserDocumentExtractionController::class, 'show']);
+            Route::post('/{userDocument}/extraction/reprocess', [UserDocumentExtractionController::class, 'reprocess']);
             Route::post('/{userDocument}/extraction/approve', [UserDocumentExtractionController::class, 'approve']);
             Route::post('/{userDocument}/extraction/reject', [UserDocumentExtractionController::class, 'reject']);
         });

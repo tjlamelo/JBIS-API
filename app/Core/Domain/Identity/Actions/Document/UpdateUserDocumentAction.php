@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Core\Domain\Identity\Actions\Document;
 
+use App\Core\Domain\Identity\Jobs\ExtractUserDocumentJob;
 use App\Core\Domain\Identity\Models\DocumentType;
 use App\Core\Domain\Identity\Models\User;
 use App\Core\Domain\Identity\Models\UserDocument;
@@ -11,7 +12,9 @@ use App\Core\Domain\Identity\Services\Document\DocumentStorageService;
 use App\Core\Domain\Identity\Services\Document\DocumentTypeResolver;
 use App\Core\Domain\Identity\Services\Document\UserDocumentGuardService;
 use App\Core\Domain\Identity\States\Document\UserDocumentStatus;
+use App\Core\Domain\Shared\Ai\Intel\DocumentExtractionProfileRegistry;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Log;
 
 final class UpdateUserDocumentAction
 {
@@ -73,7 +76,29 @@ final class UpdateUserDocumentAction
         }
 
         $document->save();
+        $document = $document->fresh(['issuingCountry', 'user', 'documentType']);
 
-        return $document->fresh(['issuingCountry', 'user', 'documentType']);
+        if ($file !== null) {
+            $this->maybeDispatchExtraction($document);
+        }
+
+        return $document;
+    }
+
+    private function maybeDispatchExtraction(UserDocument $document): void
+    {
+        $typeCode = (string) ($document->documentType?->code ?? '');
+        $extractionEnabled = (bool) config('ai.document_extraction.enabled', true);
+        $isExtractable = DocumentExtractionProfileRegistry::isExtractable($typeCode);
+        $supportsMime = DocumentExtractionProfileRegistry::supportsExtractableMime($document->mime_type);
+
+        if ($extractionEnabled && $isExtractable && $supportsMime) {
+            Log::info('[document_extraction] Job dispatché après remplacement fichier', [
+                'user_document_id' => $document->id,
+                'document_type' => $typeCode,
+                'mime_type' => $document->mime_type,
+            ]);
+            ExtractUserDocumentJob::dispatch($document->id);
+        }
     }
 }

@@ -10,7 +10,7 @@ use App\Core\Domain\Shared\Ai\DTOs\GenerateContentResult;
 use App\Core\Domain\Shared\Ai\Enums\ChatRole;
 use App\Core\Domain\Shared\Ai\Exceptions\LanguageModelConfigurationException;
 use App\Core\Domain\Shared\Ai\Exceptions\LanguageModelTransportException;
-use Illuminate\Support\Facades\Http;
+use App\Core\Domain\Shared\Ai\Support\LanguageModelHttp;
 
 final class GeminiLanguageModelClient implements LanguageModelClientInterface
 {
@@ -36,12 +36,16 @@ final class GeminiLanguageModelClient implements LanguageModelClientInterface
             rawurlencode($this->model)
         );
 
-        $response = Http::timeout($this->timeout)
-            ->acceptJson()
-            ->withQueryParameters(['key' => $this->apiKey])
-            ->post($url, $payload);
+        $response = LanguageModelHttp::postJson(
+            url: $url,
+            payload: $payload,
+            provider: 'gemini',
+            timeout: $this->timeout,
+            query: ['key' => $this->apiKey],
+        );
 
         if (! $response->successful()) {
+            LanguageModelHttp::throwIfRateLimited($response, 'gemini');
             $message = $this->formatHttpError($response->json(), $response->status());
             throw new LanguageModelTransportException($message);
         }

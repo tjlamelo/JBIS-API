@@ -11,7 +11,7 @@ use App\Core\Domain\Shared\Ai\Enums\ChatRole;
 use App\Core\Domain\Shared\Ai\Exceptions\LanguageModelConfigurationException;
 use App\Core\Domain\Shared\Ai\Exceptions\LanguageModelTransportException;
 use App\Core\Domain\Shared\Ai\Support\GeminiSchemaAdapter;
-use Illuminate\Support\Facades\Http;
+use App\Core\Domain\Shared\Ai\Support\LanguageModelHttp;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -59,6 +59,7 @@ final class GroqLanguageModelClient implements LanguageModelClientInterface
         }
 
         if (! $response->successful()) {
+            LanguageModelHttp::throwIfRateLimited($response, 'groq');
             $message = $this->formatHttpError($response->json(), $response->status());
             Log::warning('[groq] Erreur HTTP chat/completions', [
                 'status' => $response->status(),
@@ -205,10 +206,13 @@ final class GroqLanguageModelClient implements LanguageModelClientInterface
      */
     private function postChatCompletion(string $url, array $payload): \Illuminate\Http\Client\Response
     {
-        return Http::timeout($this->timeout)
-            ->acceptJson()
-            ->withToken($this->apiKey)
-            ->post($url, $payload);
+        return LanguageModelHttp::postJson(
+            url: $url,
+            payload: $payload,
+            provider: 'groq',
+            timeout: $this->timeout,
+            bearerToken: $this->apiKey,
+        );
     }
 
     private function requestUsesVision(GenerateContentRequest $request): bool

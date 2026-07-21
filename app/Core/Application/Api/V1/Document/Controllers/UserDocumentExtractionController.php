@@ -8,6 +8,7 @@ use App\Core\Application\Api\Responses\BaseResponse;
 use App\Core\Application\Api\V1\Document\Requests\ApproveUserDocumentExtractionRequest;
 use App\Core\Application\Api\V1\Document\Resources\UserDocumentExtractionResource;
 use App\Core\Domain\Identity\Actions\Document\ApplyUserDocumentExtractionAction;
+use App\Core\Domain\Identity\Actions\Document\ReprocessUserDocumentExtractionAction;
 use App\Core\Domain\Identity\Models\UserDocument;
 use App\Core\Domain\Identity\Models\UserDocumentExtraction;
 use App\Core\Domain\Shared\Ai\Enums\DocumentExtractionStatus;
@@ -19,6 +20,7 @@ final class UserDocumentExtractionController extends Controller
 {
     public function __construct(
         private readonly ApplyUserDocumentExtractionAction $applyExtraction,
+        private readonly ReprocessUserDocumentExtractionAction $reprocessExtraction,
     ) {}
 
     public function show(Request $request, UserDocument $userDocument): JsonResponse
@@ -37,6 +39,22 @@ final class UserDocumentExtractionController extends Controller
         }
 
         return BaseResponse::ok([
+            'extraction' => new UserDocumentExtractionResource($extraction),
+        ])->toJsonResponse();
+    }
+
+    public function reprocess(Request $request, UserDocument $userDocument): JsonResponse
+    {
+        $this->authorize('update', $userDocument);
+
+        try {
+            $extraction = $this->reprocessExtraction->execute($userDocument);
+        } catch (\RuntimeException $exception) {
+            return BaseResponse::unprocessableEntity(null, $exception->getMessage())->toJsonResponse();
+        }
+
+        return BaseResponse::ok([
+            'message' => __('Analyse IA relancée.'),
             'extraction' => new UserDocumentExtractionResource($extraction),
         ])->toJsonResponse();
     }
