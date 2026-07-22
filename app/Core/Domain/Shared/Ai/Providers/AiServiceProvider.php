@@ -40,7 +40,7 @@ final class AiServiceProvider extends ServiceProvider
 
             return new GeminiLanguageModelClient(
                 apiKey: (string) ($gemini['api_key'] ?? ''),
-                model: (string) ($gemini['model'] ?? 'gemini-2.5-flash'),
+                model: (string) ($gemini['model'] ?? 'gemini-3.1-flash-lite'),
                 baseUrl: (string) ($gemini['base_url'] ?? 'https://generativelanguage.googleapis.com/v1beta'),
                 timeout: (int) ($gemini['timeout'] ?? 60),
             );

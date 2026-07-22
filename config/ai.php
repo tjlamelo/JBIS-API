@@ -23,7 +23,7 @@ return [
 
     'gemini' => [
         'api_key' => env('AI_GEMINI_API_KEY', ''),
-        'model' => env('AI_GEMINI_MODEL', 'gemini-2.5-flash'),
+        'model' => env('AI_GEMINI_MODEL', 'gemini-3.1-flash-lite'),
         'base_url' => rtrim((string) env('AI_GEMINI_BASE_URL', 'https://generativelanguage.googleapis.com/v1beta'), '/'),
         'timeout' => (int) env('AI_GEMINI_TIMEOUT', 60),
     ],
