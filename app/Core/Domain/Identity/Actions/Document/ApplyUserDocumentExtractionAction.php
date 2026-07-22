@@ -175,7 +175,7 @@ final class ApplyUserDocumentExtractionAction
             'CV' => $this->applyCvSections($user, $document, $draft),
             'WORK_CERTIFICATE' => $this->applyExperienceSections($user, $document, $draft),
             'PROFESSIONAL_CERTIFICATION', 'TRAINING_CERTIFICATE' => $this->applyCertificationSections($user, $document, $draft),
-            'DIPLOMA', 'TRANSCRIPT' => $this->applyEducationSections($user, $document, $draft),
+            'DIPLOMA', 'TRANSCRIPT', 'SUCCESS_CERTIFICATE' => $this->applyEducationSections($user, $document, $draft),
             default => null,
         };
     }

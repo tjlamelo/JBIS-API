@@ -27,6 +27,7 @@ final class DocumentExtractionProfileRegistry
         'BIRTH_CERTIFICATE',
         'DIPLOMA',
         'TRANSCRIPT',
+        'SUCCESS_CERTIFICATE',
         'WORK_CERTIFICATE',
         'PROFESSIONAL_CERTIFICATION',
         'TRAINING_CERTIFICATE',
@@ -91,7 +92,7 @@ final class DocumentExtractionProfileRegistry
                 'system' => BirthCertificateExtractionSystemPrompt::text(),
                 'schema' => BirthCertificateGeminiSchema::responseSchema(),
             ],
-            'DIPLOMA', 'TRANSCRIPT' => [
+            'DIPLOMA', 'TRANSCRIPT', 'SUCCESS_CERTIFICATE' => [
                 'system' => DiplomaDocumentExtractionSystemPrompt::text(),
                 'schema' => DiplomaDocumentGeminiSchema::responseSchema(),
             ],

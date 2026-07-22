@@ -48,7 +48,10 @@ final class UserDocumentController extends Controller
 
     public function types(Request $request): JsonResponse
     {
-        $includeAll = $request->boolean('all') && $request->user()?->can('viewAny', UserDocument::class);
+        $includeAll = $request->boolean('all') && (
+            $request->user()?->can('viewAny', UserDocument::class)
+            || $request->user()?->can('validateAny', UserDocument::class)
+        );
         $scope = $includeAll ? 'all' : 'candidate';
 
         $types = $this->cache->remember(

@@ -120,6 +120,13 @@ class DocumentTypeSeeder extends Seeder
                 'sort_order' => 100,
             ],
             [
+                'code' => 'SUCCESS_CERTIFICATE',
+                'label' => ['fr' => 'Attestation de réussite', 'en' => 'Certificate of success'],
+                'storage_slug' => 'attestation-reussite',
+                'max_file_size_kb' => 10240,
+                'sort_order' => 105,
+            ],
+            [
                 'code' => 'WORK_CERTIFICATE',
                 'label' => ['fr' => 'Attestation de travail', 'en' => 'Work certificate'],
                 'storage_slug' => 'attestation-travail',

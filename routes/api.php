@@ -283,6 +283,7 @@ Route::prefix('v1')->group(function (): void {
             Route::put('/{user}', [AdminUserController::class, 'update']);
             Route::patch('/{user}/active', [AdminUserController::class, 'updateActive']);
             Route::patch('/{user}/profile/approval', [AdminUserController::class, 'updateProfileApproval']);
+            Route::post('/{user}/profile/pictures', [AdminUserController::class, 'uploadPicture']);
             Route::patch('/{user}/profile/steps/{step}', [AdminUserController::class, 'updateProfileStep'])
                 ->whereIn('step', ['personal', 'contact', 'professional', 'documents']);
             Route::post('/{user}/reset-password', [AdminUserController::class, 'sendPasswordReset']);

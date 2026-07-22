@@ -23,6 +23,8 @@ use App\Core\Domain\Identity\DTOs\AdminUserWriteDto;
 use App\Core\Domain\Identity\Enums\MatriculeService;
 use App\Core\Domain\Identity\Models\User;
 use App\Core\Domain\Identity\Queries\AdminUserIndexQuery;
+use App\Core\Domain\Shared\Media\Actions\StoreMediaAction;
+use App\Core\Domain\Shared\Media\Support\MediaUrlResolver;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -298,6 +300,36 @@ final class AdminUserController extends Controller
                 : __('Matricule attribué avec succès.'),
             'assignment' => $result,
             'user' => new AdminUserResource($user),
+        ])->toJsonResponse();
+    }
+
+    public function uploadPicture(
+        Request $request,
+        User $user,
+        StoreMediaAction $storeMediaAction,
+        MediaUrlResolver $mediaUrlResolver,
+    ): JsonResponse {
+        $this->authorize('moderateProfile', $user);
+
+        $validated = $request->validate([
+            'image' => ['required_without:photo', 'file', 'max:5120', 'mimes:jpg,jpeg,png,webp'],
+            'photo' => ['required_without:image', 'file', 'max:5120', 'mimes:jpg,jpeg,png,webp'],
+        ]);
+
+        $file = $validated['image'] ?? $validated['photo'];
+
+        $uploaded = $storeMediaAction->execute(
+            $file,
+            'identity/profile-pictures',
+        );
+
+        $media = $uploaded->toArray();
+        $urls = $mediaUrlResolver->all($media);
+
+        return BaseResponse::ok([
+            'message' => __('Photo telechargee avec succes.'),
+            'image' => $urls,
+            'media' => $media,
         ])->toJsonResponse();
     }
 }

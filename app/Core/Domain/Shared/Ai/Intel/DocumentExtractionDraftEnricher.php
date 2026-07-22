@@ -50,7 +50,7 @@ final class DocumentExtractionDraftEnricher
             $code === 'BIRTH_CERTIFICATE' => $this->enrichBirthCertificateDraft($draft),
             $code === 'WORK_CERTIFICATE' => $this->enrichWorkCertificateDraft($draft),
             in_array($code, ['PROFESSIONAL_CERTIFICATION', 'TRAINING_CERTIFICATE'], true) => $this->enrichCertificationDocumentDraft($draft),
-            in_array($code, ['DIPLOMA', 'TRANSCRIPT'], true) => $this->enrichDiplomaDocumentDraft($draft),
+            in_array($code, ['DIPLOMA', 'TRANSCRIPT', 'SUCCESS_CERTIFICATE'], true) => $this->enrichDiplomaDocumentDraft($draft),
             default => ProfileBundleDraftNormalizer::normalize($draft),
         };
     }
