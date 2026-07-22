@@ -323,12 +323,24 @@ final class ApplyUserDocumentExtractionAction
                 continue;
             }
 
+            // issue_date NOT NULL en base — saute la ligne plutôt que de faire échouer toute l'application.
+            $issueDate = $this->parseDateOrNull($row['issue_date'] ?? null)
+                ?? $this->parseDateOrNull($row['expiry_date'] ?? null);
+            if ($issueDate === null) {
+                Log::info('[document_extraction] Certification ignorée (issue_date manquante)', [
+                    'user_id' => $user->id,
+                    'name' => (string) $row['name'],
+                ]);
+
+                continue;
+            }
+
             Certification::query()->create([
                 'user_id' => $user->id,
                 'document_id' => $document->id,
                 'name' => (string) $row['name'],
                 'issuing_organization' => (string) ($row['issuing_organization'] ?? ''),
-                'issue_date' => $this->parseDateOrNull($row['issue_date'] ?? null),
+                'issue_date' => $issueDate,
                 'expiry_date' => $this->parseDateOrNull($row['expiry_date'] ?? null),
                 'credential_id' => (string) ($row['credential_id'] ?? ''),
                 'credential_url' => (string) ($row['credential_url'] ?? ''),
