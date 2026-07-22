@@ -48,6 +48,13 @@ return [
             'max_pages' => (int) env('AI_DOCUMENT_EXTRACTION_PDF_MAX_PAGES', 4),
             'min_text_chars' => (int) env('AI_DOCUMENT_EXTRACTION_PDF_MIN_TEXT_CHARS', 200),
         ],
+        /** OCR Google Cloud Vision sur pages PDF rendues (CV). Nécessite un compte de service. */
+        'ocr' => [
+            'enabled' => (bool) env('AI_DOCUMENT_EXTRACTION_OCR_ENABLED', false),
+            'credentials' => env('GOOGLE_APPLICATION_CREDENTIALS', ''),
+            'service_account_json' => env('GOOGLE_SERVICE_ACCOUNT_JSON', ''),
+            'project_id' => env('GOOGLE_CLOUD_PROJECT', ''),
+        ],
         /**
          * Plafond de tokens en sortie pour l'extraction documentaire.
          * Groq free tier ~8k TPM si repli ; Gemini tolère des valeurs plus hautes.

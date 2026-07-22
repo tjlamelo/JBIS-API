@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\Core\Domain\Shared\Ai\Intel;
 
 use App\Core\Domain\Identity\Models\UserDocument;
+use App\Core\Domain\Identity\Services\Document\CvSourceTextPreparer;
 use App\Core\Domain\Identity\Services\Document\DocumentPdfPageImageExtractor;
 use App\Core\Domain\Identity\Services\Document\DocumentPdfTextExtractor;
 use App\Core\Domain\Identity\Services\Document\DocumentVisionInputResolver;
+use App\Core\Domain\Identity\Services\Document\GoogleCloudVisionOcrService;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -21,6 +23,8 @@ final class UserDocumentExtractionService
         private readonly DocumentPdfTextExtractor $pdfTextExtractor,
         private readonly DocumentPdfPageImageExtractor $pdfPageImageExtractor,
         private readonly DocumentVisionInputResolver $visionInputResolver,
+        private readonly GoogleCloudVisionOcrService $visionOcr,
+        private readonly CvSourceTextPreparer $cvSourceTextPreparer,
         private readonly DocumentExtractionDraftEnricher $draftEnricher,
     ) {}
 
@@ -96,35 +100,57 @@ final class UserDocumentExtractionService
     }
 
     /**
-     * CV PDF : vision d'abord (mise en page), puis fusion avec le texte natif si disponible.
+     * CV PDF : OCR Vision + texte natif → structuration LLM ; repli vision Gemini si incomplet.
      *
      * @return array<string, mixed>
      */
     private function extractCvFromPdf(UserDocument $document, int $maxPages, int $minTextChars): array
     {
-        Log::info('[document_extraction] Pipeline CV PDF vision prioritaire', [
-            'user_document_id' => $document->id,
-            'max_pages' => $maxPages,
-        ]);
+        $renderedPages = $this->pdfPageImageExtractor->renderFirstPages($document, $maxPages);
 
-        $visionDraft = $this->extractPdfViaVision($document, $maxPages);
+        try {
+            $nativeText = $this->pdfTextExtractor->extractFirstPages($document, $maxPages);
+            $ocrText = $this->visionOcr->isEnabled()
+                ? $this->visionOcr->extractFromImagePaths($renderedPages)
+                : '';
+            $sourceText = $this->cvSourceTextPreparer->prepare($nativeText, $ocrText);
+            $sourceChars = mb_strlen(trim($sourceText));
 
-        $text = $this->pdfTextExtractor->extractFirstPages($document, $maxPages);
-        $textChars = mb_strlen(trim($text));
+            if ($sourceChars >= $minTextChars) {
+                Log::info('[document_extraction] Pipeline CV PDF OCR + texte', [
+                    'user_document_id' => $document->id,
+                    'char_count' => $sourceChars,
+                    'ocr_enabled' => $this->visionOcr->isEnabled(),
+                    'ocr_chars' => mb_strlen(trim($ocrText)),
+                    'native_chars' => mb_strlen(trim($nativeText)),
+                ]);
 
-        if ($textChars < $minTextChars) {
-            return $visionDraft;
+                $textDraft = $this->textExtraction->extractDraft('CV', $sourceText);
+
+                if (! $this->isCvDraftIncomplete($textDraft, $sourceText)) {
+                    return $textDraft;
+                }
+
+                Log::info('[document_extraction] CV OCR+texte incomplet → repli vision', [
+                    'user_document_id' => $document->id,
+                    'section_counts' => $this->sectionCounts($textDraft),
+                ]);
+
+                $visionDraft = $this->extractFromRenderedPages($document, $renderedPages);
+
+                return $this->mergeCvDrafts($visionDraft, $textDraft);
+            }
+
+            Log::info('[document_extraction] Pipeline CV PDF vision (texte insuffisant)', [
+                'user_document_id' => $document->id,
+                'source_chars' => $sourceChars,
+                'min_text_chars' => $minTextChars,
+            ]);
+
+            return $this->extractFromRenderedPages($document, $renderedPages);
+        } finally {
+            $this->pdfPageImageExtractor->cleanupRenderedPages($renderedPages);
         }
-
-        Log::info('[document_extraction] CV PDF fusion texte + vision', [
-            'user_document_id' => $document->id,
-            'char_count' => $textChars,
-            'vision_sections' => $this->sectionCounts($visionDraft),
-        ]);
-
-        $textDraft = $this->textExtraction->extractDraft('CV', $text);
-
-        return $this->mergeCvDrafts($visionDraft, $textDraft);
     }
 
     /**
@@ -175,15 +201,24 @@ final class UserDocumentExtractionService
         $renderedPages = $this->pdfPageImageExtractor->renderFirstPages($document, $maxPages);
 
         try {
-            $imageInputs = array_map(
-                fn (string $absolutePath): string => $this->visionInputResolver->fromAbsolutePath($absolutePath, 'image/jpeg'),
-                $renderedPages,
-            );
-
-            return $this->visionExtraction->extractFromImageInputs($document, $imageInputs);
+            return $this->extractFromRenderedPages($document, $renderedPages);
         } finally {
             $this->pdfPageImageExtractor->cleanupRenderedPages($renderedPages);
         }
+    }
+
+    /**
+     * @param  list<string>  $renderedPages
+     * @return array<string, mixed>
+     */
+    private function extractFromRenderedPages(UserDocument $document, array $renderedPages): array
+    {
+        $imageInputs = array_map(
+            fn (string $absolutePath): string => $this->visionInputResolver->fromAbsolutePath($absolutePath, 'image/jpeg'),
+            $renderedPages,
+        );
+
+        return $this->visionExtraction->extractFromImageInputs($document, $imageInputs);
     }
 
     /**
