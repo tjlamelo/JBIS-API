@@ -51,8 +51,12 @@ final class UserDocumentExtractionService
             throw new \RuntimeException('L\'extraction IA des PDF est désactivée (AI_DOCUMENT_EXTRACTION_PDF_ENABLED).');
         }
 
-        $maxPages = max(1, (int) config('ai.document_extraction.pdf.max_pages', 2));
+        $maxPages = max(1, (int) config('ai.document_extraction.pdf.max_pages', 4));
         $minTextChars = max(1, (int) config('ai.document_extraction.pdf.min_text_chars', 200));
+
+        if ($typeCode === 'CV') {
+            return $this->extractCvFromPdf($document, $maxPages, $minTextChars);
+        }
 
         $text = $this->pdfTextExtractor->extractFirstPages($document, $maxPages);
         $textChars = mb_strlen(trim($text));
@@ -89,6 +93,78 @@ final class UserDocumentExtractionService
         ]);
 
         return $this->extractPdfViaVision($document, $maxPages);
+    }
+
+    /**
+     * CV PDF : vision d'abord (mise en page), puis fusion avec le texte natif si disponible.
+     *
+     * @return array<string, mixed>
+     */
+    private function extractCvFromPdf(UserDocument $document, int $maxPages, int $minTextChars): array
+    {
+        Log::info('[document_extraction] Pipeline CV PDF vision prioritaire', [
+            'user_document_id' => $document->id,
+            'max_pages' => $maxPages,
+        ]);
+
+        $visionDraft = $this->extractPdfViaVision($document, $maxPages);
+
+        $text = $this->pdfTextExtractor->extractFirstPages($document, $maxPages);
+        $textChars = mb_strlen(trim($text));
+
+        if ($textChars < $minTextChars) {
+            return $visionDraft;
+        }
+
+        Log::info('[document_extraction] CV PDF fusion texte + vision', [
+            'user_document_id' => $document->id,
+            'char_count' => $textChars,
+            'vision_sections' => $this->sectionCounts($visionDraft),
+        ]);
+
+        $textDraft = $this->textExtraction->extractDraft('CV', $text);
+
+        return $this->mergeCvDrafts($visionDraft, $textDraft);
+    }
+
+    /**
+     * Fusionne deux brouillons CV : vision (prioritaire) + texte natif (complément).
+     *
+     * @param  array<string, mixed>  $primary
+     * @param  array<string, mixed>  $secondary
+     * @return array<string, mixed>
+     */
+    private function mergeCvDrafts(array $primary, array $secondary): array
+    {
+        $merged = $primary;
+
+        $profilePrimary = is_array($primary['user_profile'] ?? null) ? $primary['user_profile'] : [];
+        $profileSecondary = is_array($secondary['user_profile'] ?? null) ? $secondary['user_profile'] : [];
+
+        foreach ($profileSecondary as $key => $value) {
+            if ($value === null || $value === '') {
+                continue;
+            }
+            if (! isset($profilePrimary[$key]) || $profilePrimary[$key] === '' || $profilePrimary[$key] === null) {
+                $profilePrimary[$key] = $value;
+            }
+        }
+
+        $merged['user_profile'] = $profilePrimary;
+
+        foreach (['educations', 'experiences', 'internships', 'certifications', 'languages', 'skills', 'formations', 'interests'] as $listKey) {
+            $primaryRows = is_array($primary[$listKey] ?? null) ? $primary[$listKey] : [];
+            $secondaryRows = is_array($secondary[$listKey] ?? null) ? $secondary[$listKey] : [];
+            $merged[$listKey] = array_merge($primaryRows, $secondaryRows);
+        }
+
+        $mergedNotes = array_filter([
+            is_string($primary['notes'] ?? null) ? trim($primary['notes']) : '',
+            is_string($secondary['notes'] ?? null) ? trim($secondary['notes']) : '',
+        ]);
+        $merged['notes'] = implode("\n", $mergedNotes);
+
+        return $merged;
     }
 
     /**

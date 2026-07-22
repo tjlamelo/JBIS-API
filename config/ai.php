@@ -45,14 +45,14 @@ return [
         'vision_input' => env('AI_DOCUMENT_EXTRACTION_VISION_INPUT', 'base64'),
         'pdf' => [
             'enabled' => (bool) env('AI_DOCUMENT_EXTRACTION_PDF_ENABLED', true),
-            'max_pages' => (int) env('AI_DOCUMENT_EXTRACTION_PDF_MAX_PAGES', 2),
+            'max_pages' => (int) env('AI_DOCUMENT_EXTRACTION_PDF_MAX_PAGES', 4),
             'min_text_chars' => (int) env('AI_DOCUMENT_EXTRACTION_PDF_MIN_TEXT_CHARS', 200),
         ],
         /**
          * Plafond de tokens en sortie pour l'extraction documentaire.
          * Groq free tier ~8k TPM si repli ; Gemini tolère des valeurs plus hautes.
          */
-        'max_output_tokens' => (int) env('AI_DOCUMENT_EXTRACTION_MAX_OUTPUT_TOKENS', 4096),
+        'max_output_tokens' => (int) env('AI_DOCUMENT_EXTRACTION_MAX_OUTPUT_TOKENS', 8192),
         /** Côté long max (px) avant envoi vision base64. */
         'vision_max_edge' => (int) env('AI_DOCUMENT_EXTRACTION_VISION_MAX_EDGE', 1280),
         'vision_jpeg_quality' => (int) env('AI_DOCUMENT_EXTRACTION_VISION_JPEG_QUALITY', 70),
