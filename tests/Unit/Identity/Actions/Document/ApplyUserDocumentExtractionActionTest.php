@@ -207,4 +207,48 @@ final class ApplyUserDocumentExtractionActionTest extends TestCase
         self::assertSame('2023-01-01', $education->start_date?->toDateString());
         self::assertSame('2023-01-01', $education->end_date?->toDateString());
     }
+
+    public function test_skips_duplicate_phone_and_applies_other_profile_fields(): void
+    {
+        $owner = User::factory()->create();
+        $owner->profile()->create([
+            'first_name' => 'Owner',
+            'last_name' => 'Phone',
+            'phone_number2' => '+237698689252',
+        ]);
+
+        $user = User::factory()->create();
+        $reviewer = User::factory()->create();
+        $type = DocumentType::query()->where('code', 'CV')->first()
+            ?? DocumentType::factory()->create(['code' => 'CV', 'label' => ['fr' => 'CV', 'en' => 'CV']]);
+
+        $document = UserDocument::factory()->create([
+            'user_id' => $user->id,
+            'document_type_id' => $type->id,
+        ]);
+
+        $extraction = UserDocumentExtraction::query()->create([
+            'user_document_id' => $document->id,
+            'user_id' => $user->id,
+            'document_type_code' => 'CV',
+            'status' => DocumentExtractionStatus::PendingReview,
+            'draft_payload' => [
+                'user_profile' => [
+                    'first_name' => 'Fortune',
+                    'last_name' => 'EBOLE DIBONGUE',
+                    'phone_number2' => '+237698689252',
+                    'bio' => 'Finance manager bilingual.',
+                ],
+            ],
+        ]);
+
+        $this->app->make(ApplyUserDocumentExtractionAction::class)->execute($extraction, $reviewer);
+
+        $profile = $user->fresh()->profile;
+        self::assertSame('Fortune', $profile?->first_name);
+        self::assertSame('EBOLE DIBONGUE', $profile?->last_name);
+        self::assertSame('Finance manager bilingual.', $profile?->bio);
+        self::assertNull($profile?->phone_number2);
+        self::assertSame(DocumentExtractionStatus::Applied, $extraction->fresh()->status);
+    }
 }

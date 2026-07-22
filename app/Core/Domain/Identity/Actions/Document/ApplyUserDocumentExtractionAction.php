@@ -26,6 +26,7 @@ use App\Core\Domain\Shared\Ai\Enums\DocumentExtractionStatus;
 use App\Core\Domain\Shared\Ai\Support\AiScalarText;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Persiste le brouillon validé dans le profil et les tables liées.
@@ -129,13 +130,59 @@ final class ApplyUserDocumentExtractionAction
             }
         }
 
-        if ($attributes !== []) {
-            $profile->fill($attributes);
-            $profile->user_id = $user->id;
-            $profile->save();
+        if ($attributes === []) {
+            return $profile;
         }
 
+        $attributes = $this->dropConflictingUniqueProfileAttributes($profile, $user->id, $attributes);
+
+        if ($attributes === []) {
+            return $profile;
+        }
+
+        $profile->fill($attributes);
+        $profile->user_id = $user->id;
+        $profile->save();
+
         return $profile;
+    }
+
+    /**
+     * Ignore les champs uniques déjà utilisés par un autre profil (téléphones).
+     *
+     * @param  array<string, mixed>  $attributes
+     * @return array<string, mixed>
+     */
+    private function dropConflictingUniqueProfileAttributes(UserProfile $profile, int $userId, array $attributes): array
+    {
+        foreach (['phone_number2', 'phone_number3'] as $field) {
+            if (! array_key_exists($field, $attributes)) {
+                continue;
+            }
+
+            $value = trim((string) $attributes[$field]);
+            if ($value === '') {
+                unset($attributes[$field]);
+
+                continue;
+            }
+
+            $taken = UserProfile::query()
+                ->where($field, $value)
+                ->when($profile->exists, static fn ($q) => $q->where('id', '!=', $profile->id))
+                ->exists();
+
+            if ($taken) {
+                Log::info('[document_extraction] Champ unique profil ignoré (déjà utilisé)', [
+                    'user_id' => $userId,
+                    'field' => $field,
+                    'value' => $value,
+                ]);
+                unset($attributes[$field]);
+            }
+        }
+
+        return $attributes;
     }
 
     /**
