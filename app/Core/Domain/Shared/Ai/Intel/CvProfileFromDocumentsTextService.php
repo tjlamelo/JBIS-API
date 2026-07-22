@@ -38,7 +38,7 @@ final class CvProfileFromDocumentsTextService
             ],
             options: new GenerationOptions(
                 temperature: 0.15,
-                maxOutputTokens: 8192,
+                maxOutputTokens: max(512, (int) config('ai.document_extraction.max_output_tokens', 4096)),
                 responseMimeType: 'application/json',
                 responseSchema: ProfileBundleGeminiSchema::responseSchema(),
             ),

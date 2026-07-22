@@ -19,6 +19,7 @@ final class DocumentStorageService
 {
     public function __construct(
         private readonly DocumentFilenameBuilder $filenameBuilder,
+        private readonly DocumentVisionImageEncoder $visionImageEncoder,
     ) {}
 
     public function store(UploadedFile $file, int $userId, DocumentType $type): StoredDocumentFileDto
@@ -96,6 +97,6 @@ final class DocumentStorageService
             throw new DocumentStorageException(sprintf('Fichier vide pour la vision : %s', $filePath));
         }
 
-        return sprintf('data:%s;base64,%s', $mime, base64_encode($binary));
+        return $this->visionImageEncoder->toDataUrl($binary, $mime);
     }
 }

@@ -14,6 +14,7 @@ final class DocumentVisionInputResolver
 {
     public function __construct(
         private readonly DocumentStorageService $documentStorage,
+        private readonly DocumentVisionImageEncoder $visionImageEncoder,
     ) {}
 
     public function fromStoragePath(string $relativePath, ?string $mimeType = null): string
@@ -85,7 +86,7 @@ final class DocumentVisionInputResolver
             ? $detectedMime
             : $mimeType;
 
-        return sprintf('data:%s;base64,%s', $mime, base64_encode($binary));
+        return $this->visionImageEncoder->toDataUrl($binary, $mime);
     }
 
     private function isPubliclyReachableUrl(string $url): bool

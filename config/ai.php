@@ -47,6 +47,14 @@ return [
             'max_pages' => (int) env('AI_DOCUMENT_EXTRACTION_PDF_MAX_PAGES', 2),
             'min_text_chars' => (int) env('AI_DOCUMENT_EXTRACTION_PDF_MIN_TEXT_CHARS', 200),
         ],
+        /**
+         * Groq compte max_tokens dans le TPM de la requête.
+         * Free tier ~8k TPM : 8192 réservés + images dépasse → HTTP 413.
+         */
+        'max_output_tokens' => (int) env('AI_DOCUMENT_EXTRACTION_MAX_OUTPUT_TOKENS', 4096),
+        /** Côté long max (px) avant envoi vision base64. */
+        'vision_max_edge' => (int) env('AI_DOCUMENT_EXTRACTION_VISION_MAX_EDGE', 1280),
+        'vision_jpeg_quality' => (int) env('AI_DOCUMENT_EXTRACTION_VISION_JPEG_QUALITY', 70),
         /** File d'attente dédiée (optionnel). */
         'queue' => env('AI_DOCUMENT_EXTRACTION_QUEUE', 'default'),
     ],

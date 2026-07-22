@@ -42,7 +42,7 @@ final class DocumentTextExtractionService
             ],
             options: new GenerationOptions(
                 temperature: 0.1,
-                maxOutputTokens: 8192,
+                maxOutputTokens: max(512, (int) config('ai.document_extraction.max_output_tokens', 4096)),
                 responseMimeType: 'application/json',
                 responseSchema: $profile['schema'],
             ),
