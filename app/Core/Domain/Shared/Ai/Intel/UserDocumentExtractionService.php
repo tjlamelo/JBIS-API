@@ -69,7 +69,7 @@ final class UserDocumentExtractionService
 
             // CV : le texte natif peut contenir l'en-tête (identité) mais pas le corps
             // (PDF Canva/Word → texte partiel). Si le parcours est vide, on repasse en vision.
-            if ($typeCode === 'CV' && $this->isCvDraftIncomplete($draft)) {
+            if ($typeCode === 'CV' && $this->isCvDraftIncomplete($draft, $text)) {
                 Log::info('[document_extraction] CV texte incomplet → repli vision', [
                     'user_document_id' => $document->id,
                     'section_counts' => $this->sectionCounts($draft),
@@ -113,13 +113,32 @@ final class UserDocumentExtractionService
     /**
      * @param  array<string, mixed>  $draft
      */
-    private function isCvDraftIncomplete(array $draft): bool
+    private function isCvDraftIncomplete(array $draft, string $sourceText): bool
     {
-        return $this->nonEmptyCount($draft['experiences'] ?? null) === 0
-            && $this->nonEmptyCount($draft['educations'] ?? null) === 0
-            && $this->nonEmptyCount($draft['internships'] ?? null) === 0
-            && $this->nonEmptyCount($draft['skills'] ?? null) === 0
-            && $this->nonEmptyCount($draft['languages'] ?? null) === 0;
+        $experienceCount = $this->nonEmptyCount($draft['experiences'] ?? null);
+        $educationCount = $this->nonEmptyCount($draft['educations'] ?? null);
+        $internshipCount = $this->nonEmptyCount($draft['internships'] ?? null);
+        $skillCount = $this->nonEmptyCount($draft['skills'] ?? null);
+        $languageCount = $this->nonEmptyCount($draft['languages'] ?? null);
+
+        if ($experienceCount === 0
+            && $educationCount === 0
+            && $internshipCount === 0
+            && $skillCount === 0
+            && $languageCount === 0) {
+            return true;
+        }
+
+        $normalizedText = mb_strtolower($sourceText);
+        $hasExperienceSignals = preg_match('/\b(experience|experiences|professional experience|employment|work history|expérience|expériences)\b/u', $normalizedText) === 1;
+        $hasEducationSignals = preg_match('/\b(education|educations|formation|formations|dipl[oô]me|degree|university|universit[eé])\b/u', $normalizedText) === 1;
+        $hasSkillSignals = preg_match('/\b(skill|skills|competencies|competences|compétences|core competencies)\b/u', $normalizedText) === 1;
+        $hasLanguageSignals = preg_match('/\b(language|languages|langue|langues|bilingual|anglais|english|fran[cç]ais|french)\b/u', $normalizedText) === 1;
+
+        return ($hasExperienceSignals && $experienceCount === 0 && $internshipCount === 0)
+            || ($hasEducationSignals && $educationCount === 0)
+            || ($hasSkillSignals && $skillCount === 0)
+            || ($hasLanguageSignals && $languageCount === 0);
     }
 
     /**
