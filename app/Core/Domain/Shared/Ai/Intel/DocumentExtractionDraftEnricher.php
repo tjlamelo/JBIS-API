@@ -231,25 +231,88 @@ final class DocumentExtractionDraftEnricher
         $draft = $this->enrichIdentityProfile($draft, namesOnly: true);
 
         $work = is_array($draft['work_certificate'] ?? null) ? $draft['work_certificate'] : [];
-        if ($work !== [] && trim(AiScalarText::from($work['job_title'] ?? '')) !== '') {
-            $experience = $this->organizationDisambiguator->disambiguateExperience([
-                'job_title' => AiScalarText::from($work['job_title'] ?? ''),
-                'company_name' => AiScalarText::from($work['company_name'] ?? ''),
-                'city_name' => AiScalarText::from($work['city_name'] ?? ''),
-                'country_name' => AiScalarText::from($work['country_name'] ?? ''),
-                'start_date' => $work['start_date'] ?? null,
-                'end_date' => $work['end_date'] ?? null,
-                'is_current' => (bool) ($work['is_current'] ?? false),
-                'responsibilities' => AiScalarText::from($work['responsibilities'] ?? ''),
-                'experience_type' => 'employment',
-                'is_professional' => true,
-            ]);
-            $draft['experiences'] = [$experience];
+        $jobTitle = trim(AiScalarText::from($work['job_title'] ?? ''));
+        $companyName = trim(AiScalarText::from($work['company_name'] ?? ''));
+
+        if ($work !== [] && $jobTitle !== '') {
+            if ($this->looksLikeAcademicCredential($jobTitle, $companyName)) {
+                $education = $this->organizationDisambiguator->disambiguateEducation([
+                    'degree' => $jobTitle,
+                    'institution_name' => $companyName,
+                    'field_of_study' => AiScalarText::from($work['responsibilities'] ?? ''),
+                    'city_name' => AiScalarText::from($work['city_name'] ?? ''),
+                    'country_name' => AiScalarText::from($work['country_name'] ?? ''),
+                    'start_date' => $work['start_date'] ?? null,
+                    'end_date' => $work['end_date'] ?? null,
+                ]);
+                $draft['educations'] = [$education];
+                $draft['experiences'] = [];
+                $draft['notes'] = trim(implode("\n", array_filter([
+                    AiScalarText::from($draft['notes'] ?? ''),
+                    'Document académique détecté (diplôme / université) alors que le type déposé est un certificat de travail. '
+                    .'Les données ont été reclassées en formation. Re-déposez plutôt comme DIPLOMA si besoin.',
+                ])));
+            } else {
+                $experience = $this->organizationDisambiguator->disambiguateExperience([
+                    'job_title' => $jobTitle,
+                    'company_name' => $companyName,
+                    'city_name' => AiScalarText::from($work['city_name'] ?? ''),
+                    'country_name' => AiScalarText::from($work['country_name'] ?? ''),
+                    'start_date' => $work['start_date'] ?? null,
+                    'end_date' => $work['end_date'] ?? null,
+                    'is_current' => (bool) ($work['is_current'] ?? false),
+                    'responsibilities' => AiScalarText::from($work['responsibilities'] ?? ''),
+                    'experience_type' => 'employment',
+                    'is_professional' => true,
+                ]);
+                $draft['experiences'] = [$experience];
+            }
         }
 
         unset($draft['work_certificate']);
 
         return $draft;
+    }
+
+    private function looksLikeAcademicCredential(string $jobTitle, string $companyName): bool
+    {
+        $haystack = mb_strtolower(trim($jobTitle.' '.$companyName));
+        if ($haystack === '') {
+            return false;
+        }
+
+        $patterns = [
+            'master',
+            'licence',
+            'bachelor',
+            'doctorat',
+            'phd',
+            'diplôme',
+            'diplome',
+            'baccalauréat',
+            'baccalaureat',
+            'attestation de réussite',
+            'attestation de reussite',
+            'relevé de notes',
+            'releve de notes',
+            'université',
+            'universite',
+            'university',
+            'faculté',
+            'faculte',
+            'école ',
+            'ecole ',
+            'college',
+            'collège',
+        ];
+
+        foreach ($patterns as $pattern) {
+            if (str_contains($haystack, $pattern)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -262,16 +325,37 @@ final class DocumentExtractionDraftEnricher
         $draft = $this->enrichIdentityProfile($draft, namesOnly: true);
 
         $cert = is_array($draft['certification'] ?? null) ? $draft['certification'] : [];
-        if ($cert !== [] && trim(AiScalarText::from($cert['name'] ?? '')) !== '') {
-            $name = trim(AiScalarText::from($cert['name']));
-            $draft['certifications'] = [[
-                'name' => $name,
-                'issuing_organization' => AiScalarText::from($cert['issuing_organization'] ?? ''),
-                'issue_date' => $cert['issue_date'] ?? null,
-                'expiry_date' => $cert['expiry_date'] ?? null,
-                'credential_id' => AiScalarText::from($cert['credential_id'] ?? ''),
-                'credential_url' => AiScalarText::from($cert['credential_url'] ?? ''),
-            ]];
+        $name = trim(AiScalarText::from($cert['name'] ?? ''));
+        $issuer = trim(AiScalarText::from($cert['issuing_organization'] ?? ''));
+
+        if ($cert !== [] && $name !== '') {
+            if ($this->looksLikeAcademicCredential($name, $issuer)) {
+                $draft['educations'] = [
+                    $this->organizationDisambiguator->disambiguateEducation([
+                        'degree' => $name,
+                        'institution_name' => $issuer,
+                        'field_of_study' => AiScalarText::from($cert['field_of_study'] ?? ''),
+                        'start_date' => $cert['issue_date'] ?? null,
+                        'end_date' => $cert['issue_date'] ?? null,
+                        'grade' => AiScalarText::from($cert['credential_id'] ?? ''),
+                    ]),
+                ];
+                $draft['certifications'] = [];
+                $draft['notes'] = trim(implode("\n", array_filter([
+                    AiScalarText::from($draft['notes'] ?? ''),
+                    'Document académique détecté alors que le type déposé est une certification. '
+                    .'Les données ont été reclassées en formation. Re-déposez plutôt comme DIPLOMA si besoin.',
+                ])));
+            } else {
+                $draft['certifications'] = [[
+                    'name' => $name,
+                    'issuing_organization' => $issuer,
+                    'issue_date' => $cert['issue_date'] ?? null,
+                    'expiry_date' => $cert['expiry_date'] ?? null,
+                    'credential_id' => AiScalarText::from($cert['credential_id'] ?? ''),
+                    'credential_url' => AiScalarText::from($cert['credential_url'] ?? ''),
+                ]];
+            }
         }
 
         unset($draft['certification']);
@@ -501,6 +585,27 @@ final class DocumentExtractionDraftEnricher
                 continue;
             }
 
+            $jobTitle = AiScalarText::from($row['job_title'] ?? '');
+            $companyName = AiScalarText::from($row['company_name'] ?? '');
+
+            if ($this->looksLikeAcademicCredential($jobTitle, $companyName)
+                || strtolower(AiScalarText::from($row['experience_type'] ?? '')) === 'academic_project'
+            ) {
+                $educations = is_array($draft['educations'] ?? null) ? $draft['educations'] : [];
+                $educations[] = $this->organizationDisambiguator->disambiguateEducation([
+                    'degree' => $jobTitle,
+                    'institution_name' => $companyName,
+                    'field_of_study' => AiScalarText::from($row['responsibilities'] ?? $row['achievements'] ?? ''),
+                    'city_name' => AiScalarText::from($row['city_name'] ?? ''),
+                    'country_name' => AiScalarText::from($row['country_name'] ?? ''),
+                    'start_date' => $row['start_date'] ?? null,
+                    'end_date' => $row['end_date'] ?? null,
+                ]);
+                $draft['educations'] = $educations;
+
+                continue;
+            }
+
             $type = strtolower(AiScalarText::from($row['experience_type'] ?? 'employment'));
             $isProfessional = array_key_exists('is_professional', $row)
                 ? (bool) $row['is_professional']
@@ -508,8 +613,8 @@ final class DocumentExtractionDraftEnricher
 
             if ($this->isInternshipRow($row) || ! $isProfessional || $type === 'internship') {
                 $internRow = [
-                    'title' => AiScalarText::from($row['job_title'] ?? ''),
-                    'organization' => AiScalarText::from($row['company_name'] ?? ''),
+                    'title' => $jobTitle,
+                    'organization' => $companyName,
                     'location' => trim(AiScalarText::from($row['city_name'] ?? '').' '.AiScalarText::from($row['country_name'] ?? '')),
                     'start_date' => $row['start_date'] ?? null,
                     'end_date' => $row['end_date'] ?? null,

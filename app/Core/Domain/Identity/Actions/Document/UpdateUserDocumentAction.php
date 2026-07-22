@@ -45,14 +45,22 @@ final class UpdateUserDocumentAction
 
         foreach ($allowed as $key) {
             if (array_key_exists($key, $data)) {
-                $document->{$key} = $data[$key];
+                $value = $data[$key];
+                if (in_array($key, ['document_number', 'issue_date', 'expiry_date', 'notes'], true) && $value === '') {
+                    $value = null;
+                }
+                $document->{$key} = $value;
             }
         }
 
         if (array_key_exists('type', $data) && $data['type'] !== null && $data['type'] !== '') {
+            $previousTypeId = (int) $document->document_type_id;
             $document->document_type_id = $this->documentTypeResolver
                 ->resolve((string) $data['type'])
                 ->id;
+            $typeChanged = $previousTypeId !== (int) $document->document_type_id;
+        } else {
+            $typeChanged = false;
         }
 
         $document->loadMissing('documentType');
@@ -78,7 +86,7 @@ final class UpdateUserDocumentAction
         $document->save();
         $document = $document->fresh(['issuingCountry', 'user', 'documentType']);
 
-        if ($file !== null) {
+        if ($file !== null || $typeChanged) {
             $this->maybeDispatchExtraction($document);
         }
 

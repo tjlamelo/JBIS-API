@@ -29,15 +29,15 @@ final class UpdateUserDocumentRequest extends FormRequest
 
         $merge = ['user_id' => $document->user_id];
 
-        if (! $this->filled('document_number') && $document->document_number !== null) {
+        if (! $this->exists('document_number') && $document->document_number !== null) {
             $merge['document_number'] = $document->document_number;
         }
 
-        if (! $this->filled('expiry_date') && $document->expiry_date !== null) {
+        if (! $this->exists('expiry_date') && $document->expiry_date !== null) {
             $merge['expiry_date'] = $document->expiry_date->format('Y-m-d');
         }
 
-        if (! $this->filled('issue_date') && $document->issue_date !== null) {
+        if (! $this->exists('issue_date') && $document->issue_date !== null) {
             $merge['issue_date'] = $document->issue_date->format('Y-m-d');
         }
 

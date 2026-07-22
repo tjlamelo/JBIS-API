@@ -23,7 +23,9 @@ Règles :
    - `grade` : mention, moyenne ou résultat si indiqué
    - `country_name`, `city_name` : localisation de l'établissement
 3. Distingue clairement diplôme et établissement (ne les inverse pas).
-4. Ne fabrique rien. Ambiguïtés dans `notes`.
+4. Si le document est une attestation de travail / certificat d'employeur (pas un diplôme),
+   laisse `education` vide et signale dans `notes` qu'il s'agit probablement d'un WORK_CERTIFICATE.
+5. Ne fabrique rien. Ambiguïtés dans `notes`.
 
 Réponds UNIQUEMENT avec un JSON : `notes`, `user_profile`, `education`.
 PROMPT;

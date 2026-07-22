@@ -28,7 +28,9 @@ Règles :
    - `issue_date` : date d'obtention / délivrance
    {$extra}
 3. Dates au format ISO si possible.
-4. Ne fabrique rien. Ambiguïtés dans `notes`.
+4. **Hors périmètre** : diplôme universitaire (Master, Licence, Bac…) ou relevé de notes —
+   laisse `certification` vide et indique dans `notes` de déposer comme DIPLOMA / TRANSCRIPT.
+5. Ne fabrique rien. Ambiguïtés dans `notes`.
 
 Réponds UNIQUEMENT avec un JSON : `notes`, `user_profile`, `certification`.
 PROMPT;

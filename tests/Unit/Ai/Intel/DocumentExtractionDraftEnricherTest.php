@@ -170,6 +170,70 @@ final class DocumentExtractionDraftEnricherTest extends TestCase
         self::assertSame('assistant comptable', $draft['internships'][0]['title'] ?? null);
     }
 
+    public function test_reclassifies_academic_experience_on_cv_as_education(): void
+    {
+        $enricher = $this->app->make(DocumentExtractionDraftEnricher::class);
+
+        $draft = $enricher->enrich([
+            'experiences' => [
+                [
+                    'job_title' => 'MASTER II- Recherche',
+                    'company_name' => 'UNIVERSITE DE YAOUNDE II',
+                    'city_name' => 'Yaoundé',
+                    'start_date' => '2020',
+                    'end_date' => '2020',
+                    'experience_type' => 'employment',
+                ],
+            ],
+        ], 'CV');
+
+        self::assertCount(0, $draft['experiences'] ?? []);
+        self::assertCount(1, $draft['educations'] ?? []);
+        self::assertSame('MASTER II- Recherche', $draft['educations'][0]['degree'] ?? null);
+    }
+
+    public function test_reclassifies_academic_certification_as_education(): void
+    {
+        $enricher = $this->app->make(DocumentExtractionDraftEnricher::class);
+
+        $draft = $enricher->enrich([
+            'certification' => [
+                'name' => 'Diplôme Master II',
+                'issuing_organization' => 'Université de Yaoundé II',
+                'issue_date' => '2020-06-01',
+            ],
+        ], 'PROFESSIONAL_CERTIFICATION');
+
+        self::assertCount(0, $draft['certifications'] ?? []);
+        self::assertCount(1, $draft['educations'] ?? []);
+        self::assertStringContainsString('Master', (string) ($draft['educations'][0]['degree'] ?? ''));
+    }
+
+    public function test_reclassifies_academic_work_certificate_as_education(): void
+    {
+        $enricher = $this->app->make(DocumentExtractionDraftEnricher::class);
+
+        $draft = $enricher->enrich([
+            'notes' => 'Ce document est une attestation de réussite académique (Diplôme Master II).',
+            'user_profile' => [
+                'full_name' => 'MBENG PAUL ALLIANCE TONYE',
+            ],
+            'work_certificate' => [
+                'job_title' => 'MASTER II- Recherche',
+                'company_name' => 'UNIVERSITE DE YAOUNDE II',
+                'city_name' => 'Yaoundé',
+                'start_date' => '2020',
+                'end_date' => '2020',
+            ],
+        ], 'WORK_CERTIFICATE');
+
+        self::assertCount(0, $draft['experiences'] ?? []);
+        self::assertCount(1, $draft['educations'] ?? []);
+        self::assertSame('MASTER II- Recherche', $draft['educations'][0]['degree'] ?? null);
+        self::assertStringContainsString('YAOUNDE', (string) ($draft['educations'][0]['institution_name'] ?? ''));
+        self::assertStringContainsString('académique', mb_strtolower((string) ($draft['notes'] ?? '')));
+    }
+
     public function test_normalizes_dot_language_levels_and_marital_status(): void
     {
         $this->seed([LanguageSeeder::class, LanguageLevelSeeder::class]);
