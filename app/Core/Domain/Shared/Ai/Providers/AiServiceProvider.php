@@ -102,10 +102,10 @@ final class AiServiceProvider extends ServiceProvider
         $documentExtractionClient = function ($app): LanguageModelClientInterface {
             /** @var Config $config */
             $config = $app->make('config');
-            $driver = (string) $config->get('ai.document_extraction.driver', 'gemini');
+            $driver = (string) $config->get('ai.document_extraction.driver', 'groq');
             /** @var array<string, class-string> $providers */
             $providers = (array) $config->get('ai.providers', []);
-            $class = $providers[$driver] ?? GeminiLanguageModelClient::class;
+            $class = $providers[$driver] ?? GroqLanguageModelClient::class;
 
             $service = $app->make($class);
             if (! $service instanceof LanguageModelClientInterface) {

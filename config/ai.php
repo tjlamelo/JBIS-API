@@ -9,7 +9,7 @@ return [
     /**
      * Pilote par défaut (`LanguageModelClientInterface`) : textes courts structurés
      * (offres, matching profil, sections CV). Recommandé : groq.
-     * L'extraction documentaire utilise `document_extraction.driver` (gemini).
+     * L'extraction documentaire utilise `document_extraction.driver` (groq).
      */
     'driver' => env('AI_DRIVER', 'groq'),
 
@@ -31,7 +31,7 @@ return [
     'groq' => [
         'api_key' => env('AI_GROQ_API_KEY', env('AI_GROK_API_KEY', '')),
         'model' => env('AI_GROQ_MODEL', env('AI_GROK_MODEL', 'llama-3.3-70b-versatile')),
-        'vision_model' => env('AI_GROQ_VISION_MODEL', 'qwen/qwen3.6-27b'),
+        'vision_model' => env('AI_GROQ_VISION_MODEL', 'meta-llama/llama-4-scout-17b-16e-instruct'),
         'base_url' => rtrim((string) env('AI_GROQ_BASE_URL', env('AI_GROK_BASE_URL', 'https://api.groq.com/openai/v1')), '/'),
         'timeout' => (int) env('AI_GROQ_TIMEOUT', env('AI_GROK_TIMEOUT', 60)),
     ],
@@ -39,8 +39,8 @@ return [
     'document_extraction' => [
         /** Active ou désactive toute extraction IA à l'upload de documents. */
         'enabled' => (bool) env('AI_DOCUMENT_EXTRACTION_ENABLED', true),
-        /** Pilote IA dédié documents (vision, PDF, brouillons JSON). Recommandé : gemini. */
-        'driver' => env('AI_DOCUMENT_EXTRACTION_DRIVER', 'gemini'),
+        /** Pilote IA dédié documents (vision, PDF, brouillons JSON). Recommandé : groq. */
+        'driver' => env('AI_DOCUMENT_EXTRACTION_DRIVER', 'groq'),
         /** Entrée vision : base64 (local + prod) ou url (assets publics uniquement). */
         'vision_input' => env('AI_DOCUMENT_EXTRACTION_VISION_INPUT', 'base64'),
         'pdf' => [
@@ -59,7 +59,7 @@ return [
          * Plafond de tokens en sortie pour l'extraction documentaire.
          * Groq free tier ~8k TPM si repli ; Gemini tolère des valeurs plus hautes.
          */
-        'max_output_tokens' => (int) env('AI_DOCUMENT_EXTRACTION_MAX_OUTPUT_TOKENS', 8192),
+        'max_output_tokens' => (int) env('AI_DOCUMENT_EXTRACTION_MAX_OUTPUT_TOKENS', 4096),
         /** Côté long max (px) avant envoi vision base64. */
         'vision_max_edge' => (int) env('AI_DOCUMENT_EXTRACTION_VISION_MAX_EDGE', 1280),
         'vision_jpeg_quality' => (int) env('AI_DOCUMENT_EXTRACTION_VISION_JPEG_QUALITY', 70),
