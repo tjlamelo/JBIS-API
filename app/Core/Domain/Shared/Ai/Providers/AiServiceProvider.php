@@ -22,7 +22,7 @@ use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Support\ServiceProvider;
 
 /**
- * Module IA : contrat `LanguageModelClientInterface` branché selon `AI_DRIVER`.
+ * Module IA : `AI_DRIVER` (texte court) + `AI_DOCUMENT_EXTRACTION_DRIVER` (documents).
  */
 final class AiServiceProvider extends ServiceProvider
 {
@@ -40,7 +40,7 @@ final class AiServiceProvider extends ServiceProvider
 
             return new GeminiLanguageModelClient(
                 apiKey: (string) ($gemini['api_key'] ?? ''),
-                model: (string) ($gemini['model'] ?? 'gemini-2.0-flash'),
+                model: (string) ($gemini['model'] ?? 'gemini-2.5-flash'),
                 baseUrl: (string) ($gemini['base_url'] ?? 'https://generativelanguage.googleapis.com/v1beta'),
                 timeout: (int) ($gemini['timeout'] ?? 60),
             );
@@ -76,7 +76,7 @@ final class AiServiceProvider extends ServiceProvider
             /** @var Config $config */
             $config = $app->make('config');
 
-            $driver = (string) $config->get('ai.driver', 'gemini');
+            $driver = (string) $config->get('ai.driver', 'groq');
             /** @var array<string, class-string> $providers */
             $providers = (array) $config->get('ai.providers', []);
             $class = $providers[$driver] ?? null;
@@ -102,10 +102,10 @@ final class AiServiceProvider extends ServiceProvider
         $documentExtractionClient = function ($app): LanguageModelClientInterface {
             /** @var Config $config */
             $config = $app->make('config');
-            $driver = (string) $config->get('ai.document_extraction.driver', 'groq');
+            $driver = (string) $config->get('ai.document_extraction.driver', 'gemini');
             /** @var array<string, class-string> $providers */
             $providers = (array) $config->get('ai.providers', []);
-            $class = $providers[$driver] ?? GroqLanguageModelClient::class;
+            $class = $providers[$driver] ?? GeminiLanguageModelClient::class;
 
             $service = $app->make($class);
             if (! $service instanceof LanguageModelClientInterface) {

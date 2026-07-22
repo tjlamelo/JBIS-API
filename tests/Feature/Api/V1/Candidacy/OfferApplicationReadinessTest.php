@@ -195,13 +195,18 @@ class OfferApplicationReadinessTest extends TestCase
     private function makeOfferWithRequiredPassport(): array
     {
         $passportType = DocumentType::query()->where('code', 'PASSPORT')->first()
-            ?? DocumentType::query()->create([
-                'code' => 'PASSPORT_TEST',
+            ?? DocumentType::query()->firstOrCreate(
+                ['code' => 'PASSPORT_TEST'],
+                [
                 'label' => json_encode(['fr' => 'Passeport']),
                 'storage_slug' => 'passeport',
                 'is_active' => true,
                 'visible_to_candidates' => true,
-            ]);
+                'allowed_extensions' => json_encode(DocumentType::defaultAllowedExtensions()),
+                'allowed_mime_types' => json_encode(DocumentType::defaultAllowedMimeTypes()),
+                'max_file_size_kb' => 10240,
+                ],
+            );
 
         $required = RequiredDocument::query()->firstOrCreate(
             ['slug' => 'passeport-valide'],

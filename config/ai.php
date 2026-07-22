@@ -7,10 +7,11 @@ use App\Core\Domain\Shared\Ai\Services\GroqLanguageModelClient;
 
 return [
     /**
-     * Pilote l'implémentation exposée via `LanguageModelClientInterface`.
-     * Exemples : gemini, groq, fake (tests / hors-ligne).
+     * Pilote par défaut (`LanguageModelClientInterface`) : textes courts structurés
+     * (offres, matching profil, sections CV). Recommandé : groq.
+     * L'extraction documentaire utilise `document_extraction.driver` (gemini).
      */
-    'driver' => env('AI_DRIVER', 'gemini'),
+    'driver' => env('AI_DRIVER', 'groq'),
 
     'providers' => [
         'gemini' => GeminiLanguageModelClient::class,
@@ -22,7 +23,7 @@ return [
 
     'gemini' => [
         'api_key' => env('AI_GEMINI_API_KEY', ''),
-        'model' => env('AI_GEMINI_MODEL', 'gemini-2.0-flash'),
+        'model' => env('AI_GEMINI_MODEL', 'gemini-2.5-flash'),
         'base_url' => rtrim((string) env('AI_GEMINI_BASE_URL', 'https://generativelanguage.googleapis.com/v1beta'), '/'),
         'timeout' => (int) env('AI_GEMINI_TIMEOUT', 60),
     ],
@@ -38,8 +39,8 @@ return [
     'document_extraction' => [
         /** Active ou désactive toute extraction IA à l'upload de documents. */
         'enabled' => (bool) env('AI_DOCUMENT_EXTRACTION_ENABLED', true),
-        /** Pilote IA dédié (recommandé : groq). */
-        'driver' => env('AI_DOCUMENT_EXTRACTION_DRIVER', 'groq'),
+        /** Pilote IA dédié documents (vision, PDF, brouillons JSON). Recommandé : gemini. */
+        'driver' => env('AI_DOCUMENT_EXTRACTION_DRIVER', 'gemini'),
         /** Entrée vision : base64 (local + prod) ou url (assets publics uniquement). */
         'vision_input' => env('AI_DOCUMENT_EXTRACTION_VISION_INPUT', 'base64'),
         'pdf' => [
@@ -48,8 +49,8 @@ return [
             'min_text_chars' => (int) env('AI_DOCUMENT_EXTRACTION_PDF_MIN_TEXT_CHARS', 200),
         ],
         /**
-         * Groq compte max_tokens dans le TPM de la requête.
-         * Free tier ~8k TPM : 8192 réservés + images dépasse → HTTP 413.
+         * Plafond de tokens en sortie pour l'extraction documentaire.
+         * Groq free tier ~8k TPM si repli ; Gemini tolère des valeurs plus hautes.
          */
         'max_output_tokens' => (int) env('AI_DOCUMENT_EXTRACTION_MAX_OUTPUT_TOKENS', 4096),
         /** Côté long max (px) avant envoi vision base64. */

@@ -67,7 +67,7 @@ final class UserDocumentVisionExtractionService
             'user_document_id' => $document->id,
             'document_type' => $typeCode,
             'mime_type' => $document->mime_type,
-            'vision_driver' => (string) config('ai.document_extraction.driver', 'groq'),
+            'vision_driver' => (string) config('ai.document_extraction.driver', 'gemini'),
             'vision_input_mode' => (string) config('ai.document_extraction.vision_input', 'base64'),
             'image_source' => str_starts_with($firstInput, 'data:') ? 'base64' : 'url',
             'image_count' => count($imageInputs),
