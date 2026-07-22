@@ -4,20 +4,24 @@ declare(strict_types=1);
 
 namespace App\Core\Domain\Identity\Services\Document;
 
-use Google\Cloud\Vision\V1\AnnotateImageRequest;
-use Google\Cloud\Vision\V1\BatchAnnotateImagesRequest;
-use Google\Cloud\Vision\V1\Client\ImageAnnotatorClient;
-use Google\Cloud\Vision\V1\Feature;
-use Google\Cloud\Vision\V1\Feature\Type;
-use Google\Cloud\Vision\V1\Image;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 /**
- * OCR via Google Cloud Vision (DOCUMENT_TEXT_DETECTION) sur les pages PDF rendues en JPEG.
+ * OCR via Google Cloud Vision REST (DOCUMENT_TEXT_DETECTION) — sans SDK PHP.
  */
 final class GoogleCloudVisionOcrService
 {
-    private ?ImageAnnotatorClient $client = null;
+    private const VISION_ENDPOINT = 'https://vision.googleapis.com/v1/images:annotate';
+
+    private const VISION_SCOPE = 'https://www.googleapis.com/auth/cloud-vision';
+
+    private ?string $accessToken = null;
+
+    /** @var array<string, mixed>|null */
+    private ?array $credentials = null;
+
+    private ?string $lastError = null;
 
     public function isEnabled(): bool
     {
@@ -25,7 +29,12 @@ final class GoogleCloudVisionOcrService
             return false;
         }
 
-        return $this->resolveCredentials() !== null;
+        return $this->resolveCredentialsArray() !== null;
+    }
+
+    public function lastError(): ?string
+    {
+        return $this->lastError;
     }
 
     /**
@@ -33,45 +42,88 @@ final class GoogleCloudVisionOcrService
      */
     public function extractFromImagePaths(array $absoluteImagePaths): string
     {
-        if (! $this->isEnabled() || $absoluteImagePaths === []) {
+        $this->lastError = null;
+
+        if (! $this->isEnabled()) {
+            $this->lastError = 'OCR désactivé ou compte de service Google introuvable (GOOGLE_SERVICE_ACCOUNT_JSON).';
+
             return '';
         }
 
-        $requests = [];
-        foreach ($absoluteImagePaths as $absolutePath) {
-            $content = @file_get_contents($absolutePath);
-            if ($content === false || $content === '') {
-                continue;
-            }
+        if ($absoluteImagePaths === []) {
+            $this->lastError = 'Aucune image de page PDF à OCR.';
 
-            $image = (new Image())->setContent($content);
-            $feature = (new Feature())->setType(Type::DOCUMENT_TEXT_DETECTION);
-            $requests[] = (new AnnotateImageRequest())
-                ->setImage($image)
-                ->setFeatures([$feature]);
-        }
-
-        if ($requests === []) {
             return '';
         }
 
         try {
-            $response = $this->client()->batchAnnotateImages(
-                (new BatchAnnotateImagesRequest())->setRequests($requests),
-            );
+            $credentials = $this->resolveCredentialsArray();
+            if ($credentials === null) {
+                $this->lastError = 'Compte de service Google invalide ou manquant.';
 
+                return '';
+            }
+
+            $token = $this->accessToken($credentials);
+            $requests = [];
+
+            foreach ($absoluteImagePaths as $absolutePath) {
+                $content = @file_get_contents($absolutePath);
+                if ($content === false || $content === '') {
+                    continue;
+                }
+
+                $requests[] = [
+                    'image' => ['content' => base64_encode($content)],
+                    'features' => [['type' => 'DOCUMENT_TEXT_DETECTION']],
+                ];
+            }
+
+            if ($requests === []) {
+                $this->lastError = 'Impossible de lire les images PDF pour OCR.';
+
+                return '';
+            }
+
+            $response = Http::timeout(90)
+                ->withToken($token)
+                ->acceptJson()
+                ->post(self::VISION_ENDPOINT, ['requests' => $requests]);
+
+            if (! $response->successful()) {
+                $this->lastError = sprintf(
+                    'OCR Vision HTTP %d : %s',
+                    $response->status(),
+                    mb_substr((string) $response->body(), 0, 300),
+                );
+                Log::warning('[document_extraction] OCR Vision HTTP erreur', [
+                    'status' => $response->status(),
+                    'body' => mb_substr((string) $response->body(), 0, 500),
+                ]);
+
+                return '';
+            }
+
+            $payload = $response->json();
             $pages = [];
-            foreach ($response->getResponses() as $index => $annotateResponse) {
-                if ($annotateResponse->getError() !== null) {
+            $pageErrors = [];
+
+            foreach ((array) ($payload['responses'] ?? []) as $index => $annotateResponse) {
+                if (! is_array($annotateResponse)) {
+                    continue;
+                }
+
+                if (isset($annotateResponse['error']['message'])) {
+                    $pageErrors[] = sprintf('page %d: %s', $index + 1, $annotateResponse['error']['message']);
                     Log::warning('[document_extraction] OCR Vision erreur page', [
                         'page' => $index + 1,
-                        'message' => $annotateResponse->getError()?->getMessage(),
+                        'message' => $annotateResponse['error']['message'],
                     ]);
 
                     continue;
                 }
 
-                $text = trim((string) ($annotateResponse->getFullTextAnnotation()?->getText() ?? ''));
+                $text = trim((string) ($annotateResponse['fullTextAnnotation']['text'] ?? ''));
                 if ($text !== '') {
                     $pages[] = sprintf("=== PAGE %d ===\n%s", $index + 1, $text);
                 }
@@ -79,13 +131,21 @@ final class GoogleCloudVisionOcrService
 
             $joined = implode("\n\n", $pages);
 
+            if ($joined === '') {
+                $this->lastError = $pageErrors !== []
+                    ? 'OCR Vision sans texte : '.implode(' | ', $pageErrors)
+                    : 'OCR Vision a renvoyé un texte vide (API Cloud Vision activée sur le projet ?).';
+            }
+
             Log::info('[document_extraction] OCR Vision terminé', [
                 'pages' => count($pages),
                 'char_count' => mb_strlen($joined),
+                'error' => $this->lastError,
             ]);
 
             return $joined;
         } catch (\Throwable $exception) {
+            $this->lastError = $exception->getMessage();
             Log::warning('[document_extraction] OCR Vision indisponible', [
                 'message' => $exception->getMessage(),
             ]);
@@ -94,41 +154,118 @@ final class GoogleCloudVisionOcrService
         }
     }
 
-    private function client(): ImageAnnotatorClient
+    /**
+     * @param  array<string, mixed>  $credentials
+     */
+    private function accessToken(array $credentials): string
     {
-        if ($this->client instanceof ImageAnnotatorClient) {
-            return $this->client;
+        if ($this->accessToken !== null && $this->credentials === $credentials) {
+            return $this->accessToken;
         }
 
-        $credentials = $this->resolveCredentials();
-        $options = $credentials !== null ? ['credentials' => $credentials] : [];
+        $clientEmail = (string) ($credentials['client_email'] ?? '');
+        $privateKey = $this->normalizePrivateKey((string) ($credentials['private_key'] ?? ''));
+        $tokenUri = (string) ($credentials['token_uri'] ?? 'https://oauth2.googleapis.com/token');
 
-        $this->client = new ImageAnnotatorClient($options);
+        if ($clientEmail === '' || $privateKey === '') {
+            throw new \RuntimeException('Compte de service Google incomplet (client_email / private_key).');
+        }
 
-        return $this->client;
+        $now = time();
+        $header = $this->base64UrlEncode(json_encode(['alg' => 'RS256', 'typ' => 'JWT'], JSON_THROW_ON_ERROR));
+        $claims = $this->base64UrlEncode(json_encode([
+            'iss' => $clientEmail,
+            'scope' => self::VISION_SCOPE,
+            'aud' => $tokenUri,
+            'iat' => $now,
+            'exp' => $now + 3600,
+        ], JSON_THROW_ON_ERROR));
+
+        $signature = '';
+        $signed = openssl_sign("{$header}.{$claims}", $signature, $privateKey, OPENSSL_ALGO_SHA256);
+        if ($signed !== true) {
+            throw new \RuntimeException(
+                'Impossible de signer le JWT Google (private_key invalide dans GOOGLE_SERVICE_ACCOUNT_JSON).'
+            );
+        }
+
+        $jwt = "{$header}.{$claims}.".$this->base64UrlEncode($signature);
+
+        $response = Http::asForm()->timeout(30)->post($tokenUri, [
+            'grant_type' => 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+            'assertion' => $jwt,
+        ]);
+
+        if (! $response->successful()) {
+            throw new \RuntimeException(
+                'Échec OAuth Google Vision (vérifiez la clé et Cloud Vision API) : '
+                .mb_substr((string) $response->body(), 0, 300)
+            );
+        }
+
+        $token = (string) ($response->json('access_token') ?? '');
+        if ($token === '') {
+            throw new \RuntimeException('Token OAuth Google Vision vide.');
+        }
+
+        $this->credentials = $credentials;
+        $this->accessToken = $token;
+
+        return $token;
+    }
+
+    private function normalizePrivateKey(string $privateKey): string
+    {
+        $key = str_replace(["\r\n", "\r"], "\n", $privateKey);
+
+        // Dotenv / JSON parfois conserve les séquences littérales \n.
+        if (! str_contains($key, "\n") && str_contains($key, '\\n')) {
+            $key = str_replace('\\n', "\n", $key);
+        }
+
+        return $key;
     }
 
     /**
-     * @return array<string, mixed>|string|null
+     * @return array<string, mixed>|null
      */
-    private function resolveCredentials(): array|string|null
+    private function resolveCredentialsArray(): ?array
     {
         $inlineJson = config('ai.document_extraction.ocr.service_account_json');
         if (is_string($inlineJson) && trim($inlineJson) !== '') {
             $decoded = json_decode($inlineJson, true);
             if (is_array($decoded)) {
+                if (isset($decoded['private_key']) && is_string($decoded['private_key'])) {
+                    $decoded['private_key'] = $this->normalizePrivateKey($decoded['private_key']);
+                }
+
                 return $decoded;
             }
 
             Log::warning('[document_extraction] GOOGLE_SERVICE_ACCOUNT_JSON invalide');
+            $this->lastError = 'GOOGLE_SERVICE_ACCOUNT_JSON n\'est pas un JSON valide.';
         }
 
         $path = $this->resolveCredentialsPath();
-        if ($path !== null && is_readable($path)) {
-            return $path;
+        if ($path === null || ! is_readable($path)) {
+            return null;
         }
 
-        return null;
+        $contents = file_get_contents($path);
+        if ($contents === false || trim($contents) === '') {
+            return null;
+        }
+
+        $decoded = json_decode($contents, true);
+        if (! is_array($decoded)) {
+            return null;
+        }
+
+        if (isset($decoded['private_key']) && is_string($decoded['private_key'])) {
+            $decoded['private_key'] = $this->normalizePrivateKey($decoded['private_key']);
+        }
+
+        return $decoded;
     }
 
     private function resolveCredentialsPath(): ?string
@@ -149,10 +286,8 @@ final class GoogleCloudVisionOcrService
         return $path;
     }
 
-    public function __destruct()
+    private function base64UrlEncode(string $value): string
     {
-        if ($this->client instanceof ImageAnnotatorClient) {
-            $this->client->close();
-        }
+        return rtrim(strtr(base64_encode($value), '+/', '-_'), '=');
     }
 }

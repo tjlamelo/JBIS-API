@@ -110,9 +110,22 @@ final class UserDocumentExtractionService
 
         try {
             $nativeText = $this->pdfTextExtractor->extractFirstPages($document, $maxPages);
-            $ocrText = $this->visionOcr->isEnabled()
+            $ocrEnabled = $this->visionOcr->isEnabled();
+            $ocrText = $ocrEnabled
                 ? $this->visionOcr->extractFromImagePaths($renderedPages)
                 : '';
+            $ocrChars = mb_strlen(trim($ocrText));
+
+            // OCR activé mais vide → erreur explicite (évite un faux succès « identité seule »).
+            if ($ocrEnabled && $ocrChars < $minTextChars) {
+                $detail = $this->visionOcr->lastError() ?? 'texte OCR trop court';
+                throw new \RuntimeException(
+                    'OCR Google Cloud Vision indisponible ou insuffisant ('.$detail.'). '
+                    .'Activez Cloud Vision API sur le projet GCP, vérifiez GOOGLE_SERVICE_ACCOUNT_JSON, '
+                    .'puis php artisan config:clear et relancez l\'analyse.'
+                );
+            }
+
             $sourceText = $this->cvSourceTextPreparer->prepare($nativeText, $ocrText);
             $sourceChars = mb_strlen(trim($sourceText));
 
@@ -120,8 +133,8 @@ final class UserDocumentExtractionService
                 Log::info('[document_extraction] Pipeline CV PDF OCR + texte', [
                     'user_document_id' => $document->id,
                     'char_count' => $sourceChars,
-                    'ocr_enabled' => $this->visionOcr->isEnabled(),
-                    'ocr_chars' => mb_strlen(trim($ocrText)),
+                    'ocr_enabled' => $ocrEnabled,
+                    'ocr_chars' => $ocrChars,
                     'native_chars' => mb_strlen(trim($nativeText)),
                 ]);
 
@@ -131,10 +144,17 @@ final class UserDocumentExtractionService
                     return $textDraft;
                 }
 
-                Log::info('[document_extraction] CV OCR+texte incomplet → repli vision', [
+                Log::info('[document_extraction] CV OCR+texte incomplet → 2e passe sections + vision', [
                     'user_document_id' => $document->id,
                     'section_counts' => $this->sectionCounts($textDraft),
                 ]);
+
+                $sectionDraft = $this->textExtraction->extractCvSectionsOnly($sourceText);
+                $textDraft = $this->mergeCvDrafts($sectionDraft, $textDraft);
+
+                if (! $this->isCvDraftIncomplete($textDraft, $sourceText)) {
+                    return $textDraft;
+                }
 
                 $visionDraft = $this->extractFromRenderedPages($document, $renderedPages);
 
